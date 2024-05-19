@@ -49,6 +49,10 @@ fastboot flash recovery DATA\twrp.img
 
 > [!NOTE]
 > We have to modify the TZ (Trust Zone) partition in order to allow the loading of some drivers in LineageOS.  
-> And we will access [TWRP](https://github.com/omnirom/android_bootable_recovery/tree/android-7.1) when the device reboot in _recovery_ mode.
+
+Reboot in _recovery_ mode to start [TWRP](https://github.com/omnirom/android_bootable_recovery/tree/android-7.1).
+`fastboot oem reboot-recovery`
+
+
 
  
