@@ -21,8 +21,6 @@ When the copy is finished: exit mass storage mode.
 Send the following command and disconnect the usb cable when the device seems to be locked on the Nokia logo (the device will power-off automatically upon disconnection).  
 `thor2 -mode rnd -power_off`
 
-Flash the .mbn (multi boot binary) file of TWRP
-
 ## Install TWRP
 
 Prepare thor2 to put the device "in wait for command" (messaging timeout is disabled):  
@@ -35,3 +33,6 @@ Flash the .mbn (multi boot binary) file of TWRP in the UEFI partition.
 
 Reboot the device.  
 `thor2 -mode rnd -reboot`
+
+After the rebootm the device should be in "fastboot" mode:  
+![](fastboot.JPG)
