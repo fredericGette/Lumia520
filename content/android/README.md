@@ -34,5 +34,5 @@ Flash the .mbn (multi boot binary) file of TWRP in the UEFI partition.
 Reboot the device.  
 `thor2 -mode rnd -reboot`
 
-After the rebootm the device should be in "fastboot" mode:  
+After reboot, the device should be in "fastboot" mode:  
 ![](fastboot.JPG)
