@@ -15,5 +15,5 @@ Select the disk corresponding to "MainOS":
 ![](backup0.jpg)
 ![](backup.jpg)
 
-Power-off the device and disconnect the usb cable.  
+When the copy is finished: power-off the device and disconnect the usb cable.  
 `thor2 -mode rnd -power_off`
