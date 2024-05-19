@@ -39,3 +39,16 @@ After reboot, the device should be in "fastboot" mode:
 
 Boot a [special image of TWRP](https://github.com/Android4Lumia/notes/tree/master/tools) which will update the partition table of the device:  
 `fastboot boot DATA\gptflasher.img`
+
+Flash the _TZ_, _modem_ and _recovery_ partitions of the device:  
+```
+fastboot flash TZ DATA\TZ.img
+fastboot flash modem DATA\modem.img
+fastboot flash recovery DATA\twrp.img
+```
+
+> [!NOTE]
+> We have to modify the TZ (Trust Zone) partition in order to allow the loading of some drivers in LineageOS.
+> And we will access TWRP when the device reboot in _recovery_ mode.
+
+ 
