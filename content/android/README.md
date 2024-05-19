@@ -48,7 +48,7 @@ fastboot flash recovery DATA\twrp.img
 ```
 
 > [!NOTE]
-> We have to modify the TZ (Trust Zone) partition in order to allow the loading of some drivers in LineageOS.
+> We have to modify the TZ (Trust Zone) partition in order to allow the loading of some drivers in LineageOS.  
 > And we will access TWRP when the device reboot in _recovery_ mode.
 
  
