@@ -21,10 +21,15 @@ When the copy is finished: exit mass storage mode.
 Send the following command and disconnect the usb cable when the device seems to be locked on the Nokia logo (the device will power-off automatically upon disconnection).  
 `thor2 -mode rnd -power_off`
 
+Flash the .mbn (multi boot binary) file of TWRP
+
 ## Install TWRP
 
 Prepare thor2 to put the device "in wait for command" (messaging timeout is disabled):  
 `thor2 -mode rnd -asciimsgreq NOKD -asciimsgresp NOKD -skip_com_scan`
 
 Immediatly connect the usb cable (the phone will power-on automatically upon connection).  
+
+Flash the .mbn (multi boot binary) file of TWRP in the UEFI partition.  
+`thor2 -mode uefiflash -partitionname UEFI -partitionimagefile "D:\Users\Public\Downloads\LK Bootloader installer\64 bit installers\lflash_windows_x86_x64\DATA\EMMCBOOT.mbn"`
 
