@@ -13,5 +13,5 @@ Switch the phone to mass storage mode:
 
 Copy the content of the phone using Win32DiskImager:
 - select the disk corresponding to "MainOS"  
-()[backup_0.jpg)
-()[backup.jpg]
+[](backup_0.jpg)
+[](backup.jpg)
