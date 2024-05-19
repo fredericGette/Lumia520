@@ -7,10 +7,10 @@ First [unlock the bootloader](/content/unlock_bootloader/Readme.md)
 > [!CAUTION]
 > This backup is mandatory when you zwant to return to Windows Phone 8.1 - of if the installation of Android failed.
 
-Switch the phone to mass storage mode:  
+Switch the device to mass storage mode:  
 `thor2 -mode rnd -bootmsc`
 
-Copy the content of the phone using Win32DiskImager.
+Copy the content of the device using Win32DiskImager.
 Select the disk corresponding to "MainOS":  
 ![](backup0.jpg)
 ![](backup.jpg)
@@ -33,3 +33,5 @@ Immediatly connect the usb cable (the phone will power-on automatically upon con
 Flash the .mbn (multi boot binary) file of TWRP in the UEFI partition.  
 `thor2 -mode uefiflash -partitionname UEFI -partitionimagefile "C:\Users\Public\Downloads\LK Bootloader installer\64 bit installers\lflash_windows_x86_x64\DATA\EMMCBOOT.mbn"`
 
+Reboot the device.  
+`thor2 -mode rnd -reboot`
