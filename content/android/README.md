@@ -28,7 +28,7 @@ Prepare thor2 to put the device "in wait for command" (messaging timeout is disa
 
 Immediatly connect the usb cable (the phone will power-on automatically upon connection).  
 
-Flash the .mbn (multi boot binary) file of TWRP in the UEFI partition.  
+Flash the .mbn (multi boot binary) file of [LittleKernel](https://github.com/Android4Lumia/bootloader_msm8227) in the UEFI partition.  
 `thor2 -mode uefiflash -partitionname UEFI -partitionimagefile "C:\Users\Public\Downloads\LK Bootloader installer\64 bit installers\lflash_windows_x86_x64\DATA\EMMCBOOT.mbn"`
 
 Reboot the device.  
@@ -36,3 +36,6 @@ Reboot the device.
 
 After reboot, the device should be in "fastboot" mode:  
 ![](fastboot.JPG)
+
+Boot a [special image of TWRP](https://github.com/Android4Lumia/notes/tree/master/tools) which will update the partition table of the device:  
+`fastboot boot DATA\gptflasher.img`
