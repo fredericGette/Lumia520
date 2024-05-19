@@ -4,8 +4,34 @@ First [unlock the bootloader](/content/unlock_bootloader/Readme.md)
 
 ## Make a full backup of the phone
 
-Switch the phone to mass storage mode:  
+> [!CAUTION]
+> This backup is mandatory when you zwant to return to Windows Phone 8.1 - of if the installation of Android failed.
+
+Switch the device to mass storage mode:  
 `thor2 -mode rnd -bootmsc`
 
+Copy the content of the device using Win32DiskImager.
+Select the disk corresponding to "MainOS":  
+![](backup0.jpg)
+![](backup.jpg)
 
-Copy the content of the phone using Win32DiskImager:
+When the copy is finished: exit mass storage mode.  
+`thor2 -mode rnd -reboot`
+
+Send the following command and disconnect the usb cable when the device seems to be locked on the Nokia logo (the device will power-off automatically upon disconnection).  
+`thor2 -mode rnd -power_off`
+
+Flash the .mbn (multi boot binary) file of TWRP
+
+## Install TWRP
+
+Prepare thor2 to put the device "in wait for command" (messaging timeout is disabled):  
+`thor2 -mode rnd -asciimsgreq NOKD -asciimsgresp NOKD -skip_com_scan`
+
+Immediatly connect the usb cable (the phone will power-on automatically upon connection).  
+
+Flash the .mbn (multi boot binary) file of TWRP in the UEFI partition.  
+`thor2 -mode uefiflash -partitionname UEFI -partitionimagefile "C:\Users\Public\Downloads\LK Bootloader installer\64 bit installers\lflash_windows_x86_x64\DATA\EMMCBOOT.mbn"`
+
+Reboot the device.  
+`thor2 -mode rnd -reboot`
