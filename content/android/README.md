@@ -15,5 +15,16 @@ Select the disk corresponding to "MainOS":
 ![](backup0.jpg)
 ![](backup.jpg)
 
-When the copy is finished: power-off the device and disconnect the usb cable.  
+When the copy is finished: exit mass storage mode.
+`thor2 -mode rnd -reboot`
+
+Send the following command and disconnect the usb cable when the device seems to be locked on the Nokia logo (the device will power-off automatically upon disconnection).  
 `thor2 -mode rnd -power_off`
+
+## Install TWRP
+
+Prepare thor2 to put the device "in wait for command" (messaging timeout is disabled):  
+`thor2 -mode rnd -asciimsgreq NOKD -asciimsgresp NOKD -skip_com_scan`
+
+Immediatly connect the usb cable (the phone will power-on automatically upon connection).  
+
