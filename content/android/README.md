@@ -10,7 +10,7 @@ First [unlock the bootloader](/content/unlock_bootloader/Readme.md)
 Switch the device to mass storage mode:  
 `thor2 -mode rnd -bootmsc`
 
-Copy the content of the device using Win32DiskImager.  
+Copy the content of the device using [Win32DiskImager](https://sourceforge.net/projects/win32diskimager/).  
 Select the disk corresponding to "MainOS":  
 ![](backup0.jpg)
 ![](backup.jpg)
