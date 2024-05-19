@@ -14,3 +14,6 @@ Copy the content of the phone using Win32DiskImager.
 Select the disk corresponding to "MainOS":  
 ![](backup0.jpg)
 ![](backup.jpg)
+
+Power-off the device and disconnect the usb cable.  
+`thor2 -mode rnd -power_off`
