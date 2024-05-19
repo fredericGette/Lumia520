@@ -21,7 +21,7 @@ When the copy is finished: exit mass storage mode.
 Send the following command and disconnect the usb cable when the device seems to be locked on the Nokia logo (the device will power-off automatically upon disconnection).  
 `thor2 -mode rnd -power_off`
 
-## Install TWRP
+## Install [TWRP](https://github.com/omnirom/android_bootable_recovery/tree/android-7.1)
 
 Prepare thor2 to put the device "in wait for command" (messaging timeout is disabled):  
 `thor2 -mode rnd -asciimsgreq NOKD -asciimsgresp NOKD -skip_com_scan`
