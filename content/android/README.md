@@ -10,7 +10,7 @@ First [unlock the bootloader](/content/unlock_bootloader/Readme.md)
 Switch the phone to mass storage mode:  
 `thor2 -mode rnd -bootmsc`
 
-### Copy the content of the phone using Win32DiskImager
+Copy the content of the phone using Win32DiskImager.
 Select the disk corresponding to "MainOS":  
 ![](backup0.jpg)
 ![](backup.jpg)
