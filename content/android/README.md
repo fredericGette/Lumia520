@@ -21,7 +21,7 @@ When the copy is finished: exit mass storage mode.
 Send the following command and disconnect the usb cable when the device seems to be locked on the Nokia logo (the device will power-off automatically upon disconnection).  
 `thor2 -mode rnd -power_off`
 
-## Install [TWRP](https://github.com/omnirom/android_bootable_recovery/tree/android-7.1)
+## Install TWRP
 
 Prepare thor2 to put the device "in wait for command" (messaging timeout is disabled):  
 `thor2 -mode rnd -asciimsgreq NOKD -asciimsgresp NOKD -skip_com_scan`
@@ -49,6 +49,6 @@ fastboot flash recovery DATA\twrp.img
 
 > [!NOTE]
 > We have to modify the TZ (Trust Zone) partition in order to allow the loading of some drivers in LineageOS.  
-> And we will access TWRP when the device reboot in _recovery_ mode.
+> And we will access [TWRP](https://github.com/omnirom/android_bootable_recovery/tree/android-7.1) when the device reboot in _recovery_ mode.
 
  
