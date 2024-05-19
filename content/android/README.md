@@ -15,7 +15,7 @@ Select the disk corresponding to "MainOS":
 ![](backup0.jpg)
 ![](backup.jpg)
 
-When the copy is finished: exit mass storage mode.
+When the copy is finished: exit mass storage mode.  
 `thor2 -mode rnd -reboot`
 
 Send the following command and disconnect the usb cable when the device seems to be locked on the Nokia logo (the device will power-off automatically upon disconnection).  
