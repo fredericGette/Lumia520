@@ -68,7 +68,8 @@ Wait the end of the installation then "Reboot System".
 > [!NOTE]
 > First boot of LineageOS is quite long.
 
-
+![](IMG_20240520_115235.jpg)
+![](IMG_20240520_115246.jpg)
 
 
  
