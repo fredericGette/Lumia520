@@ -21,7 +21,7 @@ When the copy is finished: exit mass storage mode.
 Send the following command and disconnect the usb cable when the device seems to be locked on the Nokia logo (the device will power-off automatically upon disconnection).  
 `thor2 -mode rnd -power_off`
 
-At this point, copy "lineage-14-1-20190701-UNOFFICIAL-fame.zip" in FAT32 formatted SDcard of 2GB. And put this SDcard inside the device.
+At this point, copy "lineage-14-1-20190701-UNOFFICIAL-fame.zip" in a FAT32 formatted micro SDcard of 2GB. And insert this micro SDcard in the device.
 
 ## Install TWRP
 
