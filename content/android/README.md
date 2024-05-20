@@ -65,6 +65,8 @@ Twrp > Mount > Select Micro SDCard (check in Select Storage that MicroSDCard is 
 Twrp > Install > Select lineage-14-1-20190701-UNOFFICIAL-fame.zip  
 Wait the end of the installation then "Reboot System".
 
+> [!NOTE]
+> First boot of LineageOS is quite long.
 
 
 
