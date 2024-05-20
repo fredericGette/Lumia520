@@ -21,6 +21,8 @@ When the copy is finished: exit mass storage mode.
 Send the following command and disconnect the usb cable when the device seems to be locked on the Nokia logo (the device will power-off automatically upon disconnection).  
 `thor2 -mode rnd -power_off`
 
+At this point, copy "lineage-14-1-20190701-UNOFFICIAL-fame.zip" in FAT32 formatted SDcard of 2GB. And put this SDcard inside the device.
+
 ## Install TWRP
 
 Prepare thor2 to put the device "in wait for command" (messaging timeout is disabled):  
@@ -37,6 +39,9 @@ Reboot the device.
 After reboot, the device should be in "fastboot" mode:  
 ![](fastboot.JPG)
 
+> [!NOTE]
+> If fastboot.exe doesn't detect the device, check in device manager > if the device is named "android" with vid_18d1&pid_d00d > you have to install an "android driver" for this VID/PID like - for example - "Google Kedacom KDB Interface Driver 11.0.0.0".
+
 Boot a [special image of TWRP](https://github.com/Android4Lumia/notes/tree/master/tools) which will update the partition table of the device:  
 `fastboot boot DATA\gptflasher.img`
 
@@ -52,6 +57,15 @@ fastboot flash recovery DATA\twrp.img
 
 Reboot in "recovery mode" to start [TWRP](https://github.com/omnirom/android_bootable_recovery/tree/android-7.1).  
 `fastboot oem reboot-recovery`
+
+Twrp > Wipe > Format Data (restart the phone in recovery mode)  
+Twrp > Mount > Select Cache  
+Twrp > Mount > Select Data  
+Twrp > Mount > Select Micro SDCard (check in Select Storage that MicroSDCard is selected also)  
+Twrp > Install > Select lineage-14-1-20190701-UNOFFICIAL-fame.zip  
+Wait the end of the installation then "Reboot System".
+
+
 
 
 
