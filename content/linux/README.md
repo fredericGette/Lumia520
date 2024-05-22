@@ -34,3 +34,22 @@ Activate [debug shell](https://wiki.postmarketos.org/wiki/Inspecting_the_initram
 $ pmbootstrap initfs hook_add debug-shell
 ```
 
+Reboot the device (volume-down + power >10s).  
+
+Restart in fastboot mode (volume-down).  
+
+Flash the partition (and reboot the device):
+```
+$ pmbootstrap flasher flash_rootfs
+$ pmbootstrap flasher flash_kernel
+$ pmbootstrap flasher boot
+```
+
+Wait for the message displayed on the device and indicating we are in debug shell.  
+Then connect to the device and continue the init process step by step:
+```
+$ telnet 172.16.42.1
+```
+
+
+
