@@ -46,10 +46,45 @@ $ pmbootstrap flasher boot
 ```
 
 Wait for the message displayed on the device and indicating we are in debug shell.  
-Then connect to the device and continue the init process step by step:
+Then connect to the device and continue the [init](https://gitlab.com/postmarketOS/pmaports/-/blob/master/main/postmarketos-initramfs/init.sh) process step by step:
 ```
 $ telnet 172.16.42.1
+# . /usr/share/misc/source_deviceinfo
+# . /init_functions.sh
+# mount_boot_partition /boot
+# extract_initramfs_extra /boot/initramfs-extra
+# setup_udev
+# run_hooks /hooks-extra
+# wait_root_partition
+# delete_old_install_partition
+# resize_root_partition
+# unlock_root_partition
+# resize_root_filesystem
+# mount_root_partition
 ```
+
+The mount of the root partition may failed: "ERROR: unable to mount root partition!"
+Check the cause of the problem:  
+```
+# dmesg
+```
+The last logs should be something like the following:  
+```
+	[  373.041049] JBD2: no valid journal superblock found
+	[  373.041049] EXT4-fs (dm-1): error loading journal
+```
+
+Will fix the problem by formatting the root partition without journal:
+```
+# mkdir /sdcard
+# mount /dev/mmcblk1p1 /sdcard
+# /sdcard/mkfs.ext4 -O "^metadata_csum,^has_journal" -L pmOS_root -N 100000 -U 875eefec-ef9d-444b-9412-56cbc45ad709 /dev/mapper/userdata2
+# mount -o rw /dev/mapper/userdata2  /sysroot
+# tar x -zvf /sdcard/rootfs.tar.gz -C /sysroot
+```
+
+
+
 
 
 
