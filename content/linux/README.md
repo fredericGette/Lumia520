@@ -34,6 +34,12 @@ Activate [debug shell](https://wiki.postmarketos.org/wiki/Inspecting_the_initram
 $ pmbootstrap initfs hook_add debug-shell
 ```
 
+Now, we are going to copy some files in a micro SDcard in case of failure during first start of PostmarketOS.
+```
+$ pmbootstrap export
+
+```
+
 Reboot the device (volume-down + power >10s).  
 
 Restart in fastboot mode (volume-down).  
