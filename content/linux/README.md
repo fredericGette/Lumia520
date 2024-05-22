@@ -56,7 +56,7 @@ Copy the following binary in the micro SDcard also:
 
 Power off the device, and insert the micro SDcard into it.  
 
-Pozer on the device in fastboot mode (press volume-down during boot).  
+Power on the device in fastboot mode (press volume-down during boot).  
 
 Flash the partition (and reboot the device):
 ```
