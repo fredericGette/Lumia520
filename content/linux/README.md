@@ -94,7 +94,7 @@ The last logs should be something like the following:
 	[  373.041049] EXT4-fs (dm-1): error loading journal
 ```
 
-We will fix the problem by formatting the root partition without journal ans copying the content of the root file system into it:
+We will fix the problem by formatting the root partition without journal and copying the content of the "root file system" into it:
 ```
 # mkdir /sdcard
 # mount /dev/mmcblk1p1 /sdcard
