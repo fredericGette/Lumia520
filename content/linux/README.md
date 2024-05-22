@@ -54,9 +54,9 @@ $ sudo tar -czvf rootfs.tar.gz /mnt/pmOS_root
 And copy also in the micro SDcard the following binary:  
 /mnt/pmOS_root/sbin/mkfs.ext4
 
-Reboot the device (volume-down + power >10s).  
+Power off the device, and insert the micro SDcard into it.  
 
-Restart in fastboot mode (volume-down).  
+Pozer on the device in fastboot mode (press volume-down during boot).  
 
 Flash the partition (and reboot the device):
 ```
