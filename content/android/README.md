@@ -5,7 +5,7 @@ First [unlock the bootloader](/content/unlock_bootloader/Readme.md)
 ## Make a full backup of the phone
 
 > [!CAUTION]
-> This backup is mandatory when you want to return to Windows Phone 8.1 - of if the installation of Android failed.
+> This backup is mandatory when you want to return to Windows Phone 8.1 - or if the installation of Android failed.
 
 Switch the device to mass storage mode:  
 `thor2 -mode rnd -bootmsc`
@@ -21,7 +21,7 @@ When the copy is finished: exit mass storage mode.
 Send the following command and disconnect the usb cable when the device seems to be locked on the Nokia logo (the device will power-off automatically upon disconnection).  
 `thor2 -mode rnd -power_off`
 
-At this point, copy "lineage-14-1-20190701-UNOFFICIAL-fame.zip" in FAT32 formatted SDcard of 2GB. And put this SDcard inside the device.
+At this point, copy "lineage-14-1-20190701-UNOFFICIAL-fame.zip" in a FAT32 formatted micro SDcard of 2GB. And insert this micro SDcard in the device.
 
 ## Install TWRP
 
@@ -68,7 +68,8 @@ Wait the end of the installation then "Reboot System".
 > [!NOTE]
 > First boot of LineageOS is quite long.
 
-
+![](IMG_20240520_115235.jpg)
+![](IMG_20240520_115246.jpg)
 
 
  
