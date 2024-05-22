@@ -7,7 +7,7 @@ Use [WPinternals](https://github.com/ReneLergner/WPinternals)
 > But you will have the possibility to acquire access to almost all resources of the Windows Phone. See for example [wp81Elevation](https://github.com/fredericGette/wp81Elevation).  
 > And you will also be able to sideload applications.
 
-First [unlock the bootloader](/content/unlock_bootloader/Readme.md)
+First, [unlock the bootloader](/content/unlock_bootloader/Readme.md)
 
 ![](root01.jpg)
 
