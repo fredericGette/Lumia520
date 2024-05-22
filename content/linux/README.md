@@ -51,7 +51,7 @@ Put the content of the partition pmOS_root into a tar file, and copy this file i
 ```
 $ sudo tar -czvf rootfs.tar.gz /mnt/pmOS_root
 ```
-And copy also in the micro SDcard the following binary:  
+Copy the following binary in the micro SDcard also:  
 /mnt/pmOS_root/sbin/mkfs.ext4
 
 Power off the device, and insert the micro SDcard into it.  
