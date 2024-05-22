@@ -23,3 +23,14 @@ $ pmbootstrap init
 	user interface: console
 ```
 
+Build the images which are going to be flashed in the device:
+```
+$ pmbootstrap build device-nokia-fame
+$ pmbootstrap build linux-nokia-fame
+```
+
+Activate [debug shell](https://wiki.postmarketos.org/wiki/Inspecting_the_initramfs#Enable_the_debug_shell) because we will need it for the first boot:
+```
+$ pmbootstrap initfs hook_add debug-shell
+```
+
