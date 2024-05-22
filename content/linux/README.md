@@ -42,7 +42,7 @@ $ sudo sudo partx -a -v nokia-fame.img
 ```
 The file _nokia-fame.img_ is the image of a disk containing 2 partitions: _pmOS_boot_ and _pmOS_root_.  
 The command partx maps this image to a loop device (example _/dev/loop16_) and each partition on another device (example: _/dev/loop16p1_ for _pmOS_boot_ and _/dev/loop16p2_ for _pmOS_root_).  
-We mount the partition pmOS_root:
+We mount the partition pmOS_root (change the name of the device loop if necessary):
 ```
 $ sudo mkdir /mnt/pmOS_root
 $ sudo mount -o ro /dev/loop16p2 /mnt/pmOS_root
