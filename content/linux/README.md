@@ -36,9 +36,10 @@ $ pmbootstrap initfs hook_add debug-shell
 
 Now, we are going to copy some files in a FAT32 micro SDcard in case of failure during first start of PostmarketOS.
 ```
+$ pmbootstrap install
 $ pmbootstrap export
 $ cd  /tmp/postmarketOS-export
-$ sudo sudo partx -a -v nokia-fame.img
+$ sudo partx -a -v nokia-fame.img
 ```
 The file _nokia-fame.img_ is the image of a disk containing 2 partitions: _pmOS_boot_ and _pmOS_root_.  
 The command partx maps this image to a loop device (example _/dev/loop16_) and each partition on another device (example: _/dev/loop16p1_ for _pmOS_boot_ and _/dev/loop16p2_ for _pmOS_root_).  
