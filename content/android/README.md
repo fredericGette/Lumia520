@@ -58,7 +58,7 @@ fastboot flash recovery DATA\twrp.img
 Reboot in "recovery mode" to start [TWRP](https://github.com/omnirom/android_bootable_recovery/tree/android-7.1) 3.0.2-0  
 `fastboot oem reboot-recovery`
 
-Twrp > Wipe > Format Data (restart the phone in recovery mode)  
+Twrp > Wipe > Format Data (then choose "Reboot System" and hold volume-up to boot in recovery mode)  
 Twrp > Mount > Select Cache  
 Twrp > Mount > Select Data  
 Twrp > Mount > Select Micro SDCard (check in Select Storage that MicroSDCard is selected also)  
