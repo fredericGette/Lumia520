@@ -95,7 +95,14 @@ The last logs should be something like the following:
 	[  373.041049] EXT4-fs (dm-1): error loading journal
 ```
 
-We will fix the problem by formatting the root partition without journal and copying the content of the "root file system" into it:
+We will fix the problem by formatting the root partition without journal and copying the content of the "root file system" into it.
+But before that we have to find the UUID of the `pmOS_root` partition:  
+```
+# blkid
+```
+Find a line with the text '/dev/mapper/userdata2: LABEL="pmOS_root"' and note the value of the UUID.  
+
+Now we can format the root partition. Do no forget to pass the UUID to the command mkfs.ext4 with the parameter `-U`:  
 ```
 # mkdir /sdcard
 # mount /dev/mmcblk1p1 /sdcard
