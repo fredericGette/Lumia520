@@ -87,7 +87,7 @@ $ telnet 172.16.42.1
 # mount_root_partition
 ```
 
-The mount of the root partition may failed: `ERROR: unable to mount root partition!`  
+The mount of the root partition may fail: `ERROR: unable to mount root partition!`  
 Check the cause of the problem:  
 ```
 # dmesg
