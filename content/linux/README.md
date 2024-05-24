@@ -114,7 +114,14 @@ Now we can format the root partition. Do no forget to pass the UUID to the comma
 # tar x -zvf /sdcard/rootfs.tar.gz -C /sysroot
 ```
 
-
+Before rebooting the device, we are going to modify a startup script to avoid a potential freeze (or crash) during the boot:
+```
+# vi /sysroot/etc/init.d/udev-trigger
+```
+Near the end of the file, modify the line which trigger the adding of all devices:  
+At the end of the command `udevadm trigger --type=devices --action=add`  
+add ` --attr-nomatch=address=* --attr-nomatch=flags=0x1003`  
+because we don't want to trigger the adding of the device `/sys/devices/platform/msm_hsusb/gadget/net/usb0` which has an attribute `address` with an unknown value and an attribute `flags` with the value `0x1003`.
 
 
 
