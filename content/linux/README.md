@@ -123,6 +123,17 @@ At the end of the command `udevadm trigger --type=devices --action=add`
 add ` --attr-nomatch=address=* --attr-nomatch=flags=0x1003`  
 because we don't want to trigger the adding of the device `/sys/devices/platform/msm_hsusb/gadget/net/usb0` which has an attribute `address` with an unknown value and an attribute `flags` with the value `0x1003`.
 
+Terminate the telnet session:
+```
+# exit
+```
+
+deactivate the [debug shell](https://wiki.postmarketos.org/wiki/Inspecting_the_initramfs#Enable_the_debug_shell):  
+```
+$ pmbootstrap initfs hook_del debug-shell
+```
+
+And force a reboot of the device by pressing volume-down + power more than 10 secondes. After the reboot keep the volume-down pressed to boot in fastboot mode.  
 
 
 
