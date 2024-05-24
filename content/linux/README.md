@@ -66,7 +66,7 @@ $ pmbootstrap flasher flash_kernel
 $ pmbootstrap flasher boot
 ```
 
-Wait for the message displayed on the device indicating we are in "debug shell".  
+Wait for the message on the device display "WARNING: debug-shell is active".  
 Then connect to the device and continue the [init](https://gitlab.com/postmarketOS/pmaports/-/blob/master/main/postmarketos-initramfs/init.sh) process step by step:
 ```
 $ telnet 172.16.42.1
