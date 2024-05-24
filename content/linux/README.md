@@ -69,7 +69,7 @@ $ pmbootstrap flasher boot
 > If the command `pmbootstrap flasher flash_rootfs` fails with an error `remote: 'Unknown chunk type'`,
 > then you can still try to continue the installation process acting as when there is a problem with the root partition.
 
-Wait for the message on the device display `WARNING: debug-shell is active`.  
+Wait for the message on the device display: `WARNING: debug-shell is active`.  
 Then connect to the device and continue the [init](https://gitlab.com/postmarketOS/pmaports/-/blob/master/main/postmarketos-initramfs/init.sh) process step by step:
 ```
 $ telnet 172.16.42.1
