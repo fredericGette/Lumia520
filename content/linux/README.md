@@ -29,7 +29,7 @@ $ pmbootstrap build device-nokia-fame
 $ pmbootstrap build linux-nokia-fame
 ```
 
-Activate [debug shell](https://wiki.postmarketos.org/wiki/Inspecting_the_initramfs#Enable_the_debug_shell) because we will need it for the first boot:
+Activate [debug-shell](https://wiki.postmarketos.org/wiki/Inspecting_the_initramfs#Enable_the_debug_shell) because we will need it for the first boot:
 ```
 $ pmbootstrap initfs hook_add debug-shell
 ```
@@ -128,12 +128,18 @@ Terminate the telnet session:
 # exit
 ```
 
-deactivate the [debug shell](https://wiki.postmarketos.org/wiki/Inspecting_the_initramfs#Enable_the_debug_shell):  
+deactivate the [debug-shell](https://wiki.postmarketos.org/wiki/Inspecting_the_initramfs#Enable_the_debug_shell):  
 ```
 $ pmbootstrap initfs hook_del debug-shell
 ```
 
 And force a reboot of the device by pressing volume-down + power more than 10 secondes. After the reboot keep the volume-down pressed to boot in fastboot mode.  
+
+Flash the initramfs without the debug-shell, then reboot:
+```
+$ pmbootstrap flasher flash_kernel
+$ pmbootstrap flasher boot
+```
 
 
 
