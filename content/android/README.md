@@ -66,7 +66,7 @@ Twrp > Install > Select lineage-14-1-20190701-UNOFFICIAL-fame.zip > Swipe to con
 Wait for the end of the installation then "Reboot System".
 
 > [!NOTE]
-> First boot of LineageOS is quite long.
+> First boot of LineageOS is quite long (~7 minutes)
 
 ![](IMG_20240520_115235.jpg)
 ![](IMG_20240520_115246.jpg)
