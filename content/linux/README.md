@@ -159,7 +159,7 @@ Display an animation:
 $ sudo pbsplash -v -b "test framebuffer" -m "LUMIA 520" -s /usr/share/pbsplash/pmos-logo.svg
 ```
 
-Listen to event (event 0 is the touchscreen):  
+Listen to events (event0 is the touchscreen):  
 ```
 $ evtest
 ```
