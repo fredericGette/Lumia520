@@ -165,6 +165,32 @@ Listen to events (event0 is the touchscreen):
 $ evtest
 ```
 
+Capture screen:  
+```
+$ sudo apk add fbgrab
+$ fbgrab -v /home/user/capture.png
+```
+
+Enable Internet access using USB (to install new package on the phone for example):  
+See https://wiki.postmarketos.org/wiki/USB_Internet
+On the host computer (Ubuntu):  
+```
+$ sudo su
+# sysctl net.ipv4.ip_forward=1
+# iptables -A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+# iptables -A FORWARD -s 172.16.42.0/24 -j ACCEPT
+# iptables -A POSTROUTING -t nat -j MASQUERADE -s 172.16.42.0/24
+# iptables-save
+# exit
+```
+On the phone:  
+```
+$ sudo su
+# ip route add default via 172.16.42.2 dev usb0
+# echo nameserver 1.1.1.1 > /etc/resolv.conf
+# exit
+```
+
 
 
 
