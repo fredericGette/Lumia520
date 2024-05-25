@@ -145,5 +145,22 @@ $ pmbootstrap flasher flash_kernel
 $ pmbootstrap flasher boot
 ```
 
+After some minutes, the startup logo stops moving.  
+At this moment you can open a ssh session to the device.  
+```
+$ ssh user@172.16.42.1
+```
+> [!NOTE]
+> There is no working graphical ui currently.
+> But we can still display image in the framebuffer. See example below.
+
+```
+$ sudo pbsplash -v -b "test framebuffer" -m "LUMIA 520" -s /usr/share/pbsplash/pmos-logo.svg
+```
+
+
+
+
+
 
 
