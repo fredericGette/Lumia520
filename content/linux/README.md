@@ -154,10 +154,15 @@ $ ssh user@172.16.42.1
 > There is no working graphical ui currently.
 > But we can still display image in the framebuffer. See example below.
 
+Display an animation:  
 ```
 $ sudo pbsplash -v -b "test framebuffer" -m "LUMIA 520" -s /usr/share/pbsplash/pmos-logo.svg
 ```
 
+Listen to event (event 0 is the touchscreen):  
+```
+$ evtest
+```
 
 
 
