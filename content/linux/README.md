@@ -23,6 +23,10 @@ $ pmbootstrap init
 	user interface: console
 ```
 
+> [!NOTE]
+> Currently, I'm not able to use the xfce4 ui due to a fatal error `Segmentation fault at address 0x4` when the x11 server starts.
+> Nor the fbkeyboard ui because the console framebuffer in not activated in the kernel.
+
 Build the images which are going to be flashed in the device:
 ```
 $ pmbootstrap build device-nokia-fame
