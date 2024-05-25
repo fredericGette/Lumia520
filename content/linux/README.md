@@ -145,13 +145,14 @@ $ pmbootstrap flasher flash_kernel
 $ pmbootstrap flasher boot
 ```
 
-After some minutes, the startup logo stops moving.  
+After 2 minutes, the startup logo stops moving.  
 At this moment you can open a ssh session to the device.  
 ```
 $ ssh user@172.16.42.1
 ```
 > [!NOTE]
-> There is no working graphical ui currently.
+> Not only the first boot is long. The following ones will last the same time.  
+> There is no working graphical ui currently.  
 > But we can still display image in the framebuffer. See example below.
 
 Display an animation:  
