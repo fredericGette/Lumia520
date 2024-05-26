@@ -171,7 +171,7 @@ $ evtest
 ```
 
 Enable Internet access using USB (to install new packages on the phone for example):  
-See https://wiki.postmarketos.org/wiki/USB_Internet
+See https://wiki.postmarketos.org/wiki/USB_Internet  
 On the host computer (Ubuntu):  
 ```
 $ sudo su
