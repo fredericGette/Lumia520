@@ -109,7 +109,7 @@ But before that we have to find the UUID of the `pmOS_root` partition:
 ```
 In the result of the previous command, find a line with the text `/dev/mapper/userdata2: LABEL="pmOS_root"` and note the value of the UUID.  
 
-Now we can format the root partition. Do no forget to pass the UUID to the command mkfs.ext4 with the parameter `-U`:  
+Now we can format the root partition. Do no forget to use the correct UUID for the parameter `-U`:  
 ```
 # mkdir /sdcard
 # mount /dev/mmcblk1p1 /sdcard
