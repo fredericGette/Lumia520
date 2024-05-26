@@ -1,6 +1,6 @@
 # Install LineageOS 14.1
 
-First [unlock the bootloader](/content/unlock_bootloader/Readme.md)
+First, [unlock the bootloader](/content/unlock_bootloader/Readme.md)
 
 ## Make a full backup of the phone
 
@@ -55,18 +55,18 @@ fastboot flash recovery DATA\twrp.img
 > [!NOTE]
 > We have to modify the TZ (Trust Zone) partition in order to allow the loading of some drivers in LineageOS.  
 
-Reboot in "recovery mode" to start [TWRP](https://github.com/omnirom/android_bootable_recovery/tree/android-7.1).  
+Reboot in "recovery mode" to start [TWRP](https://github.com/omnirom/android_bootable_recovery/tree/android-7.1) 3.0.2-0  
 `fastboot oem reboot-recovery`
 
-Twrp > Wipe > Format Data (restart the phone in recovery mode)  
-Twrp > Mount > Select Cache  
+Twrp > Wipe > Format Data (then choose "Reboot System" and hold volume-up to boot in recovery mode)  
+Twrp > Mount > Select cache (if not selectable: Twrp > Wipe > Advanced Wipe > Select cache > Swipe to Wipe)
 Twrp > Mount > Select Data  
-Twrp > Mount > Select Micro SDCard (check in Select Storage that MicroSDCard is selected also)  
-Twrp > Install > Select lineage-14-1-20190701-UNOFFICIAL-fame.zip  
-Wait the end of the installation then "Reboot System".
+Twrp > Mount > Select Micro SDCard (check in "Select Storage" that Micro SDCard is selected)  
+Twrp > Install > Select lineage-14-1-20190701-UNOFFICIAL-fame.zip > Swipe to confirm Flash
+Wait for the end of the installation then "Reboot System".
 
 > [!NOTE]
-> First boot of LineageOS is quite long.
+> First boot of LineageOS is quite long (~7 minutes)
 
 ![](IMG_20240520_115235.jpg)
 ![](IMG_20240520_115246.jpg)
