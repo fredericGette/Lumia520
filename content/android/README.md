@@ -59,7 +59,7 @@ Reboot in "recovery mode" to start [TWRP](https://github.com/omnirom/android_boo
 `fastboot oem reboot-recovery`
 
 Twrp > Wipe > Format Data (then choose "Reboot System" and hold volume-up to boot in recovery mode)  
-Twrp > Mount > Select cache (if not selectable: Twrp > Wipe > Advanced Wipe > Select cache > Swipe to Wipe)
+Twrp > Mount > Select cache (if not selectable: Twrp > Wipe > Advanced Wipe > Select cache > Swipe to Wipe)  
 Twrp > Mount > Select Data  
 Twrp > Mount > Select Micro SDCard (check in "Select Storage" that Micro SDCard is selected)  
 Twrp > Install > Select lineage-14-1-20190701-UNOFFICIAL-fame.zip > Swipe to confirm Flash
