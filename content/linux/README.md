@@ -151,7 +151,7 @@ At this moment you can open a ssh session to the phone.
 $ ssh user@172.16.42.1
 ```
 
-Note the difference of color between the capture and the real display. I guess there's a problem with the color mode ([24bits instead of 32bits](https://wiki.postmarketos.org/wiki/Troubleshooting:Xorg#X11_segfault).
+Note the difference of color between the capture and the real display. I guess there's a problem with the color mode ([24bits instead of 32bits](https://wiki.postmarketos.org/wiki/Troubleshooting:Xorg#X11_segfault).  
 ![](framebuffer.jpg) ![](capture.jpg)
 ![](ssh.jpg)
 
