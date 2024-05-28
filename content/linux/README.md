@@ -27,7 +27,7 @@ $ pmbootstrap init
 > Currently, I'm not able to use the xfce4 ui due to a fatal error `Segmentation fault at address 0x4` when the x11 server starts.
 > Nor the fbkeyboard ui because the console framebuffer in not activated in the kernel.
 
-Build the images which are going to be flashed in the device:
+Build the images which are going to be flashed in the phone:
 ```
 $ pmbootstrap build device-nokia-fame
 $ pmbootstrap build linux-nokia-fame
@@ -59,11 +59,11 @@ $ sudo tar -czvf rootfs.tar.gz -C /mnt/pmOS_root .
 Copy the following binary in the micro SDcard also:  
 `/mnt/pmOS_root/sbin/mkfs.ext4`
 
-Power off the device, and insert the micro SDcard into it.  
+Power off the phone, and insert the micro SDcard into it.  
 
-Power on the device in fastboot mode (press volume-down during boot).  
+Power on the phone in fastboot mode (press volume-down during boot).  
 
-Flash the partition (and reboot the device):
+Flash the partition (and reboot the phone):
 ```
 $ pmbootstrap flasher flash_rootfs
 $ pmbootstrap flasher flash_kernel
@@ -71,10 +71,10 @@ $ pmbootstrap flasher boot
 ```
 > [!NOTE]
 > If the command `pmbootstrap flasher flash_rootfs` fails with an error `remote: 'Unknown chunk type'`,
-> then you can still try to continue the installation process acting as when there is a problem with the root partition.
+> then you can still continue the installation process because we will write the root filesystem again later.
 
-Wait for the message on the device display: `WARNING: debug-shell is active`.  
-Then connect to the device and continue the [init](https://gitlab.com/postmarketOS/pmaports/-/blob/master/main/postmarketos-initramfs/init.sh) process step by step:
+Wait for the message on the phone display: `WARNING: debug-shell is active`.  
+Then connect to the phone and continue the [init](https://gitlab.com/postmarketOS/pmaports/-/blob/master/main/postmarketos-initramfs/init.sh) process step by step:
 ```
 $ telnet 172.16.42.1
 # . /usr/share/misc/source_deviceinfo
@@ -109,7 +109,7 @@ But before that we have to find the UUID of the `pmOS_root` partition:
 ```
 In the result of the previous command, find a line with the text `/dev/mapper/userdata2: LABEL="pmOS_root"` and note the value of the UUID.  
 
-Now we can format the root partition. Do no forget to pass the UUID to the command mkfs.ext4 with the parameter `-U`:  
+Now we can format the root partition. Do no forget to use the correct UUID for the parameter `-U`:  
 ```
 # mkdir /sdcard
 # mount /dev/mmcblk1p1 /sdcard
@@ -118,7 +118,7 @@ Now we can format the root partition. Do no forget to pass the UUID to the comma
 # tar x -zvf /sdcard/rootfs.tar.gz -C /sysroot
 ```
 
-Before rebooting the device, we are going to modify a startup script to avoid a potential freeze (or crash) during the boot:
+Before rebooting the phone, we are going to modify a startup script to avoid a potential freeze (or crash) during the boot:
 ```
 # vi /sysroot/etc/init.d/udev-trigger
 ```
@@ -137,7 +137,7 @@ deactivate the [debug-shell](https://wiki.postmarketos.org/wiki/Inspecting_the_i
 $ pmbootstrap initfs hook_del debug-shell
 ```
 
-And force a reboot of the device by pressing volume-down + power more than 10 secondes. After the reboot keep the volume-down pressed to boot in fastboot mode.  
+And force a reboot of the phone by pressing volume-down + power more than 10 secondes. After the reboot keep the volume-down pressed to boot in fastboot mode.  
 
 Flash the initramfs without the debug-shell, then reboot:
 ```
@@ -146,10 +146,15 @@ $ pmbootstrap flasher boot
 ```
 
 After 2 minutes, the startup logo stops moving.  
-At this moment you can open a ssh session to the device.  
+At this moment you can open a ssh session to the phone.  
 ```
 $ ssh user@172.16.42.1
 ```
+
+Note the difference of color between the capture and the real display. I guess there's a problem with the color mode ([24bits instead of 32bits](https://wiki.postmarketos.org/wiki/Troubleshooting:Xorg#X11_segfault).  
+![](framebuffer.jpg) ![](capture.jpg)
+![](ssh.jpg)
+
 > [!NOTE]
 > Not only the first boot is long. The following ones will last the same time.  
 > There is no working graphical ui currently.  
@@ -166,7 +171,7 @@ $ evtest
 ```
 
 Enable Internet access using USB (to install new packages on the phone for example):  
-See https://wiki.postmarketos.org/wiki/USB_Internet
+See https://wiki.postmarketos.org/wiki/USB_Internet  
 On the host computer (Ubuntu):  
 ```
 $ sudo su
