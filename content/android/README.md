@@ -5,7 +5,9 @@ First, [unlock the bootloader](/content/unlock_bootloader/Readme.md)
 ## Make a full backup of the phone
 
 > [!CAUTION]
-> This backup is mandatory when you want to return to Windows Phone 8.1 - or if the installation of Android failed.
+> This backup is mandatory when you want to return to Windows Phone 8.1 - or if the installation of Android failed.  
+> But even with this backup you are going to lose all the content of your phone !!  
+> And be aware that if you want to reinstall Windows Phone you also need the .ffu file of your phone in addition to this full backup.
 
 Switch the device to mass storage mode:  
 `thor2 -mode rnd -bootmsc`
