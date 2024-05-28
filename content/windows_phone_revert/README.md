@@ -40,7 +40,7 @@ Force the update of the physical storage, then reboot the phone:
 # reboot
 ```
 
-You might have also to "power off" the phone, then "power on" to correctly take into account the new partition table.  
+Do also a cold reboot (press volume-down + power more than 10 secondes) in order to correctly take into account the new partition table.  
 Reboot the phone in fastboot mode (keep volume-down pressed during reboot).   
 
 Flash the partitions (extracted at the beginning of this document) in the order given by the following list of partition names:
