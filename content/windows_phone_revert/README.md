@@ -65,3 +65,12 @@ Flash the partitions (extracted at the beginning of this document) in the order 
 fastboot flash <partition name> parts\<partition file>.img
 ```
 
+Then reboot the phone:
+```
+fastboot reboot
+```
+
+It's expected to see a "smiley of death" :( after this reboot.
+
+You must now flash the .ffu file of your phone:
+
