@@ -72,5 +72,13 @@ fastboot reboot
 
 It's expected to see a "smiley of death" :( after this reboot.
 
-You must now flash the .ffu file of your phone:
+Now, you must flash the .ffu file of your phone:
+```
+thor2 -mode rnd -bootflashapp
+thor2 -mode uefiflash -ffufile "D:\Users\Public\Downloads\Lumia520\Denim_RM914_059S341_3058.51000.1523.1010\RM914_3058.51000.1523.1010_RETAIL_apac_australia_new_zealand_295_10_482764_prd_signed.ffu" -do_full_nvi_update -do_factory_reset
+```
 
+Finally, reboot your phone:
+```
+thor2 -mode rnd -bootnormalmode
+```
