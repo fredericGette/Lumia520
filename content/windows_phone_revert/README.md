@@ -2,7 +2,7 @@
 
 from [Linux](/content/linux/README.md) or [Android](/content/android/README.md)
 
-Use the .img file you created at the beginning of the installation of [Android](/content/android/README.md).
+Use the .img file (full backup) you created at the beginning of the installation of [Android](/content/android/README.md).
 
 Create a folder "parts" and extract the partitions of the .img files using imgman64.exe or 7zip (faster than imgman64).
 
