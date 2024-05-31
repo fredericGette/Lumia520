@@ -14,3 +14,5 @@ All about Nokia Lumia 520
 ## [Key combinations (Windows Phone 8.1)](content/windows_keys/README.md)
 
 ## [Key combinations (LineageOS 14.1)](content/android_keys/README.md)
+
+## [Key combinations (PostmarketOS)](content/linux_keys/README.md)
