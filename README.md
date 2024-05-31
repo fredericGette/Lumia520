@@ -9,4 +9,4 @@ All about Nokia Lumia 520
 
 ## [Install Linux (PostmarketOS)](content/linux/README.md)
 
-## [Revert to Windows Phone](content/windows_phone_revert/README.md)
+## [Revert to Windows (Windows Phone 8.1)](content/windows_phone_revert/README.md)
