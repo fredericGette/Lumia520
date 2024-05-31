@@ -8,6 +8,8 @@
 
  **boot mass storage mode** : `camera` during boot :warning: only with unlocked bootloader :warning: (black screen).
 
- **factory reset** : boot flash mode then `volume-up`, `volume-down`, `power`, `volume-down`. The phone will restart and reset (spinning gears for a few minutes).
+ **factory reset** : _boot flash mode_ then `volume-up`, `volume-down`, `power`, `volume-down`. The phone will restart and reset (spinning gears for a few minutes).
+
+ **screen capture** : `volume-up` + `power` - only when Windows is running. The file is created in "Pictures\Screenshots".
 
 
