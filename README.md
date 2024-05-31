@@ -11,4 +11,4 @@ All about Nokia Lumia 520
 
 ## [Enable root (Windows Phone 8.1)](content/windows_phone_root/README.md)
 
-## [Key combinations (Windows Phone 8.1)(content/keys_windows/README.md)
+## [Key combinations (Windows Phone 8.1)](content/keys_windows/README.md)
