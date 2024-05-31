@@ -1,4 +1,4 @@
-# Keys for Windows Phone 8.1
+# Key combinations of Windows Phone 8.1
 
 **reboot** : `volume-down` + `power` > 10s  
 
