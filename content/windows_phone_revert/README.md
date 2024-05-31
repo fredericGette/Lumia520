@@ -83,3 +83,6 @@ Finally, reboot your phone:
 ```
 thor2 -mode rnd -bootnormalmode
 ```
+
+Welcome back to Windows:  
+![](windows.jpg)
