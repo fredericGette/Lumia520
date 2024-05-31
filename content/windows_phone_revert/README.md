@@ -70,7 +70,8 @@ Then reboot the phone:
 fastboot reboot
 ```
 
-It's expected to see a "smiley of death" :( after this reboot.
+It's expected to see a "smiley of death" :( after this reboot.  
+![](smiley_of_death.jpg)
 
 Now, you must flash the .ffu file of your phone:
 ```
