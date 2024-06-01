@@ -18,3 +18,5 @@ All about Nokia Lumia 520
 ## [Key combinations (PostmarketOS)](content/linux_keys/README.md)
 
 ## [eMMC partitions (Windows Phone 8.1)](content/windows_partitions/README.md)
+
+## [eMMC partitions (LineageOS 14.1)](content/android_partitions/README.md)
