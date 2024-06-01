@@ -9,7 +9,7 @@ Number of eMMC sectors: 0xE90000
 |MODEM_FSG        | ro | Qualcomm Modem golden file system | 0x005000 | 0x0067FF | 0x0000300000 | | :white_large_square: |
 |SSD              | ro | Qualcomm Secure Software Download | 0x007000 | 0x00701F | 0x0000004000 | | :white_large_square: |
 |SBL1             | ro | Qualcomm Secondary Bootloader. LBAend=0x008BB7 when bootloader is locked | 0x008000 | 0x008BB6 | 0x0000176E00 | | :white_check_mark: |
-|HACK             | | WPinternals | 0x008BB7 | 0x008BB7 | 0x0000000200 | | :white_large_square: |
+|HACK             | | WPinternals Bootloader unlock | 0x008BB7 | 0x008BB7 | 0x0000000200 | | :white_large_square: |
 |SBL2             | ro | Qualcomm Secondary Bootloader | 0x009000 | 0x009BB7 | 0x0000177000 | | :white_check_mark: |
 |SBL3             | ro | Qualcomm Secondary Bootloader | 0x00A000 | 0x00AFFF | 0x0000200000 | | :white_check_mark: |
 |UEFI             | ro | Qualcomm Bootloader | 0x00B000 | 0x00C387 | 0x0000271000 | | :white_check_mark: |
