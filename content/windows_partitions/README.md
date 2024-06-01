@@ -1,5 +1,7 @@
 # eMMC partitions of Windows Phone 8.1
 
+Number of eMMC sectors: 0xE90000
+
 | Name            | Acces | Description | LBA start | LBA end | Size (bytes) | File system |
 |-----------------|:-----:|-------------|-----------|---------|--------------|-------------|
 |IS_UNLOCKED_SBL3 | | WPinternals | 0x000040 | 0x000040 | 0x0000000200 | |
