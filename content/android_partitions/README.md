@@ -5,7 +5,7 @@ eMMC size : 0x1D2000000 octets
 | Name     | Description | Size (bytes) |
 |----------|-------------|--------------|
 |DPP       | | 0x000800000 |
-|fsg       | | 0x000300000 |
+|fsg       | FileSystem Golden | 0x000300000 |
 |SSD       | Secure Software Download | 0x000004000 |
 |SBL1      | Secondary BootLoader | 0x000176E00 |
 |HACK      | Bootloader unlock | 0x000000200 |
@@ -17,7 +17,7 @@ eMMC size : 0x1D2000000 octets
 |WINSECAPP | | 0x000080000 |
 |boot      | Core of Android | 0x001400000 |
 |recovery  | Recovery menu | 0x001400000 |
-|modem     | Phone modem | 0x002C20600 |
+|modem     | Phone modem - baseband | 0x002C20600 |
 |TA        | | 0x000200000 |
 |modemst1  | | 0x000300000 |
 |modemst2  | | 0x000300000 |
