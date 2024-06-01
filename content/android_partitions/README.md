@@ -18,7 +18,7 @@ eMMC size : 0x1D2000000 octets
 |boot      | Core of Android | 0x001400000 |
 |recovery  | Recovery menu | 0x001400000 |
 |modem     | Phone modem - baseband | 0x002C20600 |
-|TA        | | 0x000200000 |
+|TA        | Trusted Application | 0x000200000 |
 |modemst1  | | 0x000300000 |
 |modemst2  | | 0x000300000 |
 |system    | Main system | 0x04B000000 |
