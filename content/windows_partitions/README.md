@@ -23,13 +23,13 @@
 |UEFI_NV          | ro | Qualcomm UEFI Variable Services Partition |
 |PLAT             | ro | Qualcomm ACPI table storage |
 |EFIESP           | ro | Qualcomm EFI System Partition |
-|MODEM_FS1        | rw | Qualcomm Modem live file system |
-|MODEM_FS2        | rw | Qualcomm Modem live file system |
-|UEFI_RT_NV       | rw | Qualcomm UEFI Variable Services Partition |
-|UEFI_RT_NV_RPMB  | rw | Qualcomm UEFI Variable Services Partition |
-|MMOS             | rw | Microsoft |
-|MainOS           | rw | Microsoft |
-|Data             | rw | Microsoft |
+|MODEM_FS1        | r/w | Qualcomm Modem live file system |
+|MODEM_FS2        | r/w | Qualcomm Modem live file system |
+|UEFI_RT_NV       | r/w | Qualcomm UEFI Variable Services Partition |
+|UEFI_RT_NV_RPMB  | r/w | Qualcomm UEFI Variable Services Partition |
+|MMOS             | r/w | Microsoft |
+|MainOS           | r/w | Microsoft |
+|Data             | r/w | Microsoft |
 |HACK             | | WPinternals |
 |IS_UNLOCKED_SBL3 | | WPinternals |
 |UEFI_BS_NV       | ro | Qualcomm UEFI Variable Services Partition |
