@@ -15,7 +15,7 @@ Number of eMMC sectors: 0xE90000
 |UEFI             | ro | Qualcomm Bootloader | 0x00B000 | 0x00C387 | 0x0000271000 | | :white_check_mark: |
 |RPM              | ro | Qualcomm Bootloader. Resource & Power Management | 0x00D000 | 0x00D3E7 | 0x000007d000 | | :white_check_mark: |
 |TZ               | ro | Qualcomm Bootloader. ARM TrustZone | 0x00E000 | 0x00E3E7 | 0x000007d000 | | :white_check_mark: |
-|WINSECAPP        | ro | Qualcomm fTPM Application | 0x00F000 | 0x00F3FF | 0x0000080000 | | :white_check_mark: |
+|WINSECAPP        | ro | Qualcomm fTPM (Firmware Trusted Platform Module) Application | 0x00F000 | 0x00F3FF | 0x0000080000 | | :white_check_mark: |
 |BACKUP_SBL1      | ro | Qualcomm Bootloader Backup | 0x010000 | 0x010BB7 | 0x0000177000 | | :white_large_square: |
 |BACKUP_SBL2      | ro | Qualcomm Bootloader Backup | 0x011000 | 0x011BB7 | 0x0000177000 | | :white_large_square: |
 |BACKUP_SBL3      | ro | Qualcomm Bootloader Backup | 0x012000 | 0x012FFF | 0x0000200000 | | :white_large_square: |
