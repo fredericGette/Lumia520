@@ -2,10 +2,12 @@
 
 | Name            | Acces | Description |
 |-----------------|:-----:|-------------|
+|IS_UNLOCKED_SBL3 | | WPinternals |
 |DPP              | ro | Device Provisioning Partition |
 |MODEM_FSG        | ro | Qualcomm Modem golden file system |
 |SSD              | ro | Qualcomm Secure Software Download |
 |SBL1             | ro | Qualcomm Secondary Bootloader |
+|HACK             | | WPinternals |
 |SBL2             | ro | Qualcomm Secondary Bootloader |
 |SBL3             | ro | Qualcomm Secondary Bootloader |
 |UEFI             | ro | Qualcomm Bootloader |
@@ -20,6 +22,7 @@
 |BACKUP_TZ        | ro | Qualcomm Bootloader Backup |
 |BACKUP_WINSECAPP | ro | Qualcomm fTPM Application Backup |
 |BACKUP_BS_NV     | | |
+|UEFI_BS_NV       | ro | Qualcomm UEFI Variable Services Partition |
 |UEFI_NV          | ro | Qualcomm UEFI Variable Services Partition |
 |PLAT             | ro | Qualcomm ACPI table storage |
 |EFIESP           | ro | Qualcomm EFI System Partition |
@@ -30,7 +33,6 @@
 |MMOS             | r/w | Microsoft |
 |MainOS           | r/w | Microsoft |
 |Data             | r/w | Microsoft |
-|HACK             | | WPinternals |
-|IS_UNLOCKED_SBL3 | | WPinternals |
-|UEFI_BS_NV       | ro | Qualcomm UEFI Variable Services Partition |
+
+
 
