@@ -18,4 +18,6 @@ The HACK partition is placed in the last sector of the partition SBL1 with a siz
 The new "type GUID" and "GUID" of the partition SBL2 are 0x74 16 times.  
 The partition table is rewritten with these new information.  
 
-I guess this "HACK" partition - having the same GUID as the SBL2 partition - confuses the secure boot process.
+I guess this "HACK" partition - having the same GUID as the SBL2 partition - confuses the secure boot process.  
+
+And optionally, the content of the SBL3 partition is rewritten with an "engineering" version of this partition to activate the "mass storage" mode.  
