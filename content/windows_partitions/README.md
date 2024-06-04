@@ -1,6 +1,7 @@
 # eMMC partitions of Windows Phone 8.1
 
-Number of eMMC sectors: 0xE90000
+Number of eMMC sectors: 0xE90000  
+Sector size : 512 bytes
 
 | Name            | Acces | Description | LBA start | LBA end | Size (bytes) | File system | Present in .ffu file | GUID | Attribute flags |
 |-----------------|:-----:|-------------|-----------|---------|--------------|-------------|:--------------------:|------|-----------------|
