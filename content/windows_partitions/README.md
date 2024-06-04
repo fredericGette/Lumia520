@@ -2,8 +2,8 @@
 
 Number of eMMC sectors: 0xE90000
 
-| Name            | Acces | Description | LBA start | LBA end | Size (bytes) | File system | Present in .ffu file | GUID | Attribute flags
-|-----------------|:-----:|-------------|-----------|---------|--------------|-------------|:--------------------:|------|
+| Name            | Acces | Description | LBA start | LBA end | Size (bytes) | File system | Present in .ffu file | GUID | Attribute flags |
+|-----------------|:-----:|-------------|-----------|---------|--------------|-------------|:--------------------:|------|-----------------|
 |IS_UNLOCKED_SBL3 | | WPinternals | 0x000040 | 0x000040 | 0x0000000200 | | :white_large_square: | | |
 |DPP              | ro | Device Provisioning Partition | 0x001000 | 0x004FFF | 0x0000800000 | FAT | :white_large_square: | EBD0A0A2-B9E5-4433-87C0-68B6B72699C7 | 0x8000000000000000 |
 |MODEM_FSG        | ro | Qualcomm Modem golden file system | 0x005000 | 0x0067FF | 0x0000300000 | | :white_large_square: | 638FF8E2-22C9-E33B-8F5D-0E81686A68CB | 0x8000000000000000 |
