@@ -33,8 +33,8 @@ Sector size : 512 bytes
 |MODEM_FS2        | r/w | Qualcomm Modem live file system | 0x042000 | 0x0437FF | 0x0000300000 | | :white_large_square: | 0A288B1F-22C9-E33B-8F5D-0E81686A68CB | 0x8000000000000000 |
 |UEFI_RT_NV       | r/w | Qualcomm UEFI Variable Services Partition (Non Volatile) | 0x044000 | 0x0441FF | 0x000004000 | | :white_large_square: | 6BB94537-7D1C-44D0-9DFE-6D77C011DBFC | 0x8000000000000000 |
 |UEFI_RT_NV_RPMB  | r/w | Qualcomm UEFI Variable Services Partition (Non Volatile) | 0x045000 | 0x0450FF | 0x0000020000 | | :white_large_square: | E35F99CF-0025-4252-A608-CAAA1289CAF4 | 0x8000000000000000 |
-|MMOS             | r/w | Microsoft Manufacturing OS. Used in "test" mode (aka "label" mode). | 0x046000 | 0x06DF5F | 0x0004FEC000 | FAT | :white_check_mark: | EBD0A0A2-B9E5-4433-87C0-68B6B72699C7 | 0x8000000000000000 |
-|MainOS           | r/w | Microsoft | 0x070000 | 0x4C7EFF | 0x008AFE0000 | NTFS | :white_check_mark: | EBD0A0A2-B9E5-4433-87C0-68B6B72699C7 | 0x0000000000000000 |
+|MMOS             | r/w | Microsoft Manufacturing Operating System. Used in "test" mode (aka "label" mode). | 0x046000 | 0x06DF5F | 0x0004FEC000 | FAT | :white_check_mark: | EBD0A0A2-B9E5-4433-87C0-68B6B72699C7 | 0x8000000000000000 |
+|MainOS           | r/w | Microsoft Windows Phone 8.1 Used in "normal" mode.| 0x070000 | 0x4C7EFF | 0x008AFE0000 | NTFS | :white_check_mark: | EBD0A0A2-B9E5-4433-87C0-68B6B72699C7 | 0x0000000000000000 |
 |Data             | r/w | Microsoft | 0x4C8000 | 0xE8FFDE | 0x0138FFBE00 | NTFS | :white_check_mark: | EBD0A0A2-B9E5-4433-87C0-68B6B72699C7 | 0x0000000000000000 |
 
 
