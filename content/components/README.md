@@ -2,7 +2,8 @@
 
 RM-914 (International, vs RM-913:China, RM-915:US, RM-917:US)
 
-Soc (System on a Chip) MSM8227 (Mobile Station Modem, 8=, 2=UMTS(6=UMTS+CDMA), 27=same as 30 but without HDMI support)  
+Soc (System on a Chip) MSM8227 (Mobile Station Modem, 8=, 2=UMTS(6=UMTS+CDMA, 9=4G), 27=30 but without HDMI support)  
+MSM8227 = MSM8930 without 4G and HDMI  
 32bits 28nm Qualcomm Snapdragon S4 Plus   
 2x 1GHz Krait (armv7, neon 128bits, FPU VFPv3)  
 L2 cache 1MB / core  
