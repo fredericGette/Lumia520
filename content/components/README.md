@@ -14,7 +14,7 @@ PM8038 		Power Management
 WTR1605		UMTS/GSM/GPS  
 WCD9304		Audio   
 WCN3660		Wifi/Bluetooth/FM  
-512Mo LPDDR2  
+512Mo 32-bit LPDDR2  
 eMMC 8GB  
 SD (Secure Digital) Card max 64GB microSD, microSDXC  
 BL-5J 1430 mAh battery  
