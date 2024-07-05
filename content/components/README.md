@@ -2,13 +2,17 @@
 
 RM-914 (International, vs RM-913:China, RM-915:US, RM-917:US)
 
-Soc MSM8227  
+Soc (System on a Chip) MSM8227 (Mobile Station Modem
 32bits 28nm Qualcomm Snapdragon S4 Plus   
 2x 1GHz Krait (armv7)  
 L2 cache 1MB / core  
 L1 data cache 16KB / core  
 Hexagon QDSP6 500MHz  
 GPU Qualcomm Adreno 305  
+PM8038 		Power Management  
+WTR1605		UMTS/GSM/GPS  
+WCD9304		Audio   
+WCN3660		Wifi/Bluetooth/FM  
 512Mo LPDDR2  
 eMMC 8GB  
 SD (Secure Digital) Card max 64GB microSD, microSDXC  
