@@ -21,4 +21,4 @@ All about Nokia Lumia 520
 
 ## [eMMC partitions (LineageOS 14.1)](content/android_partitions/README.md)
 
-## [Electronic components (content/components/README.md)
+## [Electronic components](content/components/README.md)
