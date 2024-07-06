@@ -31,3 +31,5 @@ FM radio
 2G:Quad band GSM/EDGE (850/900/1800/1900 MHz) 
 3G:850/1900/2100 MHz  
 GPS A-GPS, CellID, GLONASS, SA-GPS  
+
+CST726 (Capacitive Touch Controller)
