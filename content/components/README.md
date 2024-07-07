@@ -32,10 +32,12 @@ FM radio
 3G:850/1900/2100 MHz  
 GPS A-GPS, CellID, GLONASS, SA-GPS  
 
-CST726 (Capacitive Touch Controller)
+## CST726 (Capacitive Touch Controller)  
+![front](CST726_front.JPG)  
+![back](CST726_back.JPG)  
 
 
-## Similar phones:  
+# Similar phones:  
 Nokia Lumia 720 (MSM8227)  
 Nokia Lumia 620 (MSM8227)  
 Nokia Lumia 525 (MSM8227)  
