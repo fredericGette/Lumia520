@@ -28,7 +28,7 @@ Micro-USB 2.0
 Wi-Fi :802.11b/g/n, WiFi Hotspot  
 Multi-touch capacitive touchscreen, ambient light sensor, proximity sensor  
 FM radio  
-2G:Quad band GSM/EDGE (850/900/1800/1900 MHz) 
+2G:Quad band GSM/EDGE (850/900/1800/1900 MHz)  
 3G:850/1900/2100 MHz  
 GPS A-GPS, CellID, GLONASS, SA-GPS  
 
