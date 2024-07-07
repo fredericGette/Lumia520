@@ -33,3 +33,22 @@ FM radio
 GPS A-GPS, CellID, GLONASS, SA-GPS  
 
 CST726 (Capacitive Touch Controller)
+
+
+## Similar phones:  
+Nokia Lumia 720 (MSM8227)  
+Nokia Lumia 620 (MSM8227)  
+Nokia Lumia 525 (MSM8227)  
+Nokia Lumia 521 (MSM8227)  
+Sony Xperia M (MSM8227)  
+HTC Windows Phone 8S A620t (MSM8227)  
+HTC Windows Phone 8S A620e (MSM8627)  
+HTC Windows Phone 8S A620d (MSM8927)  
+Huawei Ascend G6 LTE (MSM8927)  
+Huawei Ascend W1 (MSM8230)  
+Huawei Ascend W2 (MSM8230)  
+BlackBerry Z3 (MSM8230)  
+Gigabyte GSmart Simba SX1 (MSM8230)  
+LG Optimus L9 II (MSM8230)  
+Nokia Lumia 1320 (MSM8230)  
+Sony Xperia L (MSM8230)  
