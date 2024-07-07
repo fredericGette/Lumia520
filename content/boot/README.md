@@ -31,8 +31,8 @@ processor │  (SBL1)   │   │  │  (SBL2)   │ (TZ)
                           │        ▼                               
                           │  ┌───────────┐                         
                           │  │ Secondary │                         
-                          │  │ Bootloader│ Mass Storage            
-                          │  │     3     │ Mode                    
+                          │  │ Bootloader│ Increase processor frequency            
+                          │  │     3     │ Mass Storage Mode                    
                           │  │  (SBL3)   │                         
                           │  └─────┬─────┘                         
                           │        │                               
