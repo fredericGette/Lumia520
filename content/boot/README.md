@@ -53,6 +53,7 @@ Made with [asciiflow.com](https://asciiflow.com)
 ## Notes
 The PBL and the SBL1 run on an ARM7 processor because the Krait processor is not ready yet (the first Krait processor is started by the SBL1).  
 PBL is executed from the "Boot ROM".  
+When the PBL is not able to find or start the SBL1, it enters in Emergency Download Mode (EDL mode). In this mode a host can use USB to push a programmer.  
 SBL1 is executed in the Internal Memory (IMEM) because the main memory (SDRAM) is not ready yet (the SDRAM is initialized by SBL2).  
 TZ is also running in IMEM.  
 SBL2 is first running in MIMEM (?) and can also use GMEM (?) if needed.  
