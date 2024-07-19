@@ -56,7 +56,7 @@ PBL is executed from the "Boot ROM".
 When the PBL is not able to find or start the SBL1, it enters in Emergency Download Mode (EDL mode). In this mode a host can use USB to push a programmer.  
 SBL1 is executed in the Internal Memory (IMEM) because the main memory (SDRAM) is not ready yet (the SDRAM is initialized by SBL2).  
 TZ is also running in IMEM.  
-SBL2 is first running in MIMEM (?) and can also use GMEM (?) if needed.  
+SBL2 is first running in MIMEM (?) and can also use GMEM (Graphics internal memory) if needed.  
 SBL3, UEFI and MainOS are running in SDRAM.  
 
 # Memory addresses
