@@ -61,13 +61,14 @@ SBL3, UEFI and MainOS are running in SDRAM.
 
 # Memory addresses
 
-| Description | Start address | Size |
-|-------------|---------------|------|
-| Boot ROM | 0x0 |  |
-| IMEM | 0x2A000000 | |  
-| MIMEM/GMEM | 0x2E000000 | |  
-| Shared memory (SMEM) | 0x80000000 | 0x200000 | 
-| Q6SW | 0x89000000 |  |
+| Description | Start address | Size | Offset |
+|-------------|---------------|------|--------|
+| Boot ROM | 0x0 |  | |
+| IMEM | 0x2A000000 | 0x3FFFF | |  
+| MIMEM/GMEM | 0x2E000000 | | |  
+| Main Memory (EBI1) | 0x80000000 | 0x1FFFFFFF | |
+| Shared memory (SMEM) | 0x80000000 | 0x200000 | 0x0 | 
+| Modem memory (Q6SW) | 0x89000000 | 0x4A00000 | 0x9000000 |
 | Q6FW | 0x8D400000 |  |
 
 
