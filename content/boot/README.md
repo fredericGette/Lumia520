@@ -71,9 +71,10 @@ SBL3, UEFI and MainOS are running in SDRAM.
 | Graphical Internal Memory (GMEM or GIMEM) | 0x2E030000 | 0x7FFFF | |
 | Main Memory (EBI1) | 0x80000000 | 0x1FFFFFFF | |
 | Shared memory (SMEM or SMI) | 0x80000000 | 0x200000 | 0x0 | 
+| Krait HLOS | 0x80200000 | 0x83FFFFF | |
 | Modem memory (Q6SW) | 0x89000000 | 0x4A00000 | 0x9000000 |
 | Q6FW | 0x8D400000 |  | |
 | LPASS | 0x8DA00000 | 0x1800000 | |
-| Krait HLOS | 0x80200000 | 0x83FFFFF | |
+
 
 
