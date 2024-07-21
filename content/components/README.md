@@ -36,6 +36,9 @@ GPS A-GPS, CellID, GLONASS, SA-GPS
 ![front](CST726_front.JPG)  
 ![back](CST726_back.JPG)  
 
+## Synaptics S2202B Touchscreen Controller
+![front](DSC00518.JPG)  
+![back](DSC00517.JPG)  
 
 # Similar phones:  
 Nokia Lumia 720 (MSM8227)  
