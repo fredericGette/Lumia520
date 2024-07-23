@@ -32,11 +32,25 @@ FM radio
 3G:850/1900/2100 MHz  
 GPS A-GPS, CellID, GLONASS, SA-GPS  
 
-## CST726 (Capacitive Touch Controller)  
+## Board
+
+![back](DSC00516.JPG)
+
+### Tests points
+
+A:
+|             |              |           |        |
+|-------------|--------------|-----------|--------|
+| DBG_UART_RX	|	DBG_UART_TX	 |	PS_HOLD	 | SRST_N |
+| TRST_N			| TCK				   |  TDO			 | RTCK   |
+| GROUND			| VREG_L11_IO<br>1.8V	 |	TDI			 | TMS    |
+
+
+## CST726 (Non genuine - Capacitive Touch Controller)  
 ![front](CST726_front.JPG)  
 ![back](CST726_back.JPG)  
 
-## Synaptics S2202B Touchscreen Controller
+## Synaptics S2202B Touchscreen Controller (genuine)
 ![front](DSC00518.JPG)  
 ![back](DSC00517.JPG)  
 
