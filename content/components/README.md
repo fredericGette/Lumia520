@@ -10,7 +10,7 @@ MSM8227 = MSM8930 without 4G and HDMI and limited to 1GHz vs 1.2GHz
 2x 1GHz Krait 200 (armv7, neon 128bits, FPU VFPv3)  
 L2 cache 1MB / core  
 L1 data cache 16KB / core  
-Hexagon QDSP6 500MHz  
+Hexagon QDSP6v4 500MHz  
 GPU Qualcomm Adreno 305  
 PM8038 		Power Management  
 WTR1605		UMTS/GSM/GPS  
