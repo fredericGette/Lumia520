@@ -1,6 +1,14 @@
 # Electronic components
 
-RM-914 (International, vs RM-913:China, RM-915:US, RM-917:US)
+| Device Name | Code Name | Model | Comment |
+|-------------|-----------|-------|---------|
+| Lumia 520 | fame_cmmc | RM-913 | China |
+| Lumia 520 | fame_row | RM-914 | International |
+| Lumia 520 | fame_lta | RM-915 | US |
+| Lumia 521 | fame_tmo | RM-917 | US (T-Mobile) |
+| Lumia 525 | glee_row | RM-998 | RAM 1Go - International |
+| Lumia 526 | glee_cmmc | RM-997 | RAM 1Go - China Mobile |
+
 
 Soc (System on a Chip) MSM8227 (Mobile Station Modem, 8=premium smartphones(>7 mass market smartphones >6  feature phones), 2=UMTS(6=UMTS+CDMA, 9=4G), 27=30 but without HDMI support)  
   
@@ -17,7 +25,7 @@ PM8038 		Power Management
 WTR1605		UMTS/GSM/GPS  
 WCD9304		Audio   
 WCN3660		Wifi/Bluetooth/FM  
-512Mo 32-bit LPDDR2  
+512Mo 32-bit LPDDR2  (2x512Mo in case of Lumia 525 and Lumia 526)
 eMMC 8GB  
 SD (Secure Digital) Card max 64GB microSD, microSDXC  
 BL-5J 1430 mAh battery  
