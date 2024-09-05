@@ -66,8 +66,6 @@ A:
 # Similar phones:  
 Nokia Lumia 720 (MSM8227)  
 Nokia Lumia 620 (MSM8227)  
-Nokia Lumia 525 (MSM8227)  
-Nokia Lumia 521 (MSM8227)  
 Sony Xperia M (MSM8227)  
 HTC Windows Phone 8S A620t (MSM8227)  
 HTC Windows Phone 8S A620e (MSM8627)  
