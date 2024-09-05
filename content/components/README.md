@@ -25,7 +25,7 @@ PM8038 		Power Management
 WTR1605		UMTS/GSM/GPS  
 WCD9304		Audio   
 WCN3660		Wifi/Bluetooth/FM  
-512Mo 32-bit LPDDR2  (2x512Mo in case of Lumia 525 and Lumia 526)
+512Mo 32-bit LPDDR2  (2x512Mo in case of Lumia 525 and Lumia 526)  
 eMMC 8GB  
 SD (Secure Digital) Card max 64GB microSD, microSDXC  
 BL-5J 1430 mAh battery  
