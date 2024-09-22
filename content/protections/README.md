@@ -39,7 +39,7 @@ Dimensions (in millimeters):
 ![tape2](IMG_20240922_174242.jpg)
 - Fold all the parts. The cutted lines must be on the outside.
 ![folding](IMG_20240922_174845.jpg)
-- Join the 2 parts. Align the borders of the opening: part with the tape is slighty smaller than the part without tape.
+- Join the 2 parts. Align the borders of the opening: the parts with the tape is slighty smaller than the parts without tape.
 ![join1](IMG_20240922_175032.jpg)
 - Join the others faces of the box, finishing by the bottom. Use the long stick to apply pressure on the tape from the inside of the box.
 ![join2](IMG_20240922_175159.jpg)  
