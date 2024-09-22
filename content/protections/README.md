@@ -14,7 +14,7 @@ Dimensions (in millimeters):
 ## Materials
 
 - A4 paper sheet (for the pattern).
-- A4 sheet, 600 micrometers of polypropylene.
+- A4 polypropylene sheet, 600 micrometers.
 - Double sided tape 5 millimeters.
 - Metal ruler.
 - Utility knife.
