@@ -24,3 +24,5 @@ All about Nokia Lumia 520
 ## [Electronic components](content/components/README.md)
 
 ## [Boot](content/boot/README.md)
+
+## [DIY phone box](content/protections/README.md)
