@@ -34,7 +34,7 @@ Dimensions (in millimeters):
 ![cut2](IMG_20240922_173106.jpg)  
 - When all the lines a traced, cut the final parts.
 ![cut3](IMG_20240922_173814.jpg)
-- Apply the tape on the smallest part, on the face where the folding lines are visible. Use the knife to cut the overflowing tape.
+- Apply the tape on the smallest parts, on the face where the folding lines are visible. Use the knife to cut the overflowing tape.
 ![tape1](IMG_20240922_173957.jpg)
 ![tape2](IMG_20240922_174242.jpg)
 - Fold all the parts. The cutted lines must be on the outside.
