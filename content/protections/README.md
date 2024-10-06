@@ -1,78 +1,48 @@
-# Install LineageOS 14.1
+# Do It Yourself phone box
 
-First, [unlock the bootloader](/content/unlock_bootloader/Readme.md)
+## Original idea
 
-## Make a full backup of the phone
+![FlipCover](IMG_20240922_180400.jpg)
 
-> [!CAUTION]
-> This backup is mandatory when you want to return to Windows Phone 8.1 - or if the installation of Android failed.  
-> But even with this backup you are going to lose all the content of your phone !!  
-> And be aware that if you want to reinstall Windows Phone you also need the .ffu file of your phone in addition to this full backup.
+## Final result
 
-Switch the device to mass storage mode:  
-`thor2 -mode rnd -bootmsc`
+![Result](IMG_20240922_175647.jpg)
 
-Copy the content of the device using [Win32DiskImager](https://sourceforge.net/projects/win32diskimager/).  
-Select the disk corresponding to "MainOS":  
-![](backup0.jpg)
-![](backup.jpg)
-
-When the copy is finished: exit mass storage mode.  
-`thor2 -mode rnd -reboot`
-
-Send the following command and disconnect the usb cable when the device seems to be locked on the Nokia logo (the device will power-off automatically upon disconnection).  
-`thor2 -mode rnd -power_off`
-
-At this point, copy "lineage-14-1-20190701-UNOFFICIAL-fame.zip" in a FAT32 formatted micro SDcard of 2GB. And insert this micro SDcard in the device.
-
-## Install TWRP
-
-Prepare thor2 to put the device "in wait for command" (messaging timeout is disabled):  
-`thor2 -mode rnd -asciimsgreq NOKD -asciimsgresp NOKD -skip_com_scan`
-
-Immediatly connect the usb cable (the phone will power-on automatically upon connection).  
-
-Flash the .mbn (multi boot binary) file of [LittleKernel](https://github.com/Android4Lumia/bootloader_msm8227) in the UEFI partition.  
-`thor2 -mode uefiflash -partitionname UEFI -partitionimagefile "C:\Users\Public\Downloads\LK Bootloader installer\64 bit installers\lflash_windows_x86_x64\DATA\EMMCBOOT.mbn"`
-
-Reboot the device.  
-`thor2 -mode rnd -reboot`
-
-After reboot, the device should be in "fastboot" mode:  
-![](fastboot.JPG)
-
-> [!NOTE]
-> If fastboot.exe doesn't detect the device, check in device manager > if the device is named "android" with vid_18d1&pid_d00d > you have to install an "android driver" for this VID/PID like - for example - "Google Kedacom KDB Interface Driver 11.0.0.0".
-
-Boot a [special image of TWRP](https://github.com/Android4Lumia/notes/tree/master/tools) which will update the partition table of the device:  
-`fastboot boot DATA\gptflasher.img`
-
-Flash the _TZ_, _modem_ and _recovery_ partitions of the device:  
-```
-fastboot flash TZ DATA\TZ.img
-fastboot flash modem DATA\modem.img
-fastboot flash recovery DATA\twrp.img
-```
-
-> [!NOTE]
-> We have to modify the TZ (Trust Zone) partition in order to allow the loading of some drivers in LineageOS.  
-
-Reboot in "recovery mode" to start [TWRP](https://github.com/omnirom/android_bootable_recovery/tree/android-7.1) 3.0.2-0  
-`fastboot oem reboot-recovery`
-
-Twrp > Wipe > Format Data (then choose "Reboot System" and hold volume-up to boot in recovery mode)  
-Twrp > Mount > Select cache (if not selectable: Twrp > Wipe > Advanced Wipe > Select cache > Swipe to Wipe)  
-Twrp > Mount > Select Data  
-Twrp > Mount > Select System   
-Twrp > Mount > Select Micro SDCard (check in "Select Storage" that Micro SDCard is selected)  
-Twrp > Install > Select lineage-14-1-20190701-UNOFFICIAL-fame.zip > Swipe to confirm Flash
-Wait for the end of the installation then "Reboot System".
-
-> [!NOTE]
-> First boot of LineageOS is quite long (~7 minutes)
-
-![](IMG_20240520_115235.jpg)
-![](IMG_20240520_115246.jpg)
-
-
+Dimensions (in millimeters):  
+122x72x14  
  
+## Materials
+
+- A4 paper sheet (for the pattern).
+- A4 polypropylene sheet, 600 micrometers.
+- Double sided tape 5 millimeters.
+- Metal ruler.
+- Utility knife.
+- Long and thin stick.
+
+## Steps
+
+- Print the [pdf pattern](box.pdf) on a A4 paper sheet.
+- Cut the 2 pieces of the pattern. We will use them to create 2 boxes from one sheet of polypropylene.  
+- Put the patterns at the 4 corners of the polypropylene cheet and, with the knife, mark their corners and the ends of their fold lines.
+![4patterns](IMG_20240922_171748.jpg)
+- Using the marks previously made, trace the lines. Apply enough pressure in order be able to easily fold the polypropylene. But don't cut trough it.
+![cut1](IMG_20240922_172657.jpg)
+> [!Warning]
+> If the cut is too light, the polypropylene brokes when you try to fold it.  
+- Tips: Separate the top and the bottom parts to trace more easily the remaing lines.
+![cut2](IMG_20240922_173106.jpg)  
+- When all the lines a traced, cut the final parts.
+![cut3](IMG_20240922_173814.jpg)
+- Apply the tape on the smallest parts, on the face where the folding lines are visible. Use the knife to cut the overflowing tape.
+![tape1](IMG_20240922_173957.jpg)
+![tape2](IMG_20240922_174242.jpg)
+- Fold all the parts. The cutted lines must be on the outside.
+![folding](IMG_20240922_174845.jpg)
+- Join the 2 parts of each box. Align the borders of the opening: the parts with the tape is slightly smaller than the parts without tape.
+![join1](IMG_20240922_175032.jpg)
+- Join the others faces of the box, finishing by the bottom. Use the long stick to apply pressure on the tape from the inside of the box.
+![join2](IMG_20240922_175159.jpg)  
+![join3](IMG_20240922_175349.jpg)
+- Finally, slightly cut the corners of the lid in order for it to slide inside the box.
+![lid](IMG_20240922_175526.jpg)
