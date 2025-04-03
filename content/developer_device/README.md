@@ -17,7 +17,7 @@ wpi --ffu=C:\Users\frede\Lumia520\Denim_RM914_059S341_3058.51000.1523.1010\RM914
 
 ## First configuration
 
-During the *Out Of the Box Experience* (OOBE), configures the phone as below:  
+During the *Out Of the Box Experience* (OOBE), configure the phone as below:  
 - Language = English (United-States)
 - Accept the *Terms of Use*.
 - Connect to Wi-Fi.
