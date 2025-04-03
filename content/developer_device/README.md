@@ -37,7 +37,8 @@ During the *Out Of the Box Experience* (OOBE), configure the phone as below:
 
 In CMD.Injector_WP8:  
 - Reboot the phone as asked to intialize the app.
-- Select *Home* then *Inject*, then reboot again.
+- Select *Home* then *Inject*, then reboot.
+- Select *BootConfig* and switch on *TestSigning* and *NonIntegrityChecks* in *Boot Loader*, then reboot.
 
 In WPTweaker:  
 - In *System*, activate *'Never' screen timeout option*.
