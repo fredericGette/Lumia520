@@ -1,6 +1,6 @@
 # Configuration of a Lumia 520 for development
 
-> [!NOTES]
+> [!NOTE]
 > Nothing indicated here is mandatory. This is just an example of configuration.  
 
 ## Unlock and root the phone
