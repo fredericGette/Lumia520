@@ -24,7 +24,7 @@ GPU Qualcomm Adreno 305
 PM8038 		Power Management  
 WTR1605		UMTS/GSM/GPS  
 WCD9304		Audio   
-WCN3660		Wifi/Bluetooth/FM  
+WCN3660		Wifi/Bluetooth/FM  (WCNSS = Wireless Connectivity Subsystem, code name = "RIVA")
 512Mo 32-bit LPDDR2  (2x512Mo in case of Lumia 525 and Lumia 526)  
 eMMC 8GB  
 SD (Secure Digital) Card max 64GB microSD, microSDXC  
