@@ -41,6 +41,15 @@ FM radio
 3G:850/1900/2100 MHz  
 GPS A-GPS, CellID, GLONASS, SA-GPS  
 
+| OS | code name |
+|----|-----------|
+| Windows Phone 8.0 | Apollo |
+| Windows Phone 8.0 GDR 1 | Portico ?	|
+| Windows Phone 8.0 GDR 2 | Lumia Amber	|
+| Windows Phone 8.0 GDR 3 | ?	|
+| Windows Phone 8.1 | Blue |
+| Windows Phone 8.1 GDR 1 | ? |
+
 ## Board
 
 ![back](DSC00516.JPG)
