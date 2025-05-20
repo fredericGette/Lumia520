@@ -2,6 +2,18 @@
 
 ![BluetoothStack](BluetoothStack.png)
 
+## QcBluetooth8930.sys
+
+The _EvtDevicePrepareHardware_ of the driver reads the file C:\DPP\QCOM\BT.PROVISION  
+This binary file contains the address of the bluetooth device.  
+Example of content (the bluetooth address is : 78-92-3E-C7-7B-53):
+| BYTE 0 | BYTE 1 | BYTE 2 | BYTE 3 | BYTE 4 | BYTE 5 | BYTE 6 | BYTE 7 |
+|--------|--------|--------|--------|--------|--------|--------|--------|
+| 01 | 06 | 78 | 92 | 3E | C7 | 7B | 53 |
+
+Then it sends the [HCI Vendor Specific command SET BR_ADDR](#hci-vs-set-bd-addr) to set the bluetooth address of the device.
+
+
 
 ## HCI Vendor Specific
 
@@ -45,3 +57,26 @@ e= 06 00 00 00 04 0E 04 01 00 00 00
 | 06 00 00 00 | 04 | 0E | 04 | 01 | 00 00 | 00 |
 
 
+<a name="hci-vs-set-bd-addr">__SET BR_ADDR__</a>  
+
+```
+c< 0C 00 00 00 01 0B FC 09 01 02 06 53 7B C7 3E 92 78
+```
+| HCI message length | type _command_ (not counted in the _HCI message length_) | Vendor Specific OpCode (BT_QSOC_NVM_ACCESS_OPCODE) | Command parameter length | NVM item number (BD_ADDR) | NVM item size | NVM item value |
+|--------------------|----------------------------------------------------------|----------------------------------------------------|--------------------------|---------------------------|---------------|----------------|
+| 0C 00 00 00 | 01 | 0B FC | 09 | 01 02 | 06 | 53 7B C7 3E 92 78 |
+
+```
+e= 0C 00 00 00 04 FF 0A 0B 01 02 06 53 7B C7 3E 92 78
+```
+| HCI message length  | type _event_ (not counted in the _HCI message length_) | Vendor Specific Event | EDL Vendor specific Cmd (?) | Vendor specific NVM Access Response (BT_QSOC_NVM_ACCESS_CODE) | NVM item number (BD_ADDR) | NVM item size | NVM item value |
+|---------------------|--------------------------------------------------------|-----------------------|-----------------------------|---------------------------------------------------------------|---------------------------|---------------|----------------|
+| 0C 00 00 00 | 04 | FF | 0A | 0B | 01 02 | 06 | 53 7B C7 3E 92 78 |
+
+
+```
+e= 06 00 00 00 04 0E 04 01 00 00 00
+```
+| HCI message length  | type _event_ (not counted in the _HCI message length_) | Command Complete Event | Num_HCI_Command_Packets, ready to receive HCI command (0x01) | Command_Opcode NOP (No OPeration) | Return_Parameters |
+|---------------------|--------------------------------------------------------|------------------------|--------------------------------------------------------------|-----------------------------------|-------------------|
+| 06 00 00 00 | 04 | 0E | 04 | 01 | 00 00 | 00 |

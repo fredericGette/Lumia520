@@ -32,6 +32,7 @@ During the *Out Of the Box Experience* (OOBE), configure the phone as below:
 
 - [WPTweaker](https://github.com/sensboston/WPTweaker)
 - [CMD.Injector_WP8](https://github.com/fadilfadz01/CMD.Injector_WP8)
+- [Field Medic](https://apps.microsoft.com/detail/9wzdncrfjb82?hl=en-GB&gl=IN) but deploy the repackaged .appx from this GitHub repository using [CMD.Injector](https://github.com/fadilfadz01/CMD.Injector_WP8) or the _Windows Phone Application Deployment_ tool installed along Visual Studio.  
 
 ## Second configuration
 
@@ -45,4 +46,8 @@ In WPTweaker:
 - In *System*, select *Never* value for *Screen timeout (on battery)*.
 - In *System*, select *Never* value for *Screen timeout (when charging)*.
 - Quit the app and reboot the phone.
+
+In Field Medic:  
+- Accept the *End User License Agreement*.  
+- Select *Device Status* to see the current IP address of the phone.  
 
