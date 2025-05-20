@@ -16,8 +16,8 @@ MSM8227 = MSM8930 without 4G and HDMI and limited to 1GHz vs 1.2GHz
 A-Family chip. 
   
 32bits 28nm Qualcomm Snapdragon S4 Plus   
-2x 1GHz Krait 200 (armv7, neon 128bits, FPU VFPv3)  
-L2 cache 1MB / core  
+2x 1GHz Krait 200 (armv7, Cortex A15 compatible, neon 128bits, FPU VFPv4-D32)  
+L2 cache 1MB  
 L1 data cache 16KB / core  
 Hexagon QDSP6v4 500MHz  
 GPU Qualcomm Adreno 305  
