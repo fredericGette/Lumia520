@@ -45,10 +45,13 @@ GPS A-GPS, CellID, GLONASS, SA-GPS
 |----|-----------|
 | Windows Phone 8.0 | Apollo |
 | Windows Phone 8.0 GDR 1 | Portico ?	|
+| Windows Phone 8.0 GDR 2 | ?	|
 | Windows Phone 8.0 GDR 2 | Lumia Amber	|
 | Windows Phone 8.0 GDR 3 | ?	|
+| Windows Phone 8.0 GDR 3 | Lumia Black	|
 | Windows Phone 8.1 | Blue |
-| Windows Phone 8.1 GDR 1 | ? |
+| Windows Phone 8.1 | Lumia Cyan |
+| Windows Phone 8.1 Update 1 | Lumia Denim |
 
 ## Board
 
