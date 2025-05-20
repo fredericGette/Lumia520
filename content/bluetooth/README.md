@@ -6,7 +6,7 @@
 
 The _EvtDevicePrepareHardware_ of the driver reads the file C:\DPP\QCOM\BT.PROVISION  
 This binary file contains the address of the bluetooth device.  
-Example of content (the bluetooth address is : 78-92-3E-C7-7B-53):
+Example of content (the bluetooth address is 78-92-3E-C7-7B-53):
 | BYTE 0 | BYTE 1 | BYTE 2 | BYTE 3 | BYTE 4 | BYTE 5 | BYTE 6 | BYTE 7 |
 |--------|--------|--------|--------|--------|--------|--------|--------|
 | 01 | 06 | 78 | 92 | 3E | C7 | 7B | 53 |
