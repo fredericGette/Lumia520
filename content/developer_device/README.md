@@ -49,5 +49,5 @@ In WPTweaker:
 
 In Field Medic:  
 - Accept the *End User License Agreement*.  
-- Select *Device Status* to see the current IP address of the phone.  
+- Select *Device Status* to see the current IP and Bluetooth addresses of the phone.  
 
