@@ -11,8 +11,120 @@ Example of content (the bluetooth address is 78-92-3E-C7-7B-53):
 |--------|--------|--------|--------|--------|--------|--------|--------|
 | 01 | 06 | 78 | 92 | 3E | C7 | 7B | 53 |
 
-Then it sends the [HCI Vendor Specific command SET BR_ADDR](#hci-vs-set-bd-addr) to set the bluetooth address of the device.
+Then it sends the [HCI Vendor Specific command SET BR_ADDR](#hci-vs-set-bd-addr) to set the bluetooth address of the device.  
 
+Creates a child device with the following properties:  
+- CompatibleID : `MS_BTHX_BTHMINI`
+- DeviceType : FILE_DEVICE_BUS_EXTENDER
+- DeviceLocation : `Serial HCI Bus - Bluetooth Function`
+- DeviceDescription : `SerialHciBus_01`
+
+This child device forwards all the IOCTL_BTHX IoCtl requests to its parent device.
+
+GUID of the interface:  
+`2388B968-8AC1-401F-9C4C-11713C110F39`
+
+GUID of the ETW provider:  
+`C484A08D-41CE-4CD6-AF73-06F987827ACE`
+
+## internal IOCTL 0x22003
+
+This IOCTL is sent by QcBluetooth8930.sys  
+
+| Name | Device name | InputBuffer size | OutpoutBuffer Size |
+|------|-------------|------------------|--------------------|
+| Link to a SMD channel ? | \Device\SMD | 28 | 0 |
+
+Content of the input buffer:  
+| Bytes 00-03 | Bytes 04-07 | Bytes 08-0B | Bytes 0C-0F | Bytes 10-13 | Bytes 14-17 | Bytes 18-1B |
+|-------------|-------------|-------------|-------------|-------------|-------------|-------------|
+| pointer to a string containing the name of the SMD channel | 06 00 00 00 | 11 00 00 00 | 00 20 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 |
+
+SMD channels:  
+- `APPS_RIVA_BT_CMD`  send HCI Command packets, receive HCI Event packets.  
+- `APPS_RIVA_BT_ACL`  send/receive HCI ACL packets.  
+
+## internal IOCTL 0x22007
+
+This IOCTL is sent by QcBluetooth8930.sys  
+
+| Name | Device name | InputBuffer size | OutpoutBuffer Size |
+|------|-------------|------------------|--------------------|
+| Release a SMD channel ? | \Device\SMD | 0 | 0 |
+
+## IOCTL 0x2A8008
+
+This IOCTL is processed by QcBluetooth8930.sys  
+
+| Name | InputBuffer size | OutpoutBuffer Size |
+|------|------------------|--------------------|
+| Query the "BtOnOff" state of the Bluetooth device | 0 | 1 |
+
+Content of the output buffer:  
+| Byte 00 |
+|---------|
+| 0=off 1=on | 
+
+	
+## IOCTL 0x2A8004
+
+This IOCTL is processed by QcBluetooth8930.sys  
+
+| Name | InputBuffer size | OutpoutBuffer Size |
+|------|------------------|--------------------|
+| Switch BT on/off | 1 | 0 |
+
+Content of the input buffer:  
+| Byte 00 |
+|---------|
+| 0=off 1=on | 
+
+
+## IOCTL 0x410403
+
+This IOCTL is processed by QcBluetooth8930.sys  
+
+| Name | InputBuffer size | OutpoutBuffer Size |
+|------|------------------|--------------------|
+| IOCTL_BTHX_GET_VERSION | 0 | 4 |
+	
+## IOCTL 0x410407
+
+This IOCTL is processed by QcBluetooth8930.sys  
+
+| Name | InputBuffer size | OutpoutBuffer Size |
+|------|------------------|--------------------|
+| IOCTL_BTHX_SET_VERSION | 4 | 0 |
+
+Notes: do nothing  
+
+## IOCTL 0x41040B	
+
+This IOCTL is processed by QcBluetooth8930.sys  
+
+| Name | InputBuffer size | OutpoutBuffer Size |
+|------|------------------|--------------------|
+| IOCTL_BTHX_QUERY_CAPABILITIES | 0 | 16 |
+	
+## IOCTL 0x41040F	
+
+This IOCTL is processed by QcBluetooth8930.sys  
+
+| Name | InputBuffer size | OutpoutBuffer Size |
+|------|------------------|--------------------|
+| IOCTL_BTHX_WRITE_HCI | >= 6 | 4 |
+
+Send a HCI Command/ACL packet to the subsystem.  
+		
+## IOCTL 0x410413	
+
+This IOCTL is processed by QcBluetooth8930.sys 
+
+| Name | InputBuffer size | OutpoutBuffer Size |
+|------|------------------|--------------------|
+| IOCTL_BTHX_READ_HCI | 4 | >= 6 |
+
+Read a HCI Command/ACL packet from the subsystem.  
 
 
 ## HCI Vendor Specific
@@ -80,3 +192,13 @@ e= 06 00 00 00 04 0E 04 01 00 00 00
 | HCI message length  | type _event_ (not counted in the _HCI message length_) | Command Complete Event | Num_HCI_Command_Packets, ready to receive HCI command (0x01) | Command_Opcode NOP (No OPeration) | Return_Parameters |
 |---------------------|--------------------------------------------------------|------------------------|--------------------------------------------------------------|-----------------------------------|-------------------|
 | 06 00 00 00 | 04 | 0E | 04 | 01 | 00 00 | 00 |
+
+
+__Wake Device ?__ (not send to the subsystem)
+
+```
+c< 04 00 00 00 01 FF FF FF FF
+```
+| HCI message length | type _command_ (not counted in the _HCI message length_) | Magic number |
+|--------------------|----------------------------------------------------------|--------------|
+| 04 00 00 00 | 01 | FF FF FF FF |
