@@ -53,7 +53,7 @@ Registry of the child device:
 
 This IOCTL is sent by QcBluetooth8930.sys  
 
-| Name | Device name | InputBuffer size | OutpoutBuffer Size |
+| Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|--------------------|
 | Link to a SMD channel ? | \Device\SMD | 28 | 0 |
 
@@ -70,7 +70,7 @@ SMD channels:
 
 This IOCTL is sent by QcBluetooth8930.sys  
 
-| Name | Device name | InputBuffer size | OutpoutBuffer Size |
+| Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|--------------------|
 | Release a SMD channel ? | \Device\SMD | 0 | 0 |
 
@@ -78,7 +78,7 @@ This IOCTL is sent by QcBluetooth8930.sys
 
 This IOCTL is processed by QcBluetooth8930.sys  
 
-| Name | InputBuffer size | OutpoutBuffer Size |
+| Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
 | Query the "BtOnOff" state of the Bluetooth device | 0 | 1 |
 
@@ -92,7 +92,7 @@ Content of the output buffer:
 
 This IOCTL is processed by QcBluetooth8930.sys  
 
-| Name | InputBuffer size | OutpoutBuffer Size |
+| Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
 | Switch BT on/off | 1 | 0 |
 
@@ -106,7 +106,7 @@ Content of the input buffer:
 
 This IOCTL is processed by QcBluetooth8930.sys  
 
-| Name | InputBuffer size | OutpoutBuffer Size |
+| Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
 | IOCTL_BTHX_GET_VERSION | 0 | 4 |
 	
@@ -114,7 +114,7 @@ This IOCTL is processed by QcBluetooth8930.sys
 
 This IOCTL is processed by QcBluetooth8930.sys  
 
-| Name | InputBuffer size | OutpoutBuffer Size |
+| Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
 | IOCTL_BTHX_SET_VERSION | 4 | 0 |
 
@@ -124,7 +124,7 @@ Notes: do nothing
 
 This IOCTL is processed by QcBluetooth8930.sys  
 
-| Name | InputBuffer size | OutpoutBuffer Size |
+| Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
 | IOCTL_BTHX_QUERY_CAPABILITIES | 0 | 16 |
 	
@@ -132,7 +132,7 @@ This IOCTL is processed by QcBluetooth8930.sys
 
 This IOCTL is processed by QcBluetooth8930.sys  
 
-| Name | InputBuffer size | OutpoutBuffer Size |
+| Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
 | IOCTL_BTHX_WRITE_HCI | >= 6 | 4 |
 
@@ -142,7 +142,7 @@ Send a HCI Command/ACL packet to the subsystem.
 
 This IOCTL is processed by QcBluetooth8930.sys 
 
-| Name | InputBuffer size | OutpoutBuffer Size |
+| Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
 | IOCTL_BTHX_READ_HCI | 4 | >= 6 |
 
