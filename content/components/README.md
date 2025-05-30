@@ -66,6 +66,9 @@ A:
 | TRST_N			| TCK				   |  TDO			 | RTCK   |
 | GROUND			| VREG_L11_IO<br>1.8V	 |	TDI			 | TMS    |
 
+![front without shields](DSC01015.JPG)
+
+![back without shields](DSC01016.JPG)
 
 ## CST726 (Non genuine - Capacitive Touch Controller)  
 ![front](CST726_front.JPG)  
