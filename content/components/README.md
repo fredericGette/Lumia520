@@ -70,6 +70,36 @@ A:
 
 ![back without shields](DSC01016.JPG)
 
+## WCD9304
+
+![WCD9304](WCD9304.JPG)
+
+## PM8038
+
+![PM8038](PM8038.JPG)
+
+## LPDDR2
+
+![LPDDR2](LPDDR2.JPG)
+
+## eMMC
+
+![eMMC](eMMC.JPG)
+
+## WCN3660
+
+![WCN3660](WCN3660.JPG)  
+
+Back:  
+![back WCN3660](BehindWCN3660.JPG)  
+
+## Cellular Power Amplifier
+
+![PowerAmplifier](PowerAmplifier.JPG)
+
+## WTR1605
+![WTR1605](WTR1605.JPG)
+
 ## CST726 (Non genuine - Capacitive Touch Controller)  
 ![front](CST726_front.JPG)  
 ![back](CST726_back.JPG)  
