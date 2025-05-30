@@ -4,6 +4,7 @@
 
 ## QcBluetooth8930.sys
 
+This is the bus driver.  
 The _EvtDevicePrepareHardware_ of the driver reads the file C:\DPP\QCOM\BT.PROVISION  
 This binary file contains the address of the bluetooth device.  
 Example of content (the bluetooth address is 78-92-3E-C7-7B-53):
@@ -13,19 +14,40 @@ Example of content (the bluetooth address is 78-92-3E-C7-7B-53):
 
 Then it sends the [HCI Vendor Specific command SET BR_ADDR](#hci-vs-set-bd-addr) to set the bluetooth address of the device.  
 
-Creates a child device with the following properties:  
+Registry of the bus driver:  
+`HKEY_LOCAL_MACHINE\system\controlset001\services\qcbluetooth`
+
+| Registry value | value | comment |
+|----------------|-------|---------|
+| BtOnOff | 0x0=off or 0x1=on | Persists the state of the driver. |
+
+Other registry of the bus driver:
+`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Enum\ACPI\QCOM01E0\3&ddcf83e&0&1`
+
+GUID Bus type:  
+`4D36E978-E325-11CE-BFC1-08002BE10318` (Serial Device)
+
+GUID of the interface:  
+`2388B968-8AC1-401F-9C4C-11713C110F39`
+`B53A9DB7-1343-4C7F-B7BC-251B03DD8E34`
+
+GUID of the ETW provider:  
+`C484A08D-41CE-4CD6-AF73-06F987827ACE`
+
+The bus driver creates a child device _Physical Device Object (PDO)_ with the following properties:  
 - CompatibleID : `MS_BTHX_BTHMINI`
 - DeviceType : FILE_DEVICE_BUS_EXTENDER
 - DeviceLocation : `Serial HCI Bus - Bluetooth Function`
 - DeviceDescription : `SerialHciBus_01`
+- HardwareID : `SystemBusQc\SMD_BT`
+- ClassGUID : E0CBF06C-CD8B-4647-BB8A-263B43F0F974 (Bluetooth)
 
 This child device forwards all the IOCTL_BTHX IoCtl requests to its parent device.
 
-GUID of the interface:  
-`2388B968-8AC1-401F-9C4C-11713C110F39`
+Registry of the child device:  
+`HKLM\System\CurrentControlSet\Enum\SystemBusQc\SMD_BT\4&315a27b&0&4097`
 
-GUID of the ETW provider:  
-`C484A08D-41CE-4CD6-AF73-06F987827ACE`
+
 
 ## internal IOCTL 0x22003
 
