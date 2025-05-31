@@ -146,7 +146,7 @@ This IOCTL is processed by QcBluetooth8930.sys
 |------|------------------|--------------------|
 | IOCTL_BTHX_READ_HCI | 4 | >= 6 |
 
-Read a HCI Command/ACL packet from the subsystem.  
+Read a HCI Event/ACL packet from the subsystem.  
 
 
 ## HCI Vendor Specific
