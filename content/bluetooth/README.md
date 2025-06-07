@@ -28,7 +28,7 @@ GUID Bus type:
 `4D36E978-E325-11CE-BFC1-08002BE10318` (Serial Device)
 
 GUID of the interface:  
-`2388B968-8AC1-401F-9C4C-11713C110F39`
+`2388B968-8AC1-401F-9C4C-11713C110F39`  
 `B53A9DB7-1343-4C7F-B7BC-251B03DD8E34`
 
 GUID of the ETW provider:  
@@ -236,8 +236,8 @@ Manage the loading of the WCN image and the reset of the subsystem.
 After the reset of the WCN subsystem, it creates the PDO for the Wifi, the Bluetooth and the FM radio.  
 
 Registries of the driver:  
-`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\services\qcwcn`
-`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Enum\ACPI\QCOM0E20\2&daba3ff&0``
+`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\services\qcwcn`  
+`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Enum\ACPI\QCOM0E20\2&daba3ff&0`  
 `HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\Class\{4d36e97d-e325-11ce-bfc1-08002be10318}\0079`
 
 | Registry value | value | comment |
