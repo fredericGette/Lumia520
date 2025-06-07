@@ -247,7 +247,7 @@ Registries of the driver:
 | MaxRestartCount | ? | ? |
 | RestartTimer | ? | ? |
 
-GUID of the ETW provider: 
+GUID of the ETW provider:  
 `{98D8E493-33D4-4802-AD80-4DD111760D19}`
 
 It communicates with the following devices:  
