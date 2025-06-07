@@ -16,9 +16,9 @@ Example of content (the bluetooth address is 78-92-3E-C7-7B-53):
 Then it sends the [HCI Vendor Specific command SET BR_ADDR](#hci-vs-set-bd-addr) to set the bluetooth address of the device.  
 
 Registries of the bus driver:  
-`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\services\qcbluetooth`
-`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Enum\ACPI\QCOM01E0\3&ddcf83e&0&1`
-`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\Class\{4d36e97d-e325-11ce-bfc1-08002be10318}\0093`
+`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\services\qcbluetooth`  
+`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Enum\ACPI\QCOM01E0\3&ddcf83e&0&1`  
+`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\Class\{4d36e97d-e325-11ce-bfc1-08002be10318}\0093`  
 
 | Registry value | value | comment |
 |----------------|-------|---------|
