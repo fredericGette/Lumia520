@@ -5,7 +5,7 @@
 ## QcBluetooth8930.sys
 
 This is the bus driver.  
-It is started by the Qcwcn8930 driver.
+It is started by the Qcwcn8930 driver.  
 The _EvtDevicePrepareHardware_ of the driver reads the file C:\DPP\QCOM\BT.PROVISION  
 This binary file contains the address of the bluetooth device.  
 Example of content (the bluetooth address is 78-92-3E-C7-7B-53):
