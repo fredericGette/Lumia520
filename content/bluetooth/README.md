@@ -243,7 +243,7 @@ Registries of the driver:
 | Registry value | value | comment |
 |----------------|-------|---------|
 | WcnImagePath | `\SystemRoot\system32\qcwcnss8930.mbn` | Filename of the WCN image. Default is `C:\Windows\System32\WCNSS.MBN` |
-| RestartEnabled | 0x01 | ? |
+| RestartEnabled | 0x00=SSR(SubSystem Restart) disabled, 0x01=SSR(SubSystem Restart) enabled, 0x02=WCN_RESTART_SURPRISE_REMOVE_ONLY | ? |
 | MaxRestartCount | ? | ? |
 | RestartTimer | ? | ? |
 
@@ -361,3 +361,80 @@ This IOCTL is sent by Qcwcn8930.sys
 | IOCTL_INTERNAL_SMSM_STATE_GET | \Device\SMSM | 0 | 4 |
 
 The output buffer contains a pointer to the function `smsm_state_get` 
+
+### internal IOCTL 0x3200C
+
+This IOCTL is sent by Qcwcn8930.sys  
+
+| Name | Device name | InputBuffer size | OutputBuffer Size |
+|------|-------------|------------------|--------------------|
+| Error callback | \Device\SMSM | 0 | 0 |
+
+The completion routine of the request is executed in case of error during the reset of the subsystem.` 
+
+### internal IOCTL 0x3200C
+
+This IOCTL is sent by Qcwcn8930.sys  
+
+| Name | Device name | InputBuffer size | OutputBuffer Size |
+|------|-------------|------------------|--------------------|
+| Callback | \Device\SMSM | 12 | 0 |
+
+The completion routine of the device control request is executed in case of success or error during the reset of the subsystem.` 
+
+Content of the input buffer when we set the error callback:  
+| Bytes 00-0C | 
+|-------------|
+| 03 00 00 00 40 00 00 00 40 00 00 00 |
+
+Content of the input buffer when we set the success callback:  
+| Bytes 00-0C | 
+|-------------|
+| 00 00 00 00 00 00 00 00 00 00 00 00 |
+
+
+### internal IOCTL 0x9C41241C
+
+This IOCTL is sent by Qcwcn8930.sys  
+
+| Name | Device name | InputBuffer size | OutputBuffer Size |
+|------|-------------|------------------|--------------------|
+| IOCTL_PIL_TZ_LOAD_IMAGE | \Device\PIL | 540 | 4 |
+
+Content of the input buffer:  
+| Bytes 00-0F | Bytes 10-13 | Bytes 14-21B |
+|-------------|-------------|--------------|
+| 0f 7d 36 93 ce 35 c4 4e 8e 38 bb 33 03 0c 58 b2 | 06 00 00 00 | Null terminated WCHAR string `\SystemRoot\system32\qcwcnss8930.mbn` |
+
+The first 16 bytes of the input buffer is the GUID of the RPE client:  
+`93367d0f-35ce-4ec4-8e38-bb33030c58b2`
+
+The output buffer contains the physical address where the image was loaded.
+
+
+### internal IOCTL 0x9C412420
+
+This IOCTL is sent by Qcwcn8930.sys  
+
+| Name | Device name | InputBuffer size | OutputBuffer Size |
+|------|-------------|------------------|--------------------|
+| IOCTL_PIL_TZ_RELOAD_IMAGE | \Device\PIL | 20 | 4 |
+
+Content of the input buffer:  
+| Bytes 00-0F | Bytes 10-13 |
+|-------------|-------------|
+| 0f 7d 36 93 ce 35 c4 4e 8e 38 bb 33 03 0c 58 b2 | 06 00 00 00 |
+
+The first 16 bytes of the input buffer is the GUID of the RPE client:  
+`93367d0f-35ce-4ec4-8e38-bb33030c58b2`
+
+The output buffer contains the physical address where the image was loaded.
+
+
+### internal IOCTL 0x9C412410
+
+This IOCTL is sent by Qcwcn8930.sys  
+
+| Name | Device name | InputBuffer size | OutputBuffer Size |
+|------|-------------|------------------|--------------------|
+| IOCTL_PIL_TZ_AUTH_IMAGE_AND_RESET | \Device\PIL | 0 | 0 |
