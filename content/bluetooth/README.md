@@ -350,7 +350,7 @@ Content of the input buffer:
 |-------------|
 | 01 00 00 00 | 
 
-The output buffer contains the a pointer to the function `FuncSmsmReset` 
+The output buffer contains a pointer to the function `FuncSmsmReset` 
 
 ### internal IOCTL 0x32010
 
@@ -360,4 +360,4 @@ This IOCTL is sent by Qcwcn8930.sys
 |------|-------------|------------------|--------------------|
 | IOCTL_INTERNAL_SMSM_STATE_GET | \Device\SMSM | 0 | 4 |
 
-The output buffer contains the a pointer to the function `smsm_state_get` 
+The output buffer contains a pointer to the function `smsm_state_get` 
