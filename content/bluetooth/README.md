@@ -368,16 +368,6 @@ This IOCTL is sent by Qcwcn8930.sys
 
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|--------------------|
-| Error callback | \Device\SMSM | 0 | 0 |
-
-The completion routine of the request is executed in case of error during the reset of the subsystem.` 
-
-### internal IOCTL 0x3200C
-
-This IOCTL is sent by Qcwcn8930.sys  
-
-| Name | Device name | InputBuffer size | OutputBuffer Size |
-|------|-------------|------------------|--------------------|
 | Callback | \Device\SMSM | 12 | 0 |
 
 The completion routine of the device control request is executed in case of success or error during the reset of the subsystem.` 
