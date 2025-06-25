@@ -57,6 +57,15 @@ Registry of the child device:
 
 This IOCTL is sent by QcBluetooth8930.sys  
 
+| Property | Value |
+|----------|-------|
+| Device | 0x2 |
+| Function | 0x800 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_NEITHER |
+
+
+
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|--------------------|
 | Link to a SMD channel ? | \Device\SMD | 28 | 0 |
@@ -74,6 +83,14 @@ SMD channels:
 
 This IOCTL is sent by QcBluetooth8930.sys  
 
+| Property | Value |
+|----------|-------|
+| Device | 0x2 |
+| Function | 0x801 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_NEITHER |
+
+
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|--------------------|
 | Release a SMD channel ? | \Device\SMD | 0 | 0 |
@@ -81,6 +98,14 @@ This IOCTL is sent by QcBluetooth8930.sys
 ### IOCTL 0x2A8008
 
 This IOCTL is processed by QcBluetooth8930.sys  
+
+| Property | Value |
+|----------|-------|
+| Device | 0x2A |
+| Function | 0x2 |
+| Access | FILE_WRITE_ACCESS |
+| Method | METHOD_BUFFERED |
+
 
 | Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
@@ -96,8 +121,16 @@ Content of the output buffer:
 
 This IOCTL is processed by QcBluetooth8930.sys  
 
+| Property | Value |
+|----------|-------|
+| Device | 0x2A |
+| Function | 0x1 |
+| Access | FILE_WRITE_ACCESS |
+| Method | METHOD_BUFFERED |
+
+
 | Name | InputBuffer size | OutputBuffer Size |
-|------|------------------|--------------------|
+|------|------------------|-------------------|
 | Switch BT on/off | 1 | 0 |
 
 Content of the input buffer:  
@@ -110,6 +143,14 @@ Content of the input buffer:
 
 This IOCTL is processed by QcBluetooth8930.sys  
 
+| Property | Value |
+|----------|-------|
+| Device | 0x41 |
+| Function | 0x100 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_NEITHER |
+
+
 | Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
 | IOCTL_BTHX_GET_VERSION | 0 | 4 |
@@ -117,6 +158,14 @@ This IOCTL is processed by QcBluetooth8930.sys
 ### IOCTL 0x410407
 
 This IOCTL is processed by QcBluetooth8930.sys  
+
+| Property | Value |
+|----------|-------|
+| Device | 0x41 |
+| Function | 0x101 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_NEITHER |
+
 
 | Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
@@ -128,6 +177,14 @@ Notes: do nothing
 
 This IOCTL is processed by QcBluetooth8930.sys  
 
+| Property | Value |
+|----------|-------|
+| Device | 0x41 |
+| Function | 0x102 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_NEITHER |
+
+
 | Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
 | IOCTL_BTHX_QUERY_CAPABILITIES | 0 | 16 |
@@ -135,6 +192,14 @@ This IOCTL is processed by QcBluetooth8930.sys
 ### IOCTL 0x41040F	
 
 This IOCTL is processed by QcBluetooth8930.sys  
+
+| Property | Value |
+|----------|-------|
+| Device | 0x41 |
+| Function | 0x103 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_NEITHER |
+
 
 | Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
@@ -145,6 +210,14 @@ Send a HCI Command/ACL packet to the subsystem.
 ### IOCTL 0x410413	
 
 This IOCTL is processed by QcBluetooth8930.sys 
+
+| Property | Value |
+|----------|-------|
+| Device | 0x41 |
+| Function | 0x104 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_NEITHER |
+
 
 | Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
@@ -341,6 +414,14 @@ Example of WPP logs at the start of the phone:
 
 This IOCTL is sent by Qcwcn8930.sys  
 
+| Property | Value |
+|----------|-------|
+| Device | 0x3 |
+| Function | 0x802 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
+
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|--------------------|
 | IOCTL_INTERNAL_SMSM_RESET | \Device\SMSM | 4 | 4 |
@@ -356,6 +437,14 @@ The output buffer contains a pointer to the function `FuncSmsmReset`
 
 This IOCTL is sent by Qcwcn8930.sys  
 
+| Property | Value |
+|----------|-------|
+| Device | 0x3 |
+| Function | 0x804 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
+
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|--------------------|
 | IOCTL_INTERNAL_SMSM_STATE_GET | \Device\SMSM | 0 | 4 |
@@ -365,6 +454,13 @@ The output buffer contains a pointer to the function `smsm_state_get`
 ### internal IOCTL 0x3200C
 
 This IOCTL is sent by Qcwcn8930.sys  
+
+| Property | Value |
+|----------|-------|
+| Device | 0x3 |
+| Function | 0x803 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
 
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|--------------------|
@@ -387,6 +483,14 @@ Content of the input buffer when we set the success callback:
 
 This IOCTL is sent by Qcwcn8930.sys  
 
+| Property | Value |
+|----------|-------|
+| Device | 0xC41 |
+| Function | 0x907 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
+
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|--------------------|
 | IOCTL_PIL_TZ_LOAD_IMAGE | \Device\PIL | 540 | 4 |
@@ -406,6 +510,14 @@ The output buffer contains the physical address where the image was loaded.
 
 This IOCTL is sent by Qcwcn8930.sys  
 
+| Property | Value |
+|----------|-------|
+| Device | 0xC41 |
+| Function | 0x908 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
+
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|--------------------|
 | IOCTL_PIL_TZ_RELOAD_IMAGE | \Device\PIL | 20 | 4 |
@@ -424,6 +536,14 @@ The output buffer contains the physical address where the image was loaded.
 ### internal IOCTL 0x9C412410
 
 This IOCTL is sent by Qcwcn8930.sys  
+
+| Property | Value |
+|----------|-------|
+| Device | 0xC41 |
+| Function | 0x904 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
 
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|--------------------|
@@ -458,6 +578,14 @@ It communicates with the following devices:
 
 This IOCTL is processed by Qcpil8930.sys  
 
+| Property | Value |
+|----------|-------|
+| Device | 0xC41 |
+| Function | 0x900 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
+
 | Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
 | test load image | 536 | 0 |
@@ -478,6 +606,14 @@ I guess it must be used with the `TestState` registry parameter.
 
 This IOCTL is processed by Qcpil8930.sys  
 
+| Property | Value |
+|----------|-------|
+| Device | 0xC41 |
+| Function | 0x901 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
+
 | Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
 | force authenticate | 0 | 0 |
@@ -489,6 +625,14 @@ I guess it must be used with the `TestState` registry parameter.
 ### internal IOCTL 0x9C412408
 
 This IOCTL is processed by Qcpil8930.sys  
+
+| Property | Value |
+|----------|-------|
+| Device | 0xC41 |
+| Function | 0x902 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
 
 | Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
@@ -505,28 +649,17 @@ Example:
 
 This command reloads the last image sent by the RPE client and communicates with the SCM using the last channel ID indicated by the RPE client.  
 
-### internal IOCTL 0x9C412410
-
-This IOCTL is processed by Qcpil8930.sys  
-
-| Name | InputBuffer size | OutputBuffer Size |
-|------|------------------|--------------------|
-| IOCTL_PIL_TZ_AUTH_IMAGE_AND_RESET | 16 | 0 |
-
-Content of the input buffer:  
-| Bytes 00-0F |
-|-------------|
-| 0f 7d 36 93 ce 35 c4 4e 8e 38 bb 33 03 0c 58 b2 |
-
-The first 16 bytes of the input buffer is the GUID of the RPE client.  
-Example:  
-`93367d0f-35ce-4ec4-8e38-bb33030c58b2`
-
-This command sends a command to the SCM device to authenticate the last image sent by the RPE client and reset the subsystem identified by the last channel ID given by the RPE client.  
-
 ### internal IOCTL 0x9C41240C
 
 This IOCTL is processed by Qcpil8930.sys  
+
+| Property | Value |
+|----------|-------|
+| Device | 0xC41 |
+| Function | 0x903 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
 
 | Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
@@ -544,9 +677,45 @@ Example:
 This command reloads the last .mbn file sent by the RPE client but doesn't communicate with the SCM device.
 I guess it must be used with the `TestState` registry parameter.
 
+### internal IOCTL 0x9C412410
+
+This IOCTL is processed by Qcpil8930.sys  
+
+| Property | Value |
+|----------|-------|
+| Device | 0xC41 |
+| Function | 0x904 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
+
+| Name | InputBuffer size | OutputBuffer Size |
+|------|------------------|--------------------|
+| IOCTL_PIL_TZ_AUTH_IMAGE_AND_RESET | 16 | 0 |
+
+Content of the input buffer:  
+| Bytes 00-0F |
+|-------------|
+| 0f 7d 36 93 ce 35 c4 4e 8e 38 bb 33 03 0c 58 b2 |
+
+The first 16 bytes of the input buffer is the GUID of the RPE client.  
+Example:  
+`93367d0f-35ce-4ec4-8e38-bb33030c58b2`
+
+This command sends a command to the SCM device to authenticate the last image sent by the RPE client and reset the subsystem identified by the last channel ID given by the RPE client.  
+
+
 ### internal IOCTL 0x9C412414
 
 This IOCTL is processed by Qcpil8930.sys  
+
+| Property | Value |
+|----------|-------|
+| Device | 0xC41 |
+| Function | 0x905 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
 
 | Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
@@ -579,6 +748,14 @@ Depending of the current value of the `TestState` registry parameter, it set the
 
 This IOCTL is processed by Qcpil8930.sys  
 
+| Property | Value |
+|----------|-------|
+| Device | 0xC41 |
+| Function | 0x906 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
+
 | Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
 | get TestState | 0 | 4 |
@@ -593,6 +770,14 @@ The content of the input buffer is current value of the `TestState`.
 ### internal IOCTL 0x9C41241C
 
 This IOCTL is processed by Qcpil8930.sys  
+
+| Property | Value |
+|----------|-------|
+| Device | 0xC41 |
+| Function | 0x907 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
 
 | Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
@@ -609,12 +794,12 @@ The bytes from position 16 to 19 is the ID of the secured channel corresponding 
 
 This command parses and loads the .mbn file in memory to prepare the reset of the subsystem identified by the channel ID.  
 
-| GUID RPE client | Secured channel ID | .mbn file path | IoCtl sent by |
-|-----------------|--------------------|----------------|---------|
-| {d58464d3-5b28-4ea6-a2e2-e8e57c5c69b8} | 0x00000001 | `\SystemRoot\system32\qcadsp8930.mbn` | qcadsp8930.sys |
-| {936dc601-5530-4b82-9d2a-72a488bec7c1} | 0x00000004 | `\SystemRoot\system32\qcdsp28930.mbn` | qcamss8930.sys |
-| {ba58766d-abf2-4402-88d7-90ab243f6c77} | 0x00000005 | `\SystemRoot\system32\qcdsp1v18930.mbn` | qcamss8930.sys |
-| {93367d0f-35ce-4ec4-8e38-bb33030c58b2} | 0x00000006 | `\SystemRoot\system32\qcwcnss8930.mbn` | qcwcn8930.sys |
+| GUID RPE client | Secured channel ID | .mbn file path | file size (in bytes) | IoCtl sent by |
+|-----------------|--------------------|----------------|----------------------|---------------|
+| {d58464d3-5b28-4ea6-a2e2-e8e57c5c69b8} | 0x00000001 | `\SystemRoot\system32\qcadsp8930.mbn` | 6091904 | qcadsp8930.sys |
+| {936dc601-5530-4b82-9d2a-72a488bec7c1} | 0x00000004 | `\SystemRoot\system32\qcdsp28930.mbn` | 29776208 | qcamss8930.sys |
+| {ba58766d-abf2-4402-88d7-90ab243f6c77} | 0x00000005 | `\SystemRoot\system32\qcdsp1v18930.mbn` | 2839752 | qcamss8930.sys |
+| {93367d0f-35ce-4ec4-8e38-bb33030c58b2} | 0x00000006 | `\SystemRoot\system32\qcwcnss8930.mbn` | 2007056 | qcwcn8930.sys |
 
 #### _PilRaw[Hash]NN-0xAAAAAAAA_ files generated with `TestState` 3 
 
@@ -671,6 +856,14 @@ _AAAAAAAA_ is a physical address.
 
 This IOCTL is processed by Qcpil8930.sys  
 
+| Property | Value |
+|----------|-------|
+| Device | 0xC41 |
+| Function | 0x908 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
+
 | Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
 | IOCTL_PIL_TZ_RELOAD_IMAGE | 20 | 0 |
@@ -692,6 +885,14 @@ This command reloads the last .mbn file sent by the RPE client to prepare the re
 
 This IOCTL is processed by Qcpil8930.sys  
 
+| Property | Value |
+|----------|-------|
+| Device | 0xC41 |
+| Function | 0x909 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
+
 | Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|--------------------|
 | set TestDataBasePath | 520 | 0 |
@@ -706,6 +907,14 @@ The input buffer is the new value of the `TestDataBasePath` registry parameter.
 ### internal IOCTL 0xC3514004
 
 This IOCTL is sent by Qcpil8930.sys  
+
+| Property | Value |
+|----------|-------|
+| Device | 0x351 |
+| Function | 0x1 |
+| Access | FILE_READ_ACCESS |
+| Method | METHOD_BUFFERED |
+
 
 | Name | Device symbolic link name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|--------------------|
