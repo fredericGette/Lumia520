@@ -704,6 +704,10 @@ Example:
 
 This command sends a command to the SCM device to authenticate the last image sent by the RPE client and reset the subsystem identified by the last channel ID given by the RPE client.  
 
+NTStatus returned:
+| Value | Comment |
+|-------|---------|
+| 0xE0008000 | No image to authentify |
 
 ### internal IOCTL 0x9C412414
 
@@ -794,6 +798,11 @@ The bytes from position 16 to 19 is the ID of the secured channel corresponding 
 
 This command parses and loads the .mbn file in memory to prepare the reset of the subsystem identified by the channel ID.  
 
+NTStatus returned:
+| Value | Comment |
+|-------|---------|
+| 0xE0008005 | Image already loaded |
+
 | GUID RPE client | Secured channel ID | .mbn file path | file size (in bytes) | IoCtl sent by |
 |-----------------|--------------------|----------------|----------------------|---------------|
 | {d58464d3-5b28-4ea6-a2e2-e8e57c5c69b8} | 0x00000001 | `\SystemRoot\system32\qcadsp8930.mbn` | 6091904 | qcadsp8930.sys |
@@ -881,6 +890,11 @@ The bytes from position 16 to 19 is the ID of the secured channel corresponding 
 
 This command reloads the last .mbn file sent by the RPE client to prepare the reset of the subsystem identified by the channel ID.
 
+NTStatus returned:
+| Value | Comment |
+|-------|---------|
+| 0xE0008003 | No image to reload |
+
 ### internal IOCTL 0x9C412424
 
 This IOCTL is processed by Qcpil8930.sys  
@@ -906,7 +920,7 @@ The input buffer is the new value of the `TestDataBasePath` registry parameter.
 
 ### internal IOCTL 0xC3514004
 
-This IOCTL is sent by Qcpil8930.sys  
+This IOCTL is sent by qcpil8930.sys to qcscm8930.sys
 
 | Property | Value |
 |----------|-------|
