@@ -1,10 +1,11 @@
 [qcbluetooth8930.sys](#qcBluetooth8930sys)  
-qcwcn8930.sys  
-qcpil8930.sys  
-qcscm8930.sys  
-qcsmd8930.sys  
-qcsmsm8930.sys  
-qcrpen8930.sys  
+[qcwcn8930.sys](#qcwcn8930sys)  
+[qcpil8930.sys](#qcpil8930sys)  
+[qccdi8930.sys](#qccdi8930sys)  
+[qcscm8930.sys](#qcscm8930sys)  
+[qcsmd8930.sys](#qcsmd8930sys)  
+[qcsmsm8930.sys](#qcsmsm8930sys)  
+[qcrpen8930.sys](#qcrpen8930sys)  
 
 ## QcBluetooth8930.sys
 
