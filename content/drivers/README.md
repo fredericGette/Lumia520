@@ -1,4 +1,4 @@
-[qcbluetooth8930.sys](#QcBluetooth8930.sys)  
+[qcbluetooth8930.sys](#qcBluetooth8930sys)  
 qcwcn8930.sys  
 qcpil8930.sys  
 qcscm8930.sys  
