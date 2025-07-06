@@ -27,6 +27,8 @@ All about Nokia Lumia 520
 
 ## [Bluetooth stack](content/bluetooth/README.md)
 
+## [Windows drivers](content/drivers/README.md)
+
 ## [DIY phone box](content/protections/README.md)
 
 ## [Developer device configuration](content/developer_device/README.md)
