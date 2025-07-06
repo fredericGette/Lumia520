@@ -942,7 +942,7 @@ InputBuffer:
 | Bytes 00-03 | 18 00 00 00 | Packet size ? |
 | Bytes 04-07 | 10 00 00 00 | Packet type ? |
 | Bytes 08-0B | 00 00 00 00 | ? |
-| Bytes 0C-0F | 01 00 08 00 | Command |
+| Bytes 0C-0F | 01 08 00 00 | Command |
 | Bytes 10-13 | 06 00 00 00 | Secured channel ID |
 | Bytes 14-18 | ?? ?? ?? ?? | Physical address |
 
@@ -952,7 +952,7 @@ OutputBuffer:
 | Bytes 00-03 | 18 00 00 00 | Packet size ? |
 | Bytes 04-07 | 10 00 00 00 | Packet type ? |
 | Bytes 08-0B | ?? ?? ?? ?? | ? |
-| Bytes 0C-0F | 01 00 08 00 | Command |
+| Bytes 0C-0F | 01 08 00 00 | Command |
 | Bytes 10-13 | 06 00 00 00 | Secured channel ID |
 | Bytes 14-18 | ?? ?? ?? ?? | Physical address |
 
@@ -964,7 +964,7 @@ InputBuffer:
 | Bytes 00-03 | 18 00 00 00 | Packet size ? |
 | Bytes 04-07 | 10 00 00 00 | Packet type ? |
 | Bytes 08-0B | 00 00 00 00 | ? |
-| Bytes 0C-0F | 05 00 08 00 | Command |
+| Bytes 0C-0F | 05 08 00 00 | Command |
 | Bytes 10-13 | 06 00 00 00 | Secured channel ID |
 
 OutputBuffer:  
@@ -973,7 +973,7 @@ OutputBuffer:
 | Bytes 00-03 | 18 00 00 00 | Packet size ? |
 | Bytes 04-07 | 10 00 00 00 | Packet type ? |
 | Bytes 08-0B | 01 00 00 00 | 1 = authentication successfull |
-| Bytes 0C-0F | 05 00 08 00 | Command |
+| Bytes 0C-0F | 05 08 00 00 | Command |
 | Bytes 10-13 | 06 00 00 00 | Secured channel ID |
 
 #### Command 0x806 "Reload image"
@@ -984,7 +984,7 @@ InputBuffer:
 | Bytes 00-03 | 18 00 00 00 | Packet size ? |
 | Bytes 04-07 | 10 00 00 00 | Packet type ? |
 | Bytes 08-0B | 00 00 00 00 | ? |
-| Bytes 0C-0F | 06 00 08 00 | Command |
+| Bytes 0C-0F | 06 08 00 00 | Command |
 | Bytes 10-13 | 06 00 00 00 | Secured channel ID |
 
 OutputBuffer:  
@@ -993,5 +993,5 @@ OutputBuffer:
 | Bytes 00-03 | 18 00 00 00 | Packet size ? |
 | Bytes 04-07 | 10 00 00 00 | Packet type ? |
 | Bytes 08-0B | 01 00 00 00 | 1 = success |
-| Bytes 0C-0F | 06 00 08 00 | Command |
+| Bytes 0C-0F | 06 08 00 00 | Command |
 | Bytes 10-13 | 06 00 00 00 | Secured channel ID |
