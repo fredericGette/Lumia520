@@ -923,3 +923,63 @@ OutputBuffer:
 | Bytes 08-0B | 01 00 00 00 | 1 = success |
 | Bytes 0C-0F | 06 08 00 00 | Command |
 | Bytes 10-13 | 06 00 00 00 | Secured channel ID |
+
+
+## Qccdi8930.sys
+
+As indicated in the binary, this is the _Crash dump injectory driver that interfaces with the Windows crash dump driver and is responsible for generating crash dumps_
+
+It maintains a list of memory regions to include in the memory dump in case of crash. The address of some of these memory regions are hardcoded in the driver, whereas some other memory regions are found by querying other drivers with their driver-defined interface. 
+
+Registry driver's Parameters:  
+| Registry value | value | comment |
+|----------------|-------|---------|
+|ExpectedCrashDumpSegmentSize | | ULong (default=0xA00000, 10MB) |
+|UserDefinedCrashDumpSegmentSize | | ULong (default=0) |
+|UserDefinedCrashDumpSegmentAddress | | ULong (default=0x00000000) |
+
+Crash dump cookies used in Offline Dump:  
+`HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CrashControl\SVVariables`  
+| Registry value | value | comment |
+|----------------|-------|---------|
+| WpMemoryCaptureModeAddr | | ULong | 
+| WpSvLegacyFlagAddr | | |
+
+### internal IOCTL 0xC3514018
+
+This IOCTL is sent by qccdi8930.sys to qcscm8930.sys
+
+| Property | Value |
+|----------|-------|
+| Device | 0x351 |
+| Function | 0x6 |
+| Access | FILE_READ_ACCESS |
+| Method | METHOD_BUFFERED |
+
+
+| Name | Device symbolic link name | InputBuffer size | OutputBuffer Size |
+|------|-------------|------------------|--------------------|
+| Configure the watchdog bark FIQ | \??\ACPI#QCOM0E90#0#{41c66d2a-a9f1-40ca-a329-ae096c03ee68} | 24 | 24 |
+
+#### Command 0xC02 "Configure the watchdog bark FIQ"
+
+InputBuffer:  
+| Position | Value | Comment |
+|----------|-------|---------|
+| Bytes 00-03 | 18 00 00 00 | Packet size ? |
+| Bytes 04-07 | 10 00 00 00 | Packet type ? |
+| Bytes 08-0B | 00 00 00 00 | ? |
+| Bytes 0C-0F | 02 0C 00 00 | Command |
+| Bytes 10-13 | ?? ?? ?? ?? | physical address of the watchdog bark FIQ handler ? |
+| Bytes 14-18 | 00 10 00 00 | ? |
+
+OutputBuffer:  
+| Position | Value | Comment |
+|----------|-------|---------|
+| Bytes 00-03 | 18 00 00 00 | Packet size ? |
+| Bytes 04-07 | 10 00 00 00 | Packet type ? |
+| Bytes 08-0B | 01 00 00 00 | 1 = success |
+| Bytes 0C-0F | 02 0C 00 00 | Command |
+| Bytes 10-13 | ?? ?? ?? ?? | physical address of the watchdog bark FIQ handler ? |
+| Bytes 14-18 | 00 10 00 00 | ? |
+
