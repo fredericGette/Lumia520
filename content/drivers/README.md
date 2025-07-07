@@ -986,7 +986,7 @@ OutputBuffer:
 ### Example of memory regions 
 
 | Start address | End address | xPU protection | Region name | Comment |
-|---------------|-------------|----------------|-------------|---------|
+|---------------|-------------|:--------------:|-------------|---------|
 | 0x00020000 | 0x00044000 | :white_large_square: | RPM | Resource Power Manager |
 | 0x00108000 | 0x0010E000 | :white_large_square: | RPM | Resource Power Manager |
 | 0x01A01000 | 0x01A02000 | :white_large_square: | QDSS_ETB_REG | Register within the Qualcomm Debug Subsystem (QDSS) that controls or accesses the Embedded Trace Buffer (ETB) |
