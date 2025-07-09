@@ -29,17 +29,18 @@ Qcwcn8930.sys also configures the `IRIS XO` clock of the WCN subsystem by updati
 The physical address of this register is hardcoded in the driver: 0x3204028  
 
 The configuration of the `IRIS XO` clock is done by the following algorithm:
-1- Write 0x00000000
-2- Delay for 500 microseconds
-3- Set bits 4 (IRIS_XO_EN) and 5 (GC_BUS_MUX_SEL)
-4- Delay for 500 microseconds
-5- Clear bits 0 (WARM_BOOT) and 2 (IRIS XO mode)
-6- Delay for 500 microseconds	
-7- Set bit 3 (IRIS_XO_CFG)
-8- Loop while bit 6 (IRIS_XO_CFG_STS) is set, delay for 600 microseconds in each iteration.	
-9- Clear bits 3 (IRIS_XO_CFG) and 5 (GC_BUS_MUX_SEL)
-10- Delay for 500 microseconds
-11- Delay for 200 milliseconds
+
+1. Write 0x00000000
+2. Delay for 500 microseconds
+3. Set bits 4 (IRIS_XO_EN) and 5 (GC_BUS_MUX_SEL)
+4. Delay for 500 microseconds
+5. Clear bits 0 (WARM_BOOT) and 2 (IRIS_XO_MODE)
+6. Delay for 500 microseconds	
+7. Set bit 3 (IRIS_XO_CFG)
+8. Loop while bit 6 (IRIS_XO_CFG_STS) is set, delay for 600 microseconds in each iteration.	
+9. Clear bits 3 (IRIS_XO_CFG) and 5 (GC_BUS_MUX_SEL)
+10. Delay for 500 microseconds
+11. Delay for 200 milliseconds
 
 | Bit | Name | Comment |
 |-----|------|---------|
