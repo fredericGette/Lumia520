@@ -4,6 +4,8 @@ As indicated in the binary, this is the _Crash dump injectory driver that interf
 
 It maintains a list of memory regions to include in the memory dump in case of crash. The address of some of these memory regions are hardcoded in the driver, whereas some other memory regions are found by querying other drivers with their driver-defined interface. 
 
+All the log messages a traced in a memory region named `TRACE_LOG`.
+
 Registry driver's Parameters:  
 | Registry value | value | comment |
 |----------------|-------|---------|
@@ -55,6 +57,80 @@ OutputBuffer:
 | Bytes 0C-0F | 02 0C 00 00 | Command |
 | Bytes 10-13 | ?? ?? ?? ?? | physical address of the watchdog bark FIQ handler ? |
 | Bytes 14-18 | 00 10 00 00 | ? |
+
+### Interface GUID
+
+CDDriver interface class   
+{933B95C6-F9CF-4424-A9F8-F497F760AEE5}
+
+RPENotifier interface class     
+{B28C6F-F696-4580-ACB5-BF16C614B1C2}
+
+PIL interface class     
+{20E0709D-AF59-4CE8-9D91-39E11B4C0231}
+
+SCM interface class     
+{41C66D2A-A9F1-40CA-A329-AE096C03EE68}
+
+CDI interface class  
+{6EA2C81E-AC5E-4583-8767-37D4DBFBD6AB}
+
+CDD driver-defined interface    
+{8BCB35C2-CB20-44E4-9A1E-33A016856CBF}
+
+Unknown   
+{93367D0F-35CE-4EC4-8E38-BB33030C58B2}
+
+### Memory region GUID
+
+TRACE_LOG  
+{87d53509-c8cf-4528-b6e5-07839265cd61}
+
+AMSS (modem SW region)     
+{936dc601-5530-4b82-9d2a-72a488bec7c1}
+
+modem FW region  
+{BA58766D-ABF2-4402-88D7-90AB243F6C77}
+
+ADSP  
+{d58464d3-5b28-4ea6-a2e2-e8e57c5c69b8}
+
+RPM  
+{7f8e50dc-fad4-4a31-a243-3ab83708e49f}
+
+SYS_IMEM  
+{adf3b53c-6657-4d83-83da-a5f3b2544f3c}
+
+MDSP_RAM  
+{7d72d7e9-67df-48b3-8f07-be28c12009b5}
+
+QDSS_ETB_REG   
+{4f4f1970-8a20-40e2-b60b-99a52bb26700}
+
+MISC_REG   
+{d0be3202-f9fc-4c07-bf21-48799499a4d6}
+
+AP_REG   
+{ab3a051f-ef0b-4a5f-a79a-80c243ba0848}
+
+WCN   
+{93367d0f-35ce-4ec4-8e38-bb33030c58b2}
+
+BAMMUX   
+{cccb7664-4951-40c3-8eb1-fda3964a4479}
+
+SMD (MODEM)  
+{f9d15453-8335-434c-aa72-fcd925f135f3}
+
+SMD (RIVA)   
+{d30f94e9-9c90-4ed5-ae04-9266277c4721}
+
+SMSM (MODEM)   
+{1c90923a-df5c-4761-9fd0-835b80f5281d}
+
+SMSM (RIVA)   
+{3aabe343-4ea2-43f8-8404-8a4a01088dcf}
+
 
 ### Example of memory regions 
 
