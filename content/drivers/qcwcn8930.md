@@ -25,9 +25,10 @@ It communicates with the following devices:
 | \Device\SMSM | qcsmsm8930.sys | Shared Memory State Machine |
 | \Device\PIL | qcpil8930.sys | Peripheral Image Loader |
 
-Qcwcn8930.sys also configure the `IRIS XO` clock of the WCN subsystem by updating the _PMU_CFG_ register (Power Management Unit configuration register).
-The physical address of this register is hardcoded in the driver: 0x3204028
-And the configuration is done by the following algorithm:
+Qcwcn8930.sys also configure the `IRIS XO` clock of the WCN subsystem by updating the `PMU_CFG` register (Power Management Unit configuration register).  
+The physical address of this register is hardcoded in the driver: 0x3204028  
+
+The configuration of the `IRIS XO` clock is done by the following algorithm:
 1- Write 0x00000000
 2- Delay for 500 microseconds
 3- Set bits 4 (IRIS_XO_EN) and 5 (GC_BUS_MUX_SEL)
