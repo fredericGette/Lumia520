@@ -149,7 +149,7 @@ SMSM (RIVA)
 | 0x8DA00000 | 0x8EC00000 | :no_entry: | ADSP | Application Digital Signal Processor |
 | 0x8F000000 | 0x8F700000 | :no_entry: | WCN | Wireless Connectivity Network |
 | 0x9fa35000 | 0x9FA55000 | :white_circle: | TRACE_LOG | Crash Dump Driver log buffer - memory allocated at the start of qccdi8930.sys |
-| 0x9feb6000 | 0x9FEB7000 | :white_circle: | AP_REG | Application register ? |
+| 0x9feb6000 | 0x9FEB7000 | :white_circle: | AP_REG | Application register ? Contains the _watchdog bark timeout handler_ |
 
 ### Example of startup logs
 
