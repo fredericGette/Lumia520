@@ -32,3 +32,5 @@ All about Nokia Lumia 520
 ## [DIY phone box](content/protections/README.md)
 
 ## [Developer device configuration](content/developer_device/README.md)
+
+## [Terms and acronyms](content/terms/README.md)
