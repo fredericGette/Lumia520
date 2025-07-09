@@ -25,6 +25,30 @@ It communicates with the following devices:
 | \Device\SMSM | qcsmsm8930.sys | Shared Memory State Machine |
 | \Device\PIL | qcpil8930.sys | Peripheral Image Loader |
 
+Qcwcn8930.sys also configure the `IRIS XO` clock of the WCN subsystem by updating the _PMU_CFG_ register (Power Management Unit configuration register).
+The physical address of this register is hardcoded in the driver: 0x3204028
+And the configuration is done by the following algorithm:
+1- Write 0x00000000
+2- Delay for 500 microseconds
+3- Set bits 4 (IRIS_XO_EN) and 5 (GC_BUS_MUX_SEL)
+4- Delay for 500 microseconds
+5- Clear bits 0 (WARM_BOOT) and 2 (IRIS XO mode)
+6- Delay for 500 microseconds	
+7- Set bit 3 (IRIS_XO_CFG)
+8- Loop while bit 6 (IRIS_XO_CFG_STS) is set, delay for 600 microseconds in each iteration.	
+9- Clear bits 3 (IRIS_XO_CFG) and 5 (GC_BUS_MUX_SEL)
+10- Delay for 500 microseconds
+11- Delay for 200 milliseconds
+
+| Bit | Name | Comment |
+|-----|------|---------|
+| 0 |	WARM_BOOT |	warm/cold boot indication. |
+| 2,1	| IRIS_XO_MODE |IRIS XO mode. 2'b11 : 48MHz XO 2'b01 : 38.4MHz TCXO 2'b00 :19.2MHz TCXO |
+| 3	| IRIS_XO_CFG	| start IRIS XO configuration |
+| 4	| IRIS_XO_EN | 0x1: enable XO during configuration 0x0: disable XO during configuration |
+| 5	| GC_BUS_MUX_SEL | 0x1: GC bus is controlled by riva_top 0x0: GC bus is controlled by WLAN PHY |
+| 6	| IRIS_XO_CFG_STS	| IRIS XO configuration status. 0x1: in progress 0x0: done or idle |
+
 Example of WPP logs at the start of the phone:
 ```
 [1]0004.0084::06/06/2025-12:19:03.186 [qcwcn8930_guid01]!EvtDriverDeviceAdd[58]!Enter
