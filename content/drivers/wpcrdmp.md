@@ -23,3 +23,28 @@ The registry parameter `CrashDumpEnabled` accepts the following values:
 | 1 | Full physical memory dump. |
 | 2 | Kernel memory dump. (Dumps only pages mapped into the kernel process address space; does not include user processes.) |
 | 3 | Minidump (stack and registers). |
+
+### GUID
+
+WPCRDMP_InterfaceClassGUID  
+`{933B95C6-F9CF-4424-A9F8-F497F760AEE5}`
+
+WPCRDMP_exported_INTERFACE_GUID  
+`{8BCB35C2-CB20-44E4-9A1E-33A016856CBF}`
+
+Unknown_GUID_01  
+`{8CC74056-428F-4A4A-A7EB-034E68FC2C2A}`
+
+Unknown_UEFI_GUID_02  
+`{853CE3A3-F693-4D9A-B95F-84E2105D13F2}`
+
+Unknown_UEFI_GUID_03  
+`{83E7A47A-4023-40D2-9852-05EC34CAAF87}`
+
+SECUREBOOT_DEBUG_GUID  
+`{0CDAD82E-D839-4754-89A1-844AB282312B}`
+
+Unknown_interface_class_GUID  
+`{A942B3D9-EC95-4754-AE45-49C48735B893}`  
+could be qcbms8930.sys or qcpmicapps8930.sys or qcscm8930.sys ?
+
