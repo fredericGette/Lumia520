@@ -13,5 +13,5 @@ Registry parameters:
 | EnableOfflineDumps | 0 | Boolean to enable _offline dump_ : dump generated after the reboot of the phone. |
 | WpDisableDebuggerCheck | 0 | Boolean to disable check of KdDebuggerNotPresent. For example: generation of offline dump is deactivate when a debugger is detected. |
 | WpDisableSubSystemCallBacks | 0 | Boolean |
-| DedicatedDumpFile | c:\Data\SystemData\Telemetry\KernelDumps\DedicatedDump.sys | String to set the filepath of the offline dump. Set the UEFI variable DedicatedDumpFile of the GUID {853CE3A3-F693-4D9A-B95F-84E2105D13F2} |
+| DedicatedDumpFile | D:\DedicatedDump.sys | String to set the filepath of the offline dump. Set the UEFI variable DedicatedDumpFile of the GUID {853CE3A3-F693-4D9A-B95F-84E2105D13F2} |
 | OfflineDumpBugCheckCodes | ? | MultiString containing base10 Integer values. |
