@@ -6,3 +6,4 @@
 [qcsmd8930.sys](./qcsmd8930.md)  
 [qcsmsm8930.sys](./qcsmsm8930.md)  
 [qcrpen8930.sys](./qcrpen8930.md)  
+[wpcrdmp.sys](./wpcrdmp.md)
