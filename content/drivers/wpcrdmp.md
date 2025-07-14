@@ -15,3 +15,11 @@ Registry parameters:
 | WpDisableSubSystemCallBacks | 0 | Boolean |
 | DedicatedDumpFile | D:\DedicatedDump.sys | String to set the filepath of the offline dump. Set the UEFI variable DedicatedDumpFile of the GUID {853CE3A3-F693-4D9A-B95F-84E2105D13F2} |
 | OfflineDumpBugCheckCodes | ? | MultiString containing base10 Integer values. |
+
+The registry parameter `CrashDumpEnabled` accepts the following values:  
+| Value | comment |
+|-------|---------|
+| 0 | Disabled. |
+| 1 | Full physical memory dump. |
+| 2 | Kernel memory dump. (Dumps only pages mapped into the kernel process address space; does not include user processes.) |
+| 3 | Minidump (stack and registers). |
