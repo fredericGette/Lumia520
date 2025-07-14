@@ -1,7 +1,7 @@
 ## Wpcrdmp.sys
 
 Register callbacks in case of crash (bugcheck) to generate memory dumps.  
-Requires qccdi8930.sys to knows about the memory layout of the subsystems.  
+Requires qccdi8930.sys to know about the memory layout of the subsystems.  
 Requires the UEFI boot application wpdmp.efi to generate a full physical memory dump.  
 
 Registry parameters:  
