@@ -190,9 +190,11 @@ This IOCTL is sent by Qcwcn8930.sys
 The completion routine of the device control request is executed in case of success or error during the reset of the subsystem.` 
 
 Content of the input buffer when we set the error callback:  
-| Bytes 00-0C | 
-|-------------|
-| 03 00 00 00 40 00 00 00 40 00 00 00 |
+| Bytes | Value | Comment | 
+|-------|-------|---------|
+| 00-03 | 03 00 00 00 | SMSM_STATE_WCN |
+| 04-07 | 40 00 00 00 | SMSM_RESET |
+| 08-0B | 40 00 00 00 | SMSM_RESET |
 
 Content of the input buffer when we set the success callback:  
 | Bytes 00-0C | 
