@@ -44,6 +44,61 @@ This IOCTL is sent by Qcsmsm8930.sys to qcchipinfo8930.sys
 
 Seems to return a part of the version of the RIVA hardware.  
 
+### IOCTL 0x32000
+
+This IOCTL is received by qcsmsm8930.sys  
+
+| Property | Value |
+|----------|-------|
+| Device | 0x3 |
+| Function | 0x800 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
+### IOCTL 0x32004
+
+This IOCTL is received by qcsmsm8930.sys  
+
+| Property | Value |
+|----------|-------|
+| Device | 0x3 |
+| Function | 0x801 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
+
+### Internal IOCTL 0x32008
+
+This IOCTL is received internally by qcsmsm8930.sys  
+
+| Property | Value |
+|----------|-------|
+| Device | 0x3 |
+| Function | 0x802 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
+### IOCTL 0x3200C
+
+This IOCTL is received by qcsmsm8930.sys  
+
+| Property | Value |
+|----------|-------|
+| Device | 0x3 |
+| Function | 0x803 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
+### Internal IOCTL 0x32010
+
+This IOCTL is received internally by qcsmsm8930.sys  
+
+| Property | Value |
+|----------|-------|
+| Device | 0x3 |
+| Function | 0x804 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
 
 
 
