@@ -193,8 +193,8 @@ Content of the input buffer when we set the error callback:
 | Bytes | Value | Comment | 
 |-------|-------|---------|
 | 00-03 | 03 00 00 00 | SMSM_STATE_WCN |
-| 04-07 | 40 00 00 00 | SMSM_RESET |
-| 08-0B | 40 00 00 00 | SMSM_RESET |
+| 04-07 | 40 00 00 00 | clear_mask: SMSM_RESET |
+| 08-0B | 40 00 00 00 | set_mask: SMSM_RESET |
 
 Content of the input buffer when we set the success callback:  
 | Bytes 00-0C | 
