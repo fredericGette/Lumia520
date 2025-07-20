@@ -130,6 +130,21 @@ This IOCTL is received by qcsmsm8930.sys
 | Access | FILE_ANY_ACCESS |
 | Method | METHOD_BUFFERED |
 
+| Name |  InputBuffer size | OutputBuffer Size |
+|------|-------------------|--------------------|
+| ? | 12 | 0 |
+
+Inputbuffer:  
+| Bytes | Value | Comment |
+|-------|-------|---------|
+| 00-03 | 03 00 00 00 | smsm_state_item (example SMSM_STATE_WCN) |
+| 04-07 | 40 00 00 00 | state_mask (example: SMSM_RESET) |
+| 08-0B | 40 00 00 00 | expected_state (example: SMSM_RESET) |
+
+This IOCTL calls the function `smsm_state_get(enum smsm_state_item item)` and apply the `state_mask` on the state obtained.  
+While the difference is different from the `expected_state`, the IOTCL won' return but is marked as _cancelable_. 
+
+
 ### Internal IOCTL 0x32010
 
 This IOCTL is received internally by qcsmsm8930.sys  
