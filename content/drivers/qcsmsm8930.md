@@ -75,7 +75,7 @@ Inputbuffer:
 | 04-07 | 40 00 00 00 | clear_mask (example: SMSM_RESET) |
 | 08-0B | 40 00 00 00 | set_mask (example: SMSM_RESET) |
 
-This IOCTL calls the function `smsm_change_state` and the 3 DWORD of the Inputbuffer are the parameters of the function.
+This IOCTL calls the function `smsm_change_state(enum smsm_state_item item, uint32_t clear_mask, uint32_t set_mask)` with the 3 DWORD of the Inputbuffer as parameters.
 
 ### IOCTL 0x32004
 
@@ -97,7 +97,7 @@ Inputbuffer:
 |-------|-------|---------|
 | 00-03 | 03 00 00 00 | smsm_state_item (example SMSM_STATE_WCN) |
 
-This IOCTL calls the function `smsm_state_get` and the Inputbuffer is the parameter of the function.  
+This IOCTL calls the function `smsm_state_get(enum smsm_state_item item)` and the Inputbuffer is the parameter of the function.  
 The state is returned in the `information` returned by the IOCTL.
 
 
