@@ -64,6 +64,19 @@ This IOCTL is received by qcsmsm8930.sys
 | Access | FILE_ANY_ACCESS |
 | Method | METHOD_BUFFERED |
 
+| Name |  InputBuffer size | OutputBuffer Size |
+|------|-------------------|--------------------|
+| ? | 12 | 0 |
+
+Inputbuffer:  
+| Bytes | Value | Comment |
+|-------|-------|---------|
+| 00-03 | 03 00 00 00 | smsm_state_item |
+| 04-07 | 40 00 00 00 | clear_mask (example: SMSM_RESET) |
+| 08-0B | 40 00 00 00 | set_mask (example: SMSM_RESET) |
+
+This IOCTL calls the function `smsm_change_state` and the 3 DWORD of the Inputbuffer are the parameters of the function.
+
 ### IOCTL 0x32004
 
 This IOCTL is received by qcsmsm8930.sys  
