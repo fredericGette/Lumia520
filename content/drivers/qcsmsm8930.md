@@ -17,6 +17,7 @@ It communicates with the following devices:
 | Device | Driver | Comment |
 |--------|--------|---------|
 | \Device\SMEM | qcsmem8930.sys | Shared Memory table driver |
+| ? | qchipinfo8930.sys | ? |
 
 ### IOCTL 0x8C1F2004
 
