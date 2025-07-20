@@ -30,6 +30,10 @@ This IOCTL is sent by Qcsmsm8930.sys to qcchipinfo8930.sys
 | Access | FILE_ANY_ACCESS |
 | Method | METHOD_BUFFERED |
 
+| Name | Device name | InputBuffer size | OutputBuffer Size |
+|------|-------------|------------------|--------------------|
+| ? | ? | 0 | 4 |
+
 Seems to return a part of the version of the RIVA hardware.  
 
 ### IOCTL 0x8C1F2008
@@ -42,6 +46,10 @@ This IOCTL is sent by Qcsmsm8930.sys to qcchipinfo8930.sys
 | Function | 0x802 |
 | Access | FILE_ANY_ACCESS |
 | Method | METHOD_BUFFERED |
+
+| Name | Device name | InputBuffer size | OutputBuffer Size |
+|------|-------------|------------------|--------------------|
+| ? | ? | 0 | 4 |
 
 Seems to return a part of the version of the RIVA hardware.  
 
