@@ -71,7 +71,7 @@ This IOCTL is received by qcsmsm8930.sys
 Inputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | 03 00 00 00 | smsm_state_item |
+| 00-03 | 03 00 00 00 | smsm_state_item (example SMSM_STATE_WCN) |
 | 04-07 | 40 00 00 00 | clear_mask (example: SMSM_RESET) |
 | 08-0B | 40 00 00 00 | set_mask (example: SMSM_RESET) |
 
@@ -88,6 +88,18 @@ This IOCTL is received by qcsmsm8930.sys
 | Access | FILE_ANY_ACCESS |
 | Method | METHOD_BUFFERED |
 
+| Name |  InputBuffer size | OutputBuffer Size |
+|------|-------------------|--------------------|
+| ? | 4 | 0 |
+
+Inputbuffer:  
+| Bytes | Value | Comment |
+|-------|-------|---------|
+| 00-03 | 03 00 00 00 | smsm_state_item (example SMSM_STATE_WCN) |
+
+This IOCTL calls the function `smsm_state_get` and the Inputbuffer is the parameter of the function.  
+The state is returned in the `information` returned by the IOCTL.
+
 
 ### Internal IOCTL 0x32008
 
@@ -99,6 +111,13 @@ This IOCTL is received internally by qcsmsm8930.sys
 | Function | 0x802 |
 | Access | FILE_ANY_ACCESS |
 | Method | METHOD_BUFFERED |
+
+| Name |  InputBuffer size | OutputBuffer Size |
+|------|-------------------|--------------------|
+| ? | 0 | 4 |
+
+The Outputbuffer contains the address of the function `FuncSmsmReset(uint32_t clear_mask)`.   
+This function us the parameter `clear_mask` to clear some bits of the state of a subsystem (which one ?), then it sets the bits corresponding to SMSM_RESET.  
 
 ### IOCTL 0x3200C
 
