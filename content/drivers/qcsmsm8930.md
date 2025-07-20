@@ -100,5 +100,31 @@ This IOCTL is received internally by qcsmsm8930.sys
 | Access | FILE_ANY_ACCESS |
 | Method | METHOD_BUFFERED |
 
+### IOCTL 0x32C004
 
+This IOCTL is sent by qcsmsm8930.sys to ?
+
+| Property | Value |
+|----------|-------|
+| Device | 0x32 |
+| Function | 0x1 |
+| Access | READ_AND_WRITE |
+| Method | METHOD_BUFFERED |
+
+### IOCTL 0x42000
+
+This IOCTL is sent by qcsmsm8930.sys to qcsmem8930.sys
+
+| Property | Value |
+|----------|-------|
+| Device | 0x32 |
+| Function | 0x1 |
+| Access | READ_AND_WRITE |
+| Method | METHOD_BUFFERED |
+
+| Name | Device name | InputBuffer size | OutputBuffer Size |
+|------|-------------|------------------|--------------------|
+| ? | \Device\SMEM | 0 | 4 |
+
+The expected value contained in the outputbuffer is 0x00000034  
 
