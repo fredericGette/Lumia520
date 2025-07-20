@@ -49,9 +49,9 @@ e= 06 00 00 00 04 0E 04 01 00 00 00
 ```
 c< 0C 00 00 00 01 0B FC 09 01 02 06 53 7B C7 3E 92 78
 ```
-| HCI message length | type _command_ (not counted in the _HCI message length_) | Vendor Specific OpCode (BT_QSOC_NVM_ACCESS_OPCODE) | Command parameter length | NVM item number (BD_ADDR) | NVM item size | NVM item value |
-|--------------------|----------------------------------------------------------|----------------------------------------------------|--------------------------|---------------------------|---------------|----------------|
-| 0C 00 00 00 | 01 | 0B FC | 09 | 01 02 | 06 | 53 7B C7 3E 92 78 |
+| HCI message length | type _command_ (not counted in the _HCI message length_) | Vendor Specific OpCode (BT_QSOC_NVM_ACCESS_OPCODE) | Command parameter length | NVM Command (NVM_ACCESS_SET) | Tag number (BD_ADDR) | Tag length | NVM item value |
+|--------------------|----------------------------------------------------------|----------------------------------------------------|--------------------------|------------------------------|----------------------|------------|----------------|
+| 0C 00 00 00 | 01 | 0B FC | 09 | 01 | 02 | 06 | 53 7B C7 3E 92 78 |
 
 ```
 e= 0C 00 00 00 04 FF 0A 0B 01 02 06 53 7B C7 3E 92 78
