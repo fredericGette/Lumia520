@@ -8,7 +8,7 @@ The signification of each bits of a state is indicated here: https://github.com/
 
 It contains the same "hack" that the one indicated here: https://github.com/freexperia/android_kernel_semc_msm7x30/blob/03025f007e8f0ccdd51ea3bced3999c2d6249010/arch/arm/mach-msm/smd.c#L375  
 So the address of the GPIO_40 is hardcoded in the driver : 0x801284  
-This hack is applied when the OutputBuffer of IOCTL 0x8C1F2008 is 0x57 and OutputBuffer of IOCTL 0x8C1F2004 is less 0x20000.  
+This hack is applied when the OutputBuffer of IOCTL 0x8C1F2008 is 0x57 and OutputBuffer of IOCTL 0x8C1F2004 is less than 0x20000.  
 
 There's no interresting parameters in the registry.  
 
