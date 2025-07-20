@@ -117,7 +117,7 @@ This IOCTL is received internally by qcsmsm8930.sys
 | ? | 0 | 4 |
 
 The Outputbuffer contains the address of the function `FuncSmsmReset(uint32_t clear_mask)`.   
-This function us the parameter `clear_mask` to clear some bits of the state of a subsystem (which one ?), then it sets the bits corresponding to SMSM_RESET.  
+This function cleasr some bits of the state of a subsystem (which one ?) with the parameter `clear_mask`, then it sets the bits corresponding to SMSM_RESET.  
 
 ### IOCTL 0x3200C
 
