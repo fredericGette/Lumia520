@@ -29,5 +29,5 @@ SBL1 = rpm Secondary Boot Loader
 SBL2 = Krait Secondary Boot Loader (there's no primary boot loader of this kind)  
 MSM = Mobile Station Modem  
 ehostDL = emergency host DownLoad  
-WER = Windows Error Reporting
+WER = Windows Error Reporting  
 SV = Soc Vendor
