@@ -1,4 +1,4 @@
-SCM = Secured Channel Manager (communication with the TrustZone)  
+SCM = Secure Channel Manager (communication with the TrustZone)  
 CDD = Crash Dump Driver  
 PIL = Peripheral Image Loader   
 FIQ = Fast Interrupt Request  
@@ -20,12 +20,12 @@ PMIC = Power Management Integrated Circuit with RTC (Real Time Clock)
 SDCC = Secure Digital Card Controller  
 SDC = Secure Digital Card  
 NPA = Node Power Architecture  
-TZ = arm TrustZone  
+TZ = ARM TrustZone  
 xPU = Protection Unit (x = multiple varieties; address, memory, register)  
 ROT = Root Of Trust  
 XO = Crystal  
-PBL = rpm Primary Boot Loader  
-SBL1 = rpm Secondary Boot Loader  
+PBL = RPM Primary Boot Loader  
+SBL1 = RPM Secondary Boot Loader  
 SBL2 = Krait Secondary Boot Loader (there's no primary boot loader of this kind)  
 MSM = Mobile Station Modem  
 ehostDL = emergency host DownLoad  
