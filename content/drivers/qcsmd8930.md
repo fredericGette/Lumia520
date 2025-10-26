@@ -42,6 +42,30 @@ For WriteFile, the OS sends a write IRP to the driver's EvtWdfIoQueueIoWrite cal
 |-------------------|--------|
 | RPCRPY_CNTL | qcipcrouter8930.sys |
 | IPCRTR | qcipcrouter8930.sys |
+| sys_mon | qcipcrouter8930.sys |
+| DATA6_CNTL | qcipcrouter8930.sys |
+| DATA7_CNTL | qcipcrouter8930.sys |
+| DATA8_CNTL | qcipcrouter8930.sys |
+| DATA9_CNTL | qcipcrouter8930.sys |
+| DATA12_CNTL | qcipcrouter8930.sys |
+| SSM_RTR | qcipcrouter8930.sys |
+| DIAG | qcipcrouter8930.sys |
+| DIAG_2 | qcipcrouter8930.sys |
+| DIAG_CNTL | qcipcrouter8930.sys |
+| sys_mon | qcadsp8930.sys |
+| DATA5_CNTL | qcqmux8930.sys |
+| DATA13_CNTL | qcqmux8930.sys |
+| DIAG | qcdiagrouter8930.sys |
+| DIAG_CNTL | qcdiagrouter8930.sys |
+| DATA14_CNTL | qcdiagrouter8930.sys |
+| APPS_RIVA_DATA | qcdiagrouter8930.sys |
+| APPS_RIVA_CTRL | qcdiagrouter8930.sys |
+| apr_audio_svc | qcq6ad8930.sys |
+| apr_apps2 | qcq6ad8930.sys |
+| APPS_FM | qcfmtransport8930.sys |
+| APPS_RIVA_BT_CMD | qcbluetooth8930.sys |
+| APPS_RIVA_BT_ACL | qcbluetooth8930.sys |
+| WLAN_CTRL | qcwlan8930.sys |
 
 Internal Ioctl:  
     - **`0x22003`**: Initializes/configures a communication channel, performs input validation (including a "LOOPBACK" string check), acquires a lock, and calls `InterfaceFunction_00`. Input buffer size 28  
