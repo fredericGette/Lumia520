@@ -3,6 +3,8 @@
 Shared Memory Driver  
 Manage the SMD channels of other drivers. These channels read and write data of the subsystems.  
 
+Device name : `\Device\SMD`  
+
 There's no parameters in the registry.  
 
 GUID of the ETW provider:  
