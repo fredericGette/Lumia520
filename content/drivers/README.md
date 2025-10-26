@@ -3,7 +3,7 @@
 [qcpil8930.sys](./qcpil8930.md)  
 [qccdi8930.sys](./qccdi8930.md)  
 [qcscm8930.sys TODO](./qcscm8930.md)  
-[qcsmd8930.sys WIP](./qcsmd8930.md)  
+[qcsmd8930.sys](./qcsmd8930.md)  
 [qcsmsm8930.sys](./qcsmsm8930.md)  
 [qcrpen8930.sys TODO](./qcrpen8930.md)  
 [wpcrdmp.sys](./wpcrdmp.md)  
