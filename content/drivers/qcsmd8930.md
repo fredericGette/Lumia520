@@ -43,12 +43,12 @@ For WriteFile, the OS sends a write IRP to the driver's EvtWdfIoQueueIoWrite cal
 | RPCRPY_CNTL | qcipcrouter8930.sys |
 | IPCRTR | qcipcrouter8930.sys |
 
-Internal Ioctl:
-    - **`0x22003`**: Initializes/configures a communication channel, performs input validation (including a "LOOPBACK" string check), acquires a lock, and calls `InterfaceFunction_00`. Input buffer size 28
-    - **`0x22007`**: Appears to be a close/deactivation operation, acquiring/releasing locks and calling `InterfaceFunction_01`.
-    - **`0x2200B`**: Sets port/channel parameters, retrieves input buffer, validates, acquires a lock, and updates `SMD_PORT_CONTEXT` fields. Input buffer size 16
-    - ** 0x2200F **: Configures an SMD port by setting two 4-byte values within the SMD_PORT_CONTEXT structure at field_10 and field_14. It requires an 8-byte input buffer
-    - **`0x22013`, `0x22017`, `0x2201B`**: Involve forwarding requests to I/O queues and enqueuing work items for asynchronous operations.
-    - **`0x2201F`, `0x22023`, `0x2202B`**: Related to setting modem states, calling `InterfaceFunction_08`.
-    - **`0x2202F` (and related `0x2202F`, `0x22033`, `0x22053`, `0x22057`)**: Related to state changes, calling `InterfaceFunction_09`.
+Internal Ioctl:  
+    - **`0x22003`**: Initializes/configures a communication channel, performs input validation (including a "LOOPBACK" string check), acquires a lock, and calls `InterfaceFunction_00`. Input buffer size 28  
+    - **`0x22007`**: Appears to be a close/deactivation operation, acquiring/releasing locks and calling `InterfaceFunction_01`.  
+    - **`0x2200B`**: Sets port/channel parameters, retrieves input buffer, validates, acquires a lock, and updates `SMD_PORT_CONTEXT` fields. Input buffer size 16  
+    - **`0x2200F`**: Configures an SMD port by setting two 4-byte values within the SMD_PORT_CONTEXT structure at field_10 and field_14. It requires an 8-byte input buffer    
+    - **`0x22013`, `0x22017`, `0x2201B`**: Involve forwarding requests to I/O queues and enqueuing work items for asynchronous operations.  
+    - **`0x2201F`, `0x22023`, `0x2202B`**: Related to setting modem states, calling `InterfaceFunction_08`.  
+    - **`0x2202F` (and related `0x2202F`, `0x22033`, `0x22053`, `0x22057`)**: Related to state changes, calling `InterfaceFunction_09`.  
 
