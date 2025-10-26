@@ -8,5 +8,5 @@
 [qcrpen8930.sys TODO](./qcrpen8930.md)  
 [wpcrdmp.sys](./wpcrdmp.md)  
 [qcchipinfo8930.sys TODO](./qcchipinfo8930.md)  
-[qcsmem8930.sys TODO](./qcsmem8930.md)  
+[qcsmem8930.sys](./qcsmem8930.md)  
 
