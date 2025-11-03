@@ -21,7 +21,7 @@ The function EvtWdfDevicePrepareHardware is a standard callback in the Windows D
    * Memory Mapping: For each memory resource, it uses MmMapIoSpace to map the physical hardware addresses into the kernel's virtual address space, making them
      accessible to the driver. It uses different caching types for different resources:
        * The first resource is mapped as MmWriteCombined. This is the "heap" shared memory. Its physical addresse starts at 0x80000000 with a length of 0x200000 bytes. It contains a list of fixed memory buffers at the beginning. Then each subsequent request allocate another memory buffer. 
-       * Subsequent resources are mapped as MmNonCached. The second memory resource seems to contains an array of 32 DWORD set to 0 when the corresponding spinlock is acquired. It starts at the physical address 0x01200604 with a length of 0x80 bytes. Then there are 3 other addition memory resources of 4 bytes each. Their physicial addresses are 0x2011008, 0x12104080 and 0x12104094
+       * Subsequent resources are mapped as MmNonCached. The second memory resource seems to contains an array of 32 DWORD set to 0 when the corresponding spinlock is acquired. It starts at the physical address 0x01200604 with a length of 0x80 bytes. Then there are 3 other additional memory resources of 4 bytes each. Their physicial addresses are 0x2011008, 0x12104080 and 0x12104094
     
 IoControlCode `0x42000`  
 	Outputbuffer size 52  
@@ -46,8 +46,6 @@ IoControlCode `0x42000`
 IoControlCode `0x42004`  
 	Inputbuffer size 8  
 	Outputbuffer size 8  
-	This IOCTL is likely used to translate a bus-relative address to a kernel virtual address. The process is as follows:  
-       1. It retrieves an 8-byte input buffer and an 8-byte output buffer from the request.  
-       2. It takes the address from the input buffer and searches for it in the list of memory-mapped resources that were previously saved during the EvtWdfDevicePrepareHardware phase.  
-       3. If a matching resource is found, it copies the corresponding mapped kernel virtual address into the output buffer and completes the request with success.  
-       4. If no match is found, it completes the request with the error code STATUS_INVALID_PARAMETER (0xC0000025).  
+	This IOCTL is likely used to translate a bus-relative address to a kernel virtual address. 
+	It retrieves the 4 lower bytes of the Inputbuffer (this is a physical address) and look for it in the arrayAdditionalMemoryResources initialised during EvtWdfDevicePrepareHardware. This arrays contains 3 entries: each entries correspond to an "additional memory resource" and contains its physical address (first DWORD) and its virtual address (second DWORD).
+    If a matching entry is found, it copies the corresponding mapped kernel virtual address into the 4 upper bytes of the Outputbuffer.  
