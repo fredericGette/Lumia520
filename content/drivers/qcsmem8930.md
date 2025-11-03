@@ -27,21 +27,21 @@ IoControlCode `0x42000`
 	Outputbuffer size 52  
 	13 pointers (4*13=52) to internal functions  
 
-| Function signature |
-|--------------------|
-| void *smem_alloc(smem_mem_type smem_type, int buf_size); |
-| void *smem_get_addr(smem_mem_type smem_type, ULONG *size); |
-| void nullsub_1(); |
-| BOOLEAN smem_version_set(smem_mem_type type, int version, int mask); |
-| void smem_spin_lock(int lock); |
-| void smem_spin_unlock(int lock); |
-| unsigned int smem_read_log_events(unsigned int a1, unsigned int a2, char *a3, _DWORD *a4, _DWORD *a5); |
-| int smem_init_log_buffer(unsigned int a1); |
-| void smem_write_log_event3(unsigned int a1, int eventId, int a3, int data1, int data2, int data3); |
-| void smem_write_log_event6(unsigned int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9); |
-| void smem_set_lock0(int lock); |
-| int smem_get_firstMemoryResourcePhysicalStart(); |
-|int smem_get_firstMemoryResourceLength(); |
+| position | Function signature |
+|----------|--------------------|
+| 00 | void *smem_alloc(smem_mem_type smem_type, int buf_size); |
+| 01 | void *smem_get_addr(smem_mem_type smem_type, ULONG *size); |
+| 02 | void nullsub_1(); |
+| 03 | BOOLEAN smem_version_set(smem_mem_type type, int version, int mask); |
+| 04 | void smem_spin_lock(int lock); |
+| 05 | void smem_spin_unlock(int lock); |
+| 06 | unsigned int smem_read_log_events(unsigned int a1, unsigned int a2, char *a3, _DWORD *a4, _DWORD *a5); |
+| 07 | int smem_init_log_buffer(unsigned int a1); |
+| 08 | void smem_write_log_event3(unsigned int a1, int eventId, int a3, int data1, int data2, int data3); |
+| 09 | void smem_write_log_event6(unsigned int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9); |
+| 10 | void smem_set_lock0(int lock); |
+| 11 | int smem_get_firstMemoryResourcePhysicalStart(); |
+| 12 |int smem_get_firstMemoryResourceLength(); |
 
 IoControlCode `0x42004`  
 	Inputbuffer size 8  
