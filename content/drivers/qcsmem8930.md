@@ -24,8 +24,15 @@ The function EvtWdfDevicePrepareHardware is a standard callback in the Windows D
        * Subsequent resources are mapped as MmNonCached. The second memory resource seems to contains an array of 32 DWORD set to 0 when the corresponding spinlock is acquired. It starts at the physical address 0x01200604 with a length of 0x80 bytes. Then there are 3 other additional memory resources of 4 bytes each. Their physicial addresses are 0x2011008, 0x12104080 and 0x12104094
     
 IoControlCode `0x42000`  
-	Outputbuffer size 52  
-	13 pointers (4*13=52) to internal functions  
+| Property | Value |
+|----------|-------|
+| Device | 0x4 |
+| Function | 0x800 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |  
+
+Outputbuffer size 52  
+13 pointers (4*13=52) to internal functions  
 
 | position | Function signature |
 |----------|--------------------|
@@ -44,8 +51,15 @@ IoControlCode `0x42000`
 | 12 |int smem_get_firstMemoryResourceLength(); |
 
 IoControlCode `0x42004`  
-	Inputbuffer size 8  
-	Outputbuffer size 8  
+| Property | Value |
+|----------|-------|
+| Device | 0x4 |
+| Function | 0x801 |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |  
+
+Inputbuffer size 8  
+Outputbuffer size 8  
 	This IOCTL is likely used to translate a bus-relative address to a kernel virtual address. 
 	It retrieves the 4 lower bytes of the Inputbuffer (this is a physical address) and look for it in the arrayAdditionalMemoryResources initialised during EvtWdfDevicePrepareHardware. This arrays contains 3 entries: each entries correspond to an "additional memory resource" and contains its physical address (first DWORD) and its virtual address (second DWORD).
     If a matching entry is found, it copies the corresponding mapped kernel virtual address into the 4 upper bytes of the Outputbuffer.  
