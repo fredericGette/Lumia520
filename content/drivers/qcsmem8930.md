@@ -20,20 +20,28 @@ The function EvtWdfDevicePrepareHardware is a standard callback in the Windows D
 
    * Memory Mapping: For each memory resource, it uses MmMapIoSpace to map the physical hardware addresses into the kernel's virtual address space, making them
      accessible to the driver. It uses different caching types for different resources:
-       * The first resource is mapped as MmWriteCombined.
-       * Subsequent resources are mapped as MmNonCached.
-
-   * Resource Validation: The function performs several checks to ensure the provided resources meet its expectations:
-       * It expects at least two memory resources.
-       * It validates the size of the second memory resource to be at least 32 bytes.
-       * It expects any resources beyond the second one to be exactly 4 bytes in size.
-
-   * Data Structure Initialization: After successfully mapping the resources, the driver initializes its own internal data structures. It allocates memory for these
-      structures using a custom function, smem_alloc.
-     
+       * The first resource is mapped as MmWriteCombined. This is the "heap" shared memory. Its physical addresse starts at 0x80000000 with a length of 0x200000 bytes. It contains a list of fixed memory buffers at the beginning. Then each subsequent request allocate another memory buffer. 
+       * Subsequent resources are mapped as MmNonCached. The second memory resource seems to contains an array of 32 DWORD set to 0 when the corresponding spinlock is acquired. It starts at the physical address 0x01200604 with a length of 0x80 bytes. Then there are 3 other addition memory resources of 4 bytes each. Their physicial addresses are 0x2011008, 0x12104080 and 0x12104094
+    
 IoControlCode `0x42000`  
 	Outputbuffer size 52  
 	13 pointers (4*13=52) to internal functions  
+
+| Function signature |
+|--------------------|
+| void *smem_alloc(smem_mem_type smem_type, int buf_size); |
+| void *smem_get_addr(smem_mem_type smem_type, ULONG *size); |
+| void nullsub_1(); |
+| BOOLEAN smem_version_set(smem_mem_type type, int version, int mask); |
+| void smem_spin_lock(int lock); |
+| void smem_spin_unlock(int lock); |
+| unsigned int smem_read_log_events(unsigned int a1, unsigned int a2, char *a3, _DWORD *a4, _DWORD *a5); |
+| int smem_init_log_buffer(unsigned int a1); |
+| void smem_write_log_event3(unsigned int a1, int eventId, int a3, int data1, int data2, int data3); |
+| void smem_write_log_event6(unsigned int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9); |
+| void smem_set_lock0(int lock); |
+| int smem_get_firstMemoryResourcePhysicalStart(); |
+|int smem_get_firstMemoryResourceLength(); |
 
 IoControlCode `0x42004`  
 	Inputbuffer size 8  
