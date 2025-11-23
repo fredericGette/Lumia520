@@ -26,4 +26,4 @@ It communicates with the following devices:
 | `\Device\DiagCSI` | ? | `{23ccade6-34e8-42e4-8845-99411146dc22}` | ? |
 | `\Device\USB_DIAG` | ? | `{39ab5403-6551-4dfe-a22c-6cc6f4ed2fd0}` | ? |
 | | qcsmd8930.sys | `{f9d15453-8335-434c-aa72-fcd925f135f3}` | Shared Memory Driver |
-| `\??\QCOM_ChipInfo` | `{fb4f07cd-8d4c-4413-92c2-e2c9caed9f43}` | ? |
+| `\??\QCOM_ChipInfo` | qchipinfo8930.sys | `{fb4f07cd-8d4c-4413-92c2-e2c9caed9f43}` | ? |
