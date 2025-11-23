@@ -36,3 +36,23 @@ SMD channel names:
 | `APPS_RIVA_DATA` | 6 |
 | `DIAG_CNTL` | 1 |
 | `APPS_RIVA_CTRL` | 6 |
+
+IOCTL sent to `\??\QCOM_ChipInfo`:  
+- **`0x8C1F2014`**  
+  - inputbuffer length 0
+  - outputbuffer length 4 (contains one of these values: 0x16, 0x1A, 0x1E, 0x20, 0x22)  
+
+IOCTL sent to `\Device\USB_DIAG`:  
+- **`0x808520C0`**  
+  - inputbuffer length 8
+
+ IOCTL sent to UART device:  
+- **`0x1B0064`**  
+  -	inputbuffer length 16 :	0xFFFFFFF7 0xFFFFFF7F	0x00000000 0x00000000
+	- outputbuffer length 0	
+- **`0x1B000C`**  
+  -	inputbuffer length 3 : 0x00 0x00 0x08
+- **`0x1B0004`**  
+  -	inputbuffer length 4 : 0x1C200 // 115200 bauds ?
+- **`0x1B001C`**  
+  -	inputbuffer length 20 : 0x00000005 0x00000000	0x00000000 0x00000000	0x000000C8
