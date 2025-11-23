@@ -56,3 +56,32 @@ IOCTL sent to `\Device\USB_DIAG`:
   -	inputbuffer length 4 : 0x1C200 // 115200 bauds ?
 - **`0x1B001C`**  
   -	inputbuffer length 20 : 0x00000005 0x00000000	0x00000000 0x00000000	0x000000C8
+
+Received IOCTL:  
+- **`0x80082400`**  
+  -	InputBufferLength = 4. Allocate 3 Requests
+- **`0x80082404`**  
+  -	InputBufferLength = min 16. The size must be equals to 3 + the 16bits value at index 4 
+  -	OutputBufferLength = 0
+  -	Calls called_by_ioctl_0x80082404. Add an object in the linked list memoryPool_24bytes.
+- **`0x80082408`**  
+  -	OutputBufferLength = 2.	Contains DIAGROUTER_DEVICE_CONTEXT->field_168 + 1
+- **`0x8008240C`**  DIAGCMD_CLNT_DCIRSPSEND ?
+  -	InputBufferLength = max 4096. 00 = 0x93. Calls called_by_ioctl_0x8008240C_and_0x80082410 with third parameter = 21.  
+- **`0x80082410`**  DIAGCMD_CLNT_DCIRSPSEND ?
+  -	InputBufferLength = max 4096. Calls called_by_ioctl_0x8008240C_and_0x80082410 with third parameter = 20.
+
+Received internal IOCTL:
+- **`0x80082450`**  
+  -	InputBufferLength = 4. 00 = 0x4B or 0x80.
+  -	OutputBufferLength = 4.	00 = 0 or 1 or 2 or 3.
+- **`0x80082454`**  
+  -	InputBufferLength = min 8. 00 = 0x4B or 0x80 or 0x93 
+  -	OutputBufferLength = 0
+- **`0x80082458`**  
+  -	InputBufferLength = 0. Create and enqueue a workitem DIAGCMD_DIAGCSI ?
+  -	OutputBufferLength = 0
+- **`0x8008245D`**  
+  -	DIAGCMD_DIAGCSI_MSKCFG_WRK_CONTEXT->field_0 = 0. Create and enqueue a workitem DIAGCMD_DIAGCSI_MSKCFG ?
+- **`0x80082461`**  
+  -	DIAGCMD_DIAGCSI_MSKCFG_WRK_CONTEXT->field_0 = 1. Create and enqueue a workitem DIAGCMD_DIAGCSI_MSKCFG ?
