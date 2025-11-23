@@ -28,3 +28,11 @@ It communicates with the following devices:
 | | qcsmd8930.sys | `{f9d15453-8335-434c-aa72-fcd925f135f3}` | Shared Memory Driver |
 | `\??\QCOM_ChipInfo` | qchipinfo8930.sys | `{fb4f07cd-8d4c-4413-92c2-e2c9caed9f43}` | ? |
 | `\Device\RESOURCE_HUB\%08X%08X` or `\DosDevices\COM5` | | `{86e0d1e0-8089-11d0-9ce4-08003e301f73}` | UART Driver |
+
+SMD channel names:  
+| Name | Channel ID |
+|------|------------|
+| `DIAG` | 1 |
+| `APPS_RIVA_DATA` | 6 |
+| `DIAG_CNTL` | 1 |
+| `APPS_RIVA_CTRL` | 6 |
