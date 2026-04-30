@@ -10,4 +10,5 @@
 [qcchipinfo8930.sys TODO](./qcchipinfo8930.md)  
 [qcsmem8930.sys](./qcsmem8930.md)  
 [qcdiagrouter8930.sys](./qcdiagrouter8930.md) 
+[acpitime.sys](./acpitime.md) 
 
