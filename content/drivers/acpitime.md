@@ -14,11 +14,13 @@ to evaluate ACPI control methods on the firmware device node.
 > DeviceIoControl can only be called from kernel mode.  
 > On Lumia 520, the capabilities indicate get/set RTC only. **There's no wake alarm support.**
 
-ACPI time capabilities flag: `0x4 Get/Set real time supported (_GRT/_SRT)`
+ACPI time capabilities flag of Lumia 520: `0x4 Get/Set real time supported (_GRT/_SRT)`
 
 GUID_DEVICE_ACPI_TIME	`{97f99bf6-4497-4f18-bb22-4b9fb2fbef9c}`
 
 Symbolic link: `\GLOBAL??\ACPI#ACPI000E#2&daba3ff&0#{97f99bf6-4497-4f18-bb22-4b9fb2fbef9c}`
+
+---
 
 ### IOCTL_ACPITIME_GET_REALTIME — `0x294210`
 
