@@ -1,6 +1,6 @@
 ## acpitime.sys
 
-`acpitime.sys` is a Windows kernel-mode driver that provides user-mode access
+`acpitime.sys` provides access
 to the ACPI Real-Time Clock (RTC) and ACPI wake alarm hardware on UEFI/ACPI
 platforms. It is implemented as a WDF (Windows Driver Framework) FDO
 (Function Driver Object) that sits on top of `acpi.sys` in the device stack.
