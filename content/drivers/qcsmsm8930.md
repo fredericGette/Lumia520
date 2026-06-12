@@ -2,7 +2,7 @@
 
 Shared Memory State Machine Driver  
 Read, write and watch a memory region containing the state of the subsystems.  
-It calls qcmem8930.sys to get the address of this memory region, and provides some IOCTL to read and write in it. Moreover, it sets an interrupt handler to be notified when a state is updated by a subsystem.  
+It calls qcsmem8930.sys to get the address of this memory region, and provides some IOCTL to read and write in it. Moreover, it sets an interrupt handler to be notified when a state is updated by a subsystem.  
 When the state of a subsystem changes, it notifies the RPE client listening to this subsystem.  
 The signification of each bits of a state is indicated here: https://github.com/drakaz/cm-kernel/blob/f1215cb1e5e7090e9688ae8d1ce7eb1c5ed1c7ce/drivers/dpram/smd_private.h#L98
 
