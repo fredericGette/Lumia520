@@ -23,6 +23,8 @@ All about Nokia Lumia 520
 
 ## [Electronic components](content/components/README.md)
 
+## [Electrical power](content/power/README.md)
+
 ## [Boot](content/boot/README.md)
 
 ## [Bluetooth stack](content/bluetooth/README.md)
