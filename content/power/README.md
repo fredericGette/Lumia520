@@ -7,7 +7,7 @@ Main source of power is the BL-5J battery.
 
 The battery can be recharged through the USB port.
 
-When in power off state, the phone can be started by applying the following current to the USB port:
+When in power off state, the phone can be started by applying the following current to the USB port (Vcc and Gnd pins)
 
 | Voltage | Duration | Current |
 |---------|----------|---------|
