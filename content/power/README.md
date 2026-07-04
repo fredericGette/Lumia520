@@ -2,8 +2,7 @@
 
 Main source of power is the BL-5J battery.  
 
-![front](battery_front.jpg)
-![rear](battery_rear.jpg)
+![battery](battery.jpg)
 
 The battery can be recharged through the USB port.
 
