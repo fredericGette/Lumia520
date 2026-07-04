@@ -13,9 +13,9 @@ There is at least 3 kinds of this battery:
 
 | Name | Resistance between BSI and GND |
 |------|--------------------------------|
-| Nokia 1320mAh | 100&Omega; |
+| Nokia 1320mAh | 100K&Omega; |
 | Nokia 1430mAh | 110K&Omega; |
-| Third party 1430mAh | 101&Omega; |
+| Third party 1430mAh | 101K&Omega; |
 
 The battery can be recharged through the USB port.
 
