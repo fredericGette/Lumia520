@@ -13,4 +13,8 @@ When in power off state, the phone can be started by applying the following curr
 |---------|----------|---------|
 | min/max 4.3v / 6.0v | min 250ms | 1.5mA |
 
+> [!Note]
+> It looks like the RTC of the phone don't have an alarm wake (see [acpitime driver](https://github.com/fredericGette/Lumia520/blob/main/content/drivers/acpitime.md))
+> But we can use the USB port to periodically start the phone every hour for example.  
+
 In the power off state, the resistance mesured between Vcc and Gnd at the USB port is ~43K&Omega;
