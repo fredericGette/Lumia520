@@ -4,6 +4,19 @@ Main source of power is the BL-5J battery.
 
 ![battery](battery.jpg)
 
+Looking at the front side of the battery, the 3 connectors are from left to right:  
+- VBAT
+- GND
+- BSI (Battery Size Indicator)
+
+There is at least 3 kinds of this battery:  
+
+| Name | Resistance between BSI and GND |
+|------|--------------------------------|
+| Nokia 1320mAh | 100&Omega; |
+| Nokia 1430mAh | 110K&Omega; |
+| Third party 1430mAh | 101&Omega; |
+
 The battery can be recharged through the USB port.
 
 When in power off state, the phone can be started by applying the following current to the USB port (Vcc and Gnd pins)
