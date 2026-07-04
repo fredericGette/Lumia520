@@ -4,12 +4,12 @@ Main source of power is the BL-5J battery.
 
 ![battery](battery.jpg)
 
-Looking at the front side of the battery, the 3 connectors are from left to right:  
+Looking at the front side of the battery, the 3 pins of the connector are from left to right:  
 - VBAT
 - GND
 - BSI (Battery Size Indicator)
 
-There is at least 3 kinds of this battery:  
+This battery comes in at least three different variants:    
 
 | Name | Resistance between BSI and GND |
 |------|--------------------------------|
