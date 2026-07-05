@@ -38,3 +38,14 @@ The oscillator gives us a square signal : the duration of the _high_ pulse is eq
 We can do that with a simple edge detector wich generate a short positive spike (~100µs) no the rising edge of the oscillation and another spike - but negative - on the falling edge.  
 
 ![edge_detector](edge_detector.png)
+
+## The monostable multivibrator
+
+In my opinion, the most difficult part of the circuit to understand.  
+The monostable multivibrator is in charge to transform a previously generated positive spike into a square pulse of several hundred milliseconds.
+
+- Two inverted Schmitt triggers
+- One resistor
+- One capacitor
+- One diod
+
