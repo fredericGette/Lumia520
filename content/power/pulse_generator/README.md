@@ -57,7 +57,7 @@ When idle (between two positive spikes) the components are in this status:
 - The capacitor is discharged (both ends are high).
 - The entry of the second Schmitt trigger is high.
 - In consequence, the output of this trigger is low. And the output of this stage low also.
-- The diod is blocking as its both ends are low.
+- The diod is off as its both ends are low.
 
 When a positive spike arrives:
 - The entry of the first Schmitt trigger is high due to the spike.
