@@ -52,10 +52,10 @@ The monostable multivibrator is responsible for transforming a previously genera
 ![monostable multivibrator](monostable_multivibrator.png)
 
 When idle (between two positive spikes) the components are in this status:
-- The entry of the first Schmitt trigger is low.
+- The input of the first Schmitt trigger is low.
 - In consequence, the output of this trigger is high.
 - The capacitor is discharged (both ends are high).
-- The entry of the second Schmitt trigger is high.
+- The input of the second Schmitt trigger is high.
 - In consequence, the output of this trigger is low. And the output of this stage low also.
 - The diod is off as its both ends are low.
 
