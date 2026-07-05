@@ -8,7 +8,8 @@ The circuit is composed of 5 stages:
 - A monostable multivibrator to generate the pulse
 - An output buffer is used to avoid disturbance to the monostable multivibrator caused by the load (the Lumia 520).
 
-The power source of the circuit must be anything able to generate between 4.5v and 6v and deliver a 1.5mA current.  
+The power source of the circuit can be anything able to generate between 4.5v and 6v and deliver a 1.5mA current.  
+For example: two CR2032 coin cells in series.
 
 
 ## The oscillator
