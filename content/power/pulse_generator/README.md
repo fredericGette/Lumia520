@@ -64,9 +64,9 @@ When a positive spike arrives:
 - In consequence, the output of this first trigger is low and the input of the second Schmitt trigger is low also.
 - In consequence, the output of this second trigger is high. And the output of this stage is high also. __This is the begining of the pulse.__
 - The current flows through the diod from the high output to the input of the stage, effectively "trapping" the state: Even when the original 100 µs external spike vanishes, the input of the first Schmitt trigger is held high by the output of the second Schmitt trigger.
-- The capacitor is charging through the resistor because there is a differential voltage between Vcc (high) and the output of the first Schmitt trigger (low).
+- The capacitor is charging through the resistor because there is a differential of voltage between Vcc (high) and the output of the first Schmitt trigger (low).
 - As the capacitor is charging, the voltage at the input of the second Schmitt trigger is slowly rising.
-- When this voltage is high enough (typically around $\frac{2}{3}$ of Vcc) the second Schmitt trigger interprets the input as high again.
+- When this voltage is high enough (typically around $\frac{2}{3}$ of Vcc) the second Schmitt trigger interprets its input as high.
 - In consequence, the output of this second trigger becomes low. And the output of this stage becomes low also. __This is the end of the pulse.__
 - The flow of the current through the diod is stopped and the input of the first Schmitt trigger is dragged to low.
 - In consequence, the output of this first trigger becomes high and the capacitor is discharged (no difference of voltage between its both ends).
