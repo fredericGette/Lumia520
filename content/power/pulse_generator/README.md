@@ -41,8 +41,8 @@ We can do that with a simple edge detector wich generate a short positive spike 
 
 ## The monostable multivibrator
 
-In my opinion, the most difficult part of the circuit to understand.  
-The monostable multivibrator is in charge to transform a previously generated positive spike into a square pulse of several hundred milliseconds.
+In my opinion, this is the most difficult part of the circuit to understand.  
+The monostable multivibrator is responsible for transforming a previously generated positive spike into a square pulse of several hundred milliseconds.
 
 - Two inverted Schmitt triggers
 - One resistor
