@@ -16,4 +16,4 @@ The power source of the circuit must be anything able to generate between 4.5v a
 To keep the circuit at my low electronic skill, I selected the solution of a _relaxation oscillator_.  
 This is not the most efficient solution, because it's not perfectly stable and it consumes _a lot of_ current (around 0.20 mA) but it's very easy to build.  
 
-[oscillator](ocillator.png)
+![oscillator](oscillator.png)
