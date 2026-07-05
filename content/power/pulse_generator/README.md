@@ -71,3 +71,11 @@ When a positive spike arrives:
 - The flow of the current through the diod is stopped and the input of the first Schmitt trigger is dragged to low.
 - In consequence, the output of this first trigger becomes high and the capacitor is discharged (no difference of voltage between its both ends).
 - The stage is idle again and ready for the next spike.
+
+## The output buffer
+
+We cannot directly put an external load a the output of the previous stage, otherwise the diod is unable to maintain the level of the input of the monostable multivibrator.
+A Schmitt trigger is used to isolate the monostable multivibrator from the external load. And as this is an inverted Schmitt trigger we have to put both of them in series to ouput the same signal as the input.  
+The output of the second Schmitt trigger can directly drive the Vcc pin of the phone's USB port.
+
+![buffer](buffer.png)
