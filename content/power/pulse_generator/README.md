@@ -22,4 +22,4 @@ This is not the most efficient solution, because it's not perfectly stable and i
 
 ![oscillator](oscillator.png)
 
-The capacitor is slowy charged and discharged through the resistor. The charge and the discharge phase are commanded by the inverted Schmitt trigger.  
+The capacitor is slowy charged and discharged through the resistor. The charge and the discharge phases are piloted by the inverted Schmitt trigger.  
