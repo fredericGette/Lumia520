@@ -74,7 +74,7 @@ When a positive spike arrives:
 
 ## The output buffer
 
-We cannot directly put an external load a the output of the previous stage, otherwise the diod is unable to maintain the level of the input of the monostable multivibrator.
+We cannot directly put an external load a the output of the previous stage, otherwise the diod is unable to maintain the level of the input of the monostable multivibrator.  
 A Schmitt trigger is used to isolate the monostable multivibrator from the external load. And as this is an inverted Schmitt trigger we have to put both of them in series to ouput the same signal as the input.  
 The output of the second Schmitt trigger can directly drive the Vcc pin of the phone's USB port.
 
