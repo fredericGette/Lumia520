@@ -2,11 +2,11 @@
 
 The circuit is composed of 5 stages:
 
-- an oscillator
-- a binary counter to decrease the frequency of the oscillator
-- an edge detector to detect the rising and falling edges of the oscillations
-- a monostable multivibrator to generate the pulse
-- an output buffer to avoid disturbation on the monostable multivibrator caused by the load (the Lumia 520)
+- An oscillator
+- A binary counter to decrease the frequency of the oscillator
+- An edge detector to detect the rising and falling edges of the oscillations
+- A monostable multivibrator to generate the pulse
+- An output buffer is used to avoid disturbance to the monostable multivibrator caused by the load (the Lumia 520).
 
 The power source of the circuit must be anything able to generate between 4.5v and 6v and deliver a 1.5mA current.  
 
