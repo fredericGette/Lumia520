@@ -37,7 +37,7 @@ For example, when the oscillator has a frequency of 4Hz (0.25s) then we have to 
 The oscillator gives us a square signal : the duration of the _high_ pulse is equal to the duration of the _low_ pause. As we want a short pulse (~400ms) compared to the long pause (~1 hour) we have to detect the begining of an oscillation and use it as the signal to start our own pulse.  
 We can do that with a simple edge detector wich generates a short positive spike (~100µs) on the rising edge of the oscillation and another negative spike on the falling edge.  
 
-![edge_detector](edge_detector.png)
+![edge detector](edge_detector.png)
 
 ## The monostable multivibrator
 
@@ -49,3 +49,24 @@ The monostable multivibrator is responsible for transforming a previously genera
 - One capacitor
 - One diod
 
+![monostable multivibrator](monostable_multivibrator.png)
+
+When idle (between two positive spikes) the components are in this status:
+- The entry of the first Schmitt trigger is low.
+- In consequence, the output of this trigger is high.
+- The capacitor is discharged (both ends are high).
+- The entry of the second Schmitt trigger is high.
+- In consequence, the output of this trigger is low. And the output of this stage low also.
+- The diod is blocking as its both ends are low.
+
+When a positive spike arrives:
+- The entry of the first Schmitt trigger is high due to the spike.
+- In consequence, the output of this first trigger is low and the input of the second Schmitt trigger is low also.
+- In consequence, the output of this second trigger is high. And the output of this stage is high also. __This is the begining of the pulse.__
+- The current flows through the diod from the high output to the input of the stage, effectively "trapping" the state: Even when the original 100 µs external spike vanishes, the input of the first Schmitt trigger is held high by the output of the second Schmitt trigger.
+- The capacitor is charging through the resistor: the current flowing from Vcc (high) to the output of the first Schmitt trigger (low) and the voltage at the input of the second Schmitt trigger is slowly rising.
+- When this voltage is high enough (typically around $\frac{2}{3}$ of Vcc) the second Schmitt trigger interprets the input as high again.
+- In consequence, the output of this second trigger is low. And the output of this stage is low also. __This is the end of the pulse.__
+- The flow of the current through the diod is stopped and the input of the first Schmitt trigger is dragged to low.
+- In consequence, the output of this trigger becomes high and the capacitor is discharged.
+- The stage is idle again.
