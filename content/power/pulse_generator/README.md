@@ -37,4 +37,4 @@ For example, when the oscillator has a frequency of 4Hz (0.25s) then we have to 
 The oscillator gives us a square signal : the duration of the _high_ pulse is equals to the duration of the _low_ pause. As we want a short pulse (~400ms) compared to the long pause (~1 hour) we have to detect the begining of an oscillation and use it as the signal to start our own pulse.  
 We can do that with a simple edge detector wich generate a short positive spike (~100µs) no the rising edge of the oscillation and another spike - but negative - on the falling edge.  
 
-
+![edge_detector](edge_detector.png)
