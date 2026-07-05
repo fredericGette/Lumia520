@@ -24,3 +24,10 @@ This is not the most efficient solution, because it's not perfectly stable and i
 ![oscillator](oscillator.png)
 
 The capacitor is slowy charged and discharged through the resistor. The charge and the discharge phases are piloted by the inverted Schmitt trigger.  
+
+## The binary counter
+
+The oscillator deliver a periodic signal in the second range, to get a period in the hour range we use one or two binary counter in series.  
+For example, when the oscillator has a frequency of 4Hz (0.25s) then we have to divide it by 16384 (2^14) to get a period of 4096s (~ 1hour and 8 minutes).
+
+![counter](counter.png)
