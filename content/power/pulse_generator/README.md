@@ -79,3 +79,5 @@ A Schmitt trigger is used to isolate the monostable multivibrator from the exter
 The output of the second Schmitt trigger can directly drive the Vcc pin of the phone's USB port.
 
 ![buffer](buffer.png)
+
+All circuits created with https://www.circuit-diagram.org/
