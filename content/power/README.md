@@ -38,7 +38,7 @@ At start the % of charge of the battery is partially determined by it's voltage.
 |---------|----------|-------|
 | 3.5v | 0% | Phone doesn't start |
 | 3.6v | 0% | Phone doesn't start |
-| 3.7v | 3-4% | Critical level. Can display the discarded battery image and refuse to start. |
+| 3.7v | 3-4% | Critical level. Can display the discharged battery image and refuse to start. |
 | 3.8v | 45-47% | |
 | 3.9v | 42%-70% | I guess it uses some other parameters to determine the charge % |
 | 4.0v | 88-89% | |
@@ -48,3 +48,6 @@ At start the % of charge of the battery is partially determined by it's voltage.
 > [!Note]
 > Even under a constant voltage supply (e.g., substituting the battery with a bench power supply), the phone's displayed battery percentage steadily decreases.
 > Once it drops to 3–4%, the device automatically shuts down.
+
+Image displayed when trying to start with a nearly depleted battery:  
+![red battery](red_battery.jpg)
