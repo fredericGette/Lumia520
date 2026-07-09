@@ -51,3 +51,8 @@ At start the % of charge of the battery is partially determined by it's voltage.
 
 Image displayed when trying to start with a nearly depleted battery:  
 ![red battery](red_battery.jpg)
+
+Example of power consumption when the phone starts (screen time-out configuration is 30s):  
+
+![power at startup](power_at_startup.png)
+
