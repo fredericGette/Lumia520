@@ -56,3 +56,7 @@ Example of power consumption when the phone starts (screen time-out configuratio
 
 ![power at startup](power_at_startup.png)
 
+| 0-40s | 40-60s | 60-90s | 90-130s |
+|-------|--------|--------|---------|
+| PBL, SBL1, SBL2, SBL3, UEFI, Windows boot. | Windows UI avaible, end of initialisation of the services. | Idle with low brightness. | Sleep mode, screen off. |
+
