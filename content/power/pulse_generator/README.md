@@ -25,6 +25,9 @@ This is not the most efficient solution, because it's not perfectly stable and i
 
 The capacitor is slowy charged and discharged through the resistor. The charge and the discharge phases are piloted by the inverted Schmitt trigger.  
 
+> [!NOTE]
+> As one leg of the capacitor is grounded, we can use an polarized electrolytic capacitor.
+
 ## The binary counter
 
 The oscillator delivers a periodic signal in the second range; to get a period in the hour range, we use one or two binary counters in series.  
@@ -50,7 +53,7 @@ The monostable multivibrator is responsible for transforming a previously genera
 - Two inverted Schmitt triggers
 - One resistor
 - One capacitor
-- One diod
+- One diode
 
 ![monostable multivibrator](monostable_multivibrator.png)
 
@@ -60,27 +63,48 @@ When idle (between two positive spikes) the components are in this status:
 - The capacitor is discharged (both ends are high).
 - The input of the second Schmitt trigger is high.
 - In consequence, the output of this trigger is low. And the output of this stage low also.
-- The diod is off as its both ends are low.
+- The diode is off as its both ends are low.
 
 When a positive spike arrives:
 - The entry of the first Schmitt trigger is high due to the spike.
 - In consequence, the output of this first trigger is low and the input of the second Schmitt trigger is low also.
 - In consequence, the output of this second trigger is high. And the output of this stage is high also. __This is the begining of the pulse.__
-- The current flows through the diod from the high output to the input of the stage, effectively "trapping" the state: Even when the original 100 µs external spike vanishes, the input of the first Schmitt trigger is held high by the output of the second Schmitt trigger.
+- The current flows through the diode from the high output to the input of the stage, effectively "trapping" the state: Even when the original 100 µs external spike vanishes, the input of the first Schmitt trigger is held high by the output of the second Schmitt trigger.
 - The capacitor is charging through the resistor because there is a differential of voltage between Vcc (high) and the output of the first Schmitt trigger (low).
 - As the capacitor is charging, the voltage at the input of the second Schmitt trigger is slowly rising.
 - When this voltage is high enough (typically around $\frac{2}{3}$ of Vcc) the second Schmitt trigger interprets its input as high.
 - In consequence, the output of this second trigger becomes low. And the output of this stage becomes low also. __This is the end of the pulse.__
-- The flow of the current through the diod is stopped and the input of the first Schmitt trigger is dragged to low.
+- The flow of the current through the diode is stopped and the input of the first Schmitt trigger is dragged to low.
 - In consequence, the output of this first trigger becomes high and the capacitor is discharged (no difference of voltage between its both ends).
 - The stage is idle again and ready for the next spike.
 
+> [!NOTE]
+> The capacitor must be bipolar.
+
 ## The output buffer
 
-We cannot directly put an external load a the output of the previous stage, otherwise the diod is unable to maintain the level of the input of the monostable multivibrator.  
+We cannot directly put an external load a the output of the previous stage, otherwise the diode is unable to maintain the level of the input of the monostable multivibrator.  
 A Schmitt trigger is used to isolate the monostable multivibrator from the external load. And as this is an inverted Schmitt trigger we have to put both of them in series to ouput the same signal as the input.  
 The output of the second Schmitt trigger can directly drive the Vcc pin of the phone's USB port.
 
 ![buffer](buffer.png)
 
 All circuits created with https://www.circuit-diagram.org/
+
+
+## Bill of Material
+
+- 1x CD40106 (6 inverted Schmitt triggers)
+- 1x CD4060 (14-stage binary counter)
+- 1x 10&micro;F electrolytic capacitor
+- 1x 10&micro;F bipolar capacitor
+- 1x 10nF ceramic capacitor
+- 1x 1N4148 diode
+- 2x 56k&Omega; resitor
+- 1x 10k&Omega; resitor
+- 1x 10k&Omega; trimmer
+
+> [!NOTE]
+> Use the trimmer to set the oscillator frequency. Adjust the signal at pin 7 of the CD4060 to a period of approximately 7 seconds; connecting pin 3 of the CD4060 to the edge detector will then produce a pulse every 2 hours.
+
+
