@@ -92,7 +92,7 @@ The output of the second Schmitt trigger can directly drive the Vcc pin of the p
 All circuits created with https://www.circuit-diagram.org/
 
 
-## Bill of Material
+## Bill of Materials
 
 - 1x CD40106 (6 inverted Schmitt triggers)
 - 1x CD4060 (14-stage binary counter)
