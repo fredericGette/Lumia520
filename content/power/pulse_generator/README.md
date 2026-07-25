@@ -32,6 +32,9 @@ For example, when the oscillator has a frequency of 4Hz (0.25s) then we have to 
 
 ![counter](counter.png)
 
+> [!NOTE]
+> We can also use one CD4060 instead of two CD4040 in series. And in addition it's possible to use its oscillator feature instead of our previous oscillator based on a inverted Schmitt trigger. But beware : in this case, we must use a bipolar capacitor which is bigger in size.
+
 ## The edge detector
 
 The oscillator gives us a square signal : the duration of the _high_ pulse is equal to the duration of the _low_ pause. As we want a short pulse (~400ms) compared to the long pause (~1 hour) we have to detect the begining of an oscillation and use it as the signal to start our own pulse.  
