@@ -108,3 +108,9 @@ All circuits created with https://www.circuit-diagram.org/
 > Use the trimmer to set the oscillator frequency. Adjust the signal at pin 7 of the CD4060 to a period of approximately 7 seconds; connecting pin 3 of the CD4060 to the edge detector will then produce a pulse every 2 hours.
 
 
+## Build
+
+Circuit made with [VeeCAD 2.46](https://veecad.com/)
+![circuit](circuit.PNG)
+
+[.per file](pulse_generator.per)
