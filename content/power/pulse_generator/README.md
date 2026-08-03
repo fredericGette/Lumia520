@@ -113,4 +113,4 @@ All circuits created with https://www.circuit-diagram.org/
 Circuit made with [VeeCAD 2.46](https://veecad.com/)
 ![circuit](circuit.PNG)
 
-[.per file](pulse_generator.per)
+[VeeCAD .per file](pulse_generator.per)
