@@ -114,3 +114,6 @@ Circuit made with [VeeCAD 2.46](https://veecad.com/)
 ![circuit](circuit.PNG)
 
 [VeeCAD .per file](pulse_generator.per)
+
+![top](top.jpg)
+![bottom](bottom.jpg)
