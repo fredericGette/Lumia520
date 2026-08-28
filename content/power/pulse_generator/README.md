@@ -117,3 +117,15 @@ Circuit made with [VeeCAD 2.46](https://veecad.com/)
 
 ![top](top.jpg)
 ![bottom](bottom.jpg)
+
+3D printed case made with [FreeCAD](https://www.freecad.org/)
+
+[FreeCAD bottom file](bottom_pulse_generator.FCStd)  
+[FreeCAD top file](top_pulse_generator.FCStd)
+
+![finished](pulse_generator.jpg)
+![open](pulse_generator_inside.jpg)
+
+> [!NOTE]
+> I added a power switch.
+
