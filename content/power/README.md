@@ -46,8 +46,8 @@ At start the % of charge of the battery is partially determined by it's voltage.
 | 4.2v | 100% |
 
 > [!Note]
-> Even under a constant voltage supply (e.g., substituting the battery with a bench power supply), the phone's displayed battery percentage steadily decreases.
-> Once it drops to 3–4%, the device automatically shuts down.
+> Even under a constant voltage supply (e.g., substituting the battery with a bench power supply), the phone's displayed battery percentage steadily decreases.  
+> Once it drops to 3–4%, the device automatically shuts down.  
 > See this example of [a fake battery](https://github.com/fredericGette/Lumia520/blob/main/content/power/fake_battery/README.md) to power the phone without a battery.
 
 Image displayed when trying to start with a nearly depleted battery:  
