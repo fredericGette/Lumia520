@@ -6,3 +6,10 @@
 - 1x DC Power Connector 5.5mm x 2.1mm
 - 1x LM2596 2A
 - 1x 100k&Omega; resitor
+
+## Builds
+
+Circuit made with [VeeCAD 2.46](https://veecad.com/)
+![circuit](circuit.png)
+
+[VeeCAD .per file](fake_battery.per)
