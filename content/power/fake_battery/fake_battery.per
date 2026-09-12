@@ -1,0 +1,104 @@
+[Version]
+Product,2
+File,19
+{
+"Config" : {
+  "NetImportFormat" : "Protel"
+},
+"Board" : {
+  "Width" : 17,
+  "Height" : 13,
+  "Pattern" : "Strip"
+},
+"CelledOutlines" : [
+],
+"LeadedOutlines" : [
+  { "Name" : "Resistor", "Locked" : false,
+    "BodyLength" : 3, "BodyWidth" : 1,
+    "Pin0Name" : "1", "Pin1Name" : "2", "ShowReference" : false
+  }
+],
+"RadialOutlines" : [
+],
+"CustomOutlines" : [
+  { "Name" : " LM2596", "Locked" : true,
+    "Pins" : [
+    { "Name" : "out-", "X5" : 2, "Y5" : 2 },
+    { "Name" : "out+", "X5" : 37, "Y5" : 2 },
+    { "Name" : "int-", "X5" : 2, "Y5" : 82 },
+    { "Name" : "in+", "X5" : 37, "Y5" : 82 }
+    ],
+    "Lines" : [
+    { "X5" : 0, "Y5" : 0, "DX5" : 39, "DY5" : 0},
+    { "X5" : 0, "Y5" : 0, "DX5" : 0, "DY5" : 84},
+    { "X5" : 39, "Y5" : 0, "DX5" : 0, "DY5" : 84},
+    { "X5" : 0, "Y5" : 84, "DX5" : 39, "DY5" : 0}
+    ]
+  },
+  { "Name" : "CI415", "Locked" : true,
+    "Pins" : [
+    { "Name" : "C+", "X5" : 7, "Y5" : 2 },
+    { "Name" : "0", "X5" : 17, "Y5" : 7 },
+    { "Name" : "C-", "X5" : 7, "Y5" : 12 }
+    ],
+    "Lines" : [
+    { "X5" : 0, "Y5" : 0, "DX5" : 0, "DY5" : 14},
+    { "X5" : 0, "Y5" : 0, "DX5" : 14, "DY5" : 0},
+    { "X5" : 14, "Y5" : 0, "DX5" : 0, "DY5" : 14}
+    ]
+  }
+],
+"SmdOutlines" : [
+],
+"Components" : [
+  { "Designator" : "LM2596", "Value" : "9V -> 4.1V", "Outline" : " LM2596",
+  "X1000" : 0, "Y1000" : 7000, "EndDeltaX" : 1, "EndDeltaY" : 0,
+  "Text" : { "X" : 3, "Y" : 11, "Angle" : 0, "Visible" : true },
+  "Group" : 0
+  },
+  { "Designator" : "POWER", "Value" : "9V", "Outline" : "CI415",
+  "X1000" : 3000, "Y1000" : 9000, "EndDeltaX" : 0, "EndDeltaY" : 1,
+  "Text" : { "X" : 1, "Y" : 3, "Angle" : 0, "Visible" : true },
+  "Group" : 0
+  },
+  { "Designator" : "R", "Value" : "100K", "Outline" : "Resistor",
+  "X1000" : 9000, "Y1000" : 1000, "EndDeltaX" : 5, "EndDeltaY" : 0,
+  "Text" : { "X" : -1, "Y" : 2, "Angle" : 0, "Visible" : true },
+  "Group" : 0
+  }
+],
+"Links" : [
+  { "X" : 15, "Y" : 7, "EndDeltaX" : 0, "EndDeltaY" : 5, "Group" : 0 },
+  { "X" : 8, "Y" : 0, "EndDeltaX" : 0, "EndDeltaY" : 10, "Group" : 0 },
+  { "X" : 7, "Y" : 1, "EndDeltaX" : 0, "EndDeltaY" : 7, "Group" : 0 },
+  { "X" : 1, "Y" : 7, "EndDeltaX" : 0, "EndDeltaY" : 2, "Group" : 0 },
+  { "X" : 2, "Y" : 0, "EndDeltaX" : 0, "EndDeltaY" : 11, "Group" : 0 },
+  { "X" : 15, "Y" : 0, "EndDeltaX" : 0, "EndDeltaY" : 1, "Group" : 0 }
+],
+"Breaks" : [
+  { "X" : 4, "Y" : 0, "Shift" : "none", "Group" : 0 },
+  { "X" : 4, "Y" : 7, "Shift" : "none", "Group" : 0 },
+  { "X" : 12, "Y" : 1, "Shift" : "none", "Group" : 0 },
+  { "X" : 7, "Y" : 10, "Shift" : "none", "Group" : 0 }
+],
+"Wires" : [
+    { "Value" : "B+", "X" : 9, "Y" : 12, "Group" : 0 },
+    { "Value" : "B-", "X" : 9, "Y" : 10, "Group" : 0 },
+    { "Value" : "ID", "X" : 9, "Y" : 8, "Group" : 0 }
+],
+"Text" : [
+],
+"Nets" : [
+],
+"NetColors" : [
+    { "Node" : "" },
+    { "Node" : "" },
+    { "Node" : "" },
+    { "Node" : "" },
+    { "Node" : "" },
+    { "Node" : "" }
+],
+"Notes" : {
+  "Lines" : ""
+}
+}
