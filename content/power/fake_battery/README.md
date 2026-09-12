@@ -17,3 +17,13 @@ Circuit made with [VeeCAD 2.46](https://veecad.com/)
 
 Instead of placing the resistor under the LM2596 board, you can connect it directly between `ID` and `B-` as shown in the picture (and you also save two wires):  
 ![resistor](resistor.jpg)
+
+![top](top.jpg)
+![bottom](bottom.jpg)
+![front](front.jpg)
+![side](side.jpg)
+
+![exploded](exploded.jpg)
+
+3D printed case made with [FreeCAD](https://www.freecad.org/)  
+Add 2x M3*8 screws and 2x M3x4x5 inserts for fixation.
