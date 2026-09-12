@@ -27,3 +27,5 @@ Instead of placing the resistor under the LM2596 board, you can connect it direc
 
 3D printed case made with [FreeCAD](https://www.freecad.org/)  
 Add 2x M3*8 screws and 2x M3x4x5 inserts for fixation.
+
+[FreeCAD file](fake_battery.FCStd) 
