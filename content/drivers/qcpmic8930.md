@@ -28,7 +28,7 @@ Registry values, read from the driver's **service key** (`WdfDriverGetRegistryPa
 
 GUID of the ETW provider:  
 `{1A01E46E-E48A-4C7E-908C-E84F193B44CE}`  
-Keyword bits tested in `dword_43C1C8`: 1 = errors (`"E1"`, `"E2"`… plus the NTSTATUS / PMIC error), 2 = information (IOCTL name and buffers, ACPI values), 4 = function entry/exit.
+Keyword bits tested in `g_EtwEnableFlags`: 1 = errors (`"E1"`, `"E2"`… plus the NTSTATUS / PMIC error), 2 = information (IOCTL name and buffers, ACPI values), 4 = function entry/exit.
 
 It communicates with the following devices:  
 | Device | Driver | Comment |
@@ -64,24 +64,24 @@ It communicates with the following devices:
 
 Note: [qcbms8930.sys](./qcbms8930.md) evaluates a method with the same name `PMCF` on its own ACPI node, but expects 7 integers there.
 
-The cfg/cmd windows of each PMIC are mapped `MmNonCached` by sub_4214F4 (bus ids `PMIC_SSBI` = 10 and `PMIC_SSBI2` = 11; pointers in `dword_43B160`/`dword_43B16C` and `dword_43B164`/`dword_43B168`). Register accesses go through the `HAL_SBI_SSBI_V2_PMIC_ARBITER_CMD` routines.
+The cfg/cmd windows of each PMIC are mapped `MmNonCached` by `PmicSsbiMapIoSpace` (0x4214F4; bus ids `PMIC_SSBI` = 10 and `PMIC_SSBI2` = 11; pointers `g_Ssbi1CfgBase`/`g_Ssbi1CmdBase` and `g_Ssbi2CfgBase`/`g_Ssbi2CmdBase`). Register accesses go through the `HAL_SBI_SSBI_V2_PMIC_ARBITER_CMD` routines.
 
 ### PMIC detection
 
-For each PMIC, sub_413BD4 reads register `0x002` (REV) and, if its high nibble is `0xF`, register `0x0E8` (REV2), retrying 5 times at 100 ms intervals:  
+For each PMIC, `PmicDetectModelRevision` (0x413BD4) reads register `0x002` (REV) and, if its high nibble is `0xF`, register `0x0E8` (REV2), retrying 5 times at 100 ms intervals:  
 | REV[7:4] | REV2 | Model | Comment |
 |----------|------|-------|---------|
 | 0xE | — | 0 | ? |
 | 0xF | 0x06 | 1 | PM8921 ? |
 | 0xF | 0x0B | 2 | ? |
-| 0xF | 0x09 | 3 | PM8038 ? (Lumia 520). Some blocks (sub_416D1C table) are only initialised for this model |
+| 0xF | 0x09 | 3 | PM8038 ? (Lumia 520). Some blocks (sub_416D1C table, filled by `PmicLibraryInit` 0x41259C) are only initialised for this model |
 | other | other | 4 | Unknown, the PMIC is skipped |
 
-REV[3:0] is kept as the revision. The result is stored in `dword_43AE90` (count, then index/model/revision per PMIC) and returned by `IOCTL_PM_HARDWARE_GET_PMICS_INFO`. Most blocks are only populated for models 1 and 3; for the others their function table is zeroed and the IOCTLs return PMIC error 19.
+REV[3:0] is kept as the revision. The result is stored in `g_PmicsInfo` (count, then index/model/revision per PMIC) and returned by `IOCTL_PM_HARDWARE_GET_PMICS_INFO`. Most blocks are only populated for models 1 and 3; for the others their function table is zeroed and the IOCTLs return PMIC error 19.
 
 ### USB simulation mode
 
-When `UseUsb` ≠ 0, sub_4212F0 opens `\Device\QCUSB_COM%d_%d` and checks a handshake (`XB` → `=XB03`). SSBI accesses are then sent as ASCII lines terminated by CR LF (sub_4210C8), and the answer is read until LF (bytes > 0x7F are XORed with 0xA5):  
+When `UseUsb` ≠ 0, `PmicUsbOpenPort` (0x4212F0) opens `\Device\QCUSB_COM%d_%d` and checks a handshake (`XB` → `=XB03`). SSBI accesses are then sent as ASCII lines terminated by CR LF (`PmicUsbSendCommand`, 0x4210C8), and the answer is read until LF (bytes > 0x7F are XORed with 0xA5):  
 | Command | Meaning |
 |---------|---------|
 | `SR%03X` | Read PMIC register |
@@ -94,7 +94,7 @@ When `UseUsb` ≠ 0, sub_4212F0 opens `\Device\QCUSB_COM%d_%d` and checks a hand
 
 All requests go through `OnIoDeviceControl` (0x40F7D4) → `HandleIoCtlRequest` (0x40A4AC), which switches on the device type (upper 16 bits). Every code uses **METHOD_BUFFERED** / **FILE_ANY_ACCESS**, and function = 1000 + index in the device type's descriptor table (`0x…0FA0` = 1000, `0x…0FA4` = 1001, …). Use `python .claude/skills/driver-doc/scripts/ioctl.py <code>` to decode a code.
 
-| Device type | Block | Handler (IDB name) | Descriptor table |
+| Device type | Block | Handler | Descriptor table |
 |-------------|-------|--------------------|------------------|
 | 0x8001 | Test | `HandlePmicTestRequest` 0x410A4C | 0x42ADF0 |
 | 0x8002 | ADC, XOADC sequencer, BTM, CCADC | `HandlePmicAdcRequest` 0x401900 | 0x42BC48 |
@@ -116,8 +116,8 @@ All requests go through `OnIoDeviceControl` (0x40F7D4) → `HandleIoCtlRequest` 
 | 0x8019 | BMS (fuel gauge) | `HandlePmicBmsRequest` 0x405308 | 0x42E880 |
 | 0x801A | Battery alarm | `HandlePmicBatAlrmRequest` 0x4046D0 | 0x42E540 |
 | 0x801B | Coin-cell charger | `HandlePmicCoinChgRequest` 0x407574 | 0x430B28 |
-| 0x801D | Vibrator | `HandlePmicVibRequest` 0x410B48 (IDB: `HandlePmicCoinChgRequest_0`) | 0x434F50 |
-| 0x801E | Clocks | `HandlePmicClkRequest` 0x407210 (IDB: `HandlePmicAudioRequest_0`) | 0x430910 |
+| 0x801D | Vibrator | `HandlePmicVibRequest` 0x410B48 | 0x434F50 |
+| 0x801E | Clocks | `HandlePmicClkRequest` 0x407210 | 0x430910 |
 
 Other device types → `STATUS_INVALID_DEVICE_REQUEST` (0xC0000010). The binary also contains descriptors for device types it doesn't handle (`0x8009` `IOCTL_PM_3P_GAUGE_*`, `0x800B` `IOCTL_BATT_MNGR_*`, `0x800C` `IOCTL_PMIC_BATT_MINI_*`, `0x8010` `IOCTL_PM_ABD_*`, `0x8016` `IOCTL_PM_3P_CHG_*`); they are used only to print IOCTL names in traces (`getIoControlCodeString`, 0x411BF8).
 
@@ -168,7 +168,7 @@ Not implemented: after the size validation (`ValidatePmicTestRequest`, 0x410890)
 ### IOCTL 0x8002xxxx — ADC / BTM / CCADC
 
 This IOCTL is processed by Qcpmic8930.sys  
-Function table: `dword_43BFE0` (61 entries per PMIC), only for models 1 and 3.
+Function table: `g_PmAdcFuncTable` (61 entries per PMIC), only for models 1 and 3.
 
 | IOCTL | Fn | Name | In | Out | Input (after PMIC index) | Output |
 |-------|----|------|----|-----|--------------------------|--------|
@@ -217,7 +217,7 @@ Function table: `dword_43BFE0` (61 entries per PMIC), only for models 1 and 3.
 ### IOCTL 0x8003xxxx — GPIO
 
 This IOCTL is processed by Qcpmic8930.sys  
-Function table: `dword_43BBC0` (36 entries per PMIC).
+Function table: `g_PmGpioFuncTable` (36 entries per PMIC).
 
 | IOCTL | Fn | Name | In | Out | Handled | Input (after PMIC index) | Output |
 |-------|----|------|----|-----|---------|--------------------------|--------|
@@ -232,7 +232,7 @@ Function table: `dword_43BBC0` (36 entries per PMIC).
 | 0x80030FC0 | 1008 | IOCTL_PM_GPIO_GET_NUMBER_OF_GPIOS | 4 | 12 | yes | — | `00-03` PMIC index, `04-07` number of GPIOs, `08-0B` error |
 | 0x80030FC4 | 1009 | IOCTL_PM_GPIO_GET_GPIO_CONFIG | 12 | 2816 | yes | pointer to a GPIO number array, count | 44 bytes per GPIO (see below) |
 
-`GET_GPIO_STATE` (`PmicGpio_unknown1`, 0x409A3C): when `in[2]` ≠ 0 the state is read with the GPIO function; when it is 0 the real-time status of interrupt `192 + gpio` is read through the IRQ block instead.
+`GET_GPIO_STATE` (`PmicGpioGetGpioState`, 0x409A3C): when `in[2]` ≠ 0 the state is read with the GPIO function; when it is 0 the real-time status of interrupt `192 + gpio` is read through the IRQ block instead.
 
 `GET_GPIO_CONFIG` (0x80030FC4) Inputbuffer:  
 | Bytes | Value | Comment |
@@ -241,7 +241,7 @@ Function table: `dword_43BBC0` (36 entries per PMIC).
 | 04-07 | ? | **Pointer** to an array of `count` GPIO numbers — dereferenced directly by the driver |
 | 08-0B | ? | count (must be ≤ number of GPIOs + 1) |
 
-Output: `count` entries of 44 bytes (`BytesReturned` = 44 × count; the buffer must still be exactly 2816 = 64 × 44 bytes). Entry: `00-03` GPIO number, `04-07` error, `08-1B` 5 configuration dwords, `1C-2B` 16 more bytes (`PmicGpio_unknown3`, 0x409BFC). Field meanings ?
+Output: `count` entries of 44 bytes (`BytesReturned` = 44 × count; the buffer must still be exactly 2816 = 64 × 44 bytes). Entry: `00-03` GPIO number, `04-07` error, `08-1B` 5 configuration dwords, `1C-2B` 16 more bytes (`PmicGpioGetGpioConfig`, 0x409BFC). Field meanings ?
 
 > [!NOTE]
 > `IOCTL_PM_GPIO_GET_GPIO_CONFIG` reads the GPIO list through a raw pointer taken from the input buffer, without probing it. It is only safe for kernel-mode callers.
@@ -251,7 +251,7 @@ Output: `count` entries of 44 bytes (`BytesReturned` = 44 × count; the buffer m
 ### IOCTL 0x8004xxxx — Keypad / power key
 
 This IOCTL is processed by Qcpmic8930.sys  
-Function tables: `dword_43BAC0` (keypad, 13 entries per PMIC) and `dword_43BA60` (power key, 12 entries per PMIC).
+Function tables: `g_PmKeypadFuncTable` (keypad, 13 entries per PMIC) and `g_PmPwrKeyFuncTable` (power key, 12 entries per PMIC).
 
 | IOCTL | Fn | Name | In | Out | Input (after PMIC index) | Output |
 |-------|----|------|----|-----|--------------------------|--------|
@@ -268,7 +268,7 @@ Function tables: `dword_43BAC0` (keypad, 13 entries per PMIC) and `dword_43BA60`
 ### IOCTL 0x8005xxxx — MPP (multi-purpose pins)
 
 This IOCTL is processed by Qcpmic8930.sys  
-Function table: `dword_43B8E0` (24 entries per PMIC), only for models 1–3.
+Function table: `g_PmMppFuncTable` (24 entries per PMIC), only for models 1–3.
 
 | IOCTL | Fn | Name | In | Out | Handled | Input (after PMIC index) | Output |
 |-------|----|------|----|-----|---------|--------------------------|--------|
@@ -311,7 +311,7 @@ This IOCTL is processed by Qcpmic8930.sys
 | 0x80060FE0 | 1016 | IOCTL_PM_VREG_INITIALIZE | 0 | 4 | yes |
 | 0x80060FE4 | 1017 | IOCTL_PM_VREG_GET_POWER_SETTINGS | 4 | 60 | yes |
 
-The regulators are managed by a vote-aggregation layer (`PmicCommonInterface.c`, `InitializePmicDevice` 0x421AC0, mutex `unk_43B500`): each client's vote is kept in a per-resource list and the aggregated setting is programmed into the PMIC.
+The regulators are managed by a vote-aggregation layer (`PmicCommonInterface.c`, `InitializePmicDevice` 0x421AC0, mutex `g_VregMutex`): each client's vote is kept in a per-resource list and the aggregated setting is programmed into the PMIC.
 
 * `IOCTL_PM_VREG_INITIALIZE` (`InitializePmicVRegInterface`, 0x411194): initialises the vote layer if needed. Output: error (0, or 89 on failure).
 * `IOCTL_PM_BEGIN_SEQUENCE` / `IOCTL_PM_END_SEQUENCE` (`BeginVoltageRegulatorsSequenceVote` 0x422F24 / `EndVoltageRegulatorsSequenceVote` 0x42305C): bracket a group of votes (the mutex is held during the callback). Output: error (93 if not initialised).
@@ -346,7 +346,7 @@ Resource ids, in the order of the `PM_VREG_RESOURCE_ID_*` string table (`.data:0
 ### IOCTL 0x8007xxxx — Interrupts
 
 This IOCTL is processed by Qcpmic8930.sys  
-Function table: `unk_43BCE0` (28 entries per PMIC), only for models 1 and 3.
+Function table: `g_PmIrqFuncTable` (28 entries per PMIC), only for models 1 and 3.
 
 | IOCTL | Fn | Name | In | Out | Input (after PMIC index) | Output |
 |-------|----|------|----|-----|--------------------------|--------|
@@ -358,14 +358,14 @@ Function table: `unk_43BCE0` (28 entries per PMIC), only for models 1 and 3.
 | 0x80070FB4 | 1005 | IOCTL_PM_IRQ_TRIGGER_INTERRUPT | 8 | 4 | interrupt id | error |
 
 `GET_INTERRUPTS_STATUS` with a type other than 0/1 returns `STATUS_INVALID_PARAMETER` (0xC000000D) and error 95.  
-`TRIGGER_INTERRUPT` (0x40BE60) has no hardware "software trigger": it reads the current trigger type of the interrupt and temporarily reprograms its polarity/edge so that it fires, and remembers it in `dword_43A8B0`. `CLEAR_ACTIVE_INTERRUPTS` restores the original trigger of such interrupts before clearing them.
+`TRIGGER_INTERRUPT` (0x40BE60) has no hardware "software trigger": it reads the current trigger type of the interrupt and temporarily reprograms its polarity/edge so that it fires, and remembers it in `g_IrqSwTriggerState`. `CLEAR_ACTIVE_INTERRUPTS` restores the original trigger of such interrupts before clearing them.
 
 ---
 
 ### IOCTL 0x8008xxxx — Charger
 
 This IOCTL is processed by Qcpmic8930.sys  
-Function table: `unk_43AEB0` (57 entries per PMIC), only for models 1 and 3. Besides the descriptor check, each function re-checks the output length and returns `STATUS_INVALID_PARAMETER_4` (0xC00000F2) on mismatch.
+Function table: `g_PmChgFuncTable` (57 entries per PMIC), only for models 1 and 3. Besides the descriptor check, each function re-checks the output length and returns `STATUS_INVALID_PARAMETER_4` (0xC00000F2) on mismatch.
 
 | IOCTL | Fn | Name | In | Out | Input (after PMIC index) | Output |
 |-------|----|------|----|-----|--------------------------|--------|
@@ -393,7 +393,7 @@ Function table: `unk_43AEB0` (57 entries per PMIC), only for models 1 and 3. Bes
 ### IOCTL 0x800Axxxx — RTC
 
 This IOCTL is processed by Qcpmic8930.sys  
-Function table: `unk_43B080` (25 entries per PMIC, `perhaps_InitRtcFunctionTable`), only for models 1 and 3.
+Function table: `g_PmRtcFuncTable` (25 entries per PMIC, `perhaps_InitRtcFunctionTable`), only for models 1 and 3.
 
 | IOCTL | Fn | Name | In | Out | Input (after PMIC index) | Output |
 |-------|----|------|----|-----|--------------------------|--------|
@@ -454,7 +454,7 @@ This IOCTL is processed by Qcpmic8930.sys
 ### IOCTL 0x8011xxxx — PSI
 
 This IOCTL is processed by Qcpmic8930.sys  
-Function table: `unk_43B800` (26 entries per PMIC). Meaning of "PSI" ?
+Function table: `g_PmPsiFuncTable` (26 entries per PMIC). Meaning of "PSI" ?
 
 | IOCTL | Fn | Name | In | Out | Input (after PMIC index) | Output |
 |-------|----|------|----|-----|--------------------------|--------|
@@ -520,7 +520,7 @@ This IOCTL is processed by Qcpmic8930.sys
 |-------|-------|---------|
 | 00-03 | e.g. `01 00 00 00` | Number of detected PMICs (no error field) |
 
-`GET_PMICS_INFO` Outputbuffer (copy of `dword_43AE90`):  
+`GET_PMICS_INFO` Outputbuffer (copy of `g_PmicsInfo`):  
 | Bytes | Value | Comment |
 |-------|-------|---------|
 | 00-03 | ? | Number of detected PMICs |
@@ -535,7 +535,7 @@ This IOCTL is processed by Qcpmic8930.sys
 ### IOCTL 0x8019xxxx — BMS (fuel gauge)
 
 This IOCTL is processed by Qcpmic8930.sys  
-Function table: `dword_43BE40` (29 entries per PMIC), only for models 1 and 3. The controls are sent by [qcbms8930.sys](./qcbms8930.md).
+Function table: `g_PmBmsFuncTable` (29 entries per PMIC), only for models 1 and 3. The controls are sent by [qcbms8930.sys](./qcbms8930.md).
 
 | IOCTL | Fn | Name | In | Out | Handled | Input (after PMIC index) | Output |
 |-------|----|------|----|-----|---------|--------------------------|--------|
@@ -551,7 +551,7 @@ Function table: `dword_43BE40` (29 entries per PMIC), only for models 1 and 3. T
 | 0x80190FC4 | 1009 | IOCTL_PM_GAUGE_BMS_OVERRIDE_VBAT_MODE | 8 | 4 | yes | 2 bytes at `04`, `05` | error |
 | 0x80190FC8 | 1010 | IOCTL_PM_GAUGE_BMS_SET_CHARGING_STATE | 8 | 4 | yes | state (byte) | error |
 | 0x80190FCC | 1011 | IOCTL_PM_GAUGE_BMS_ENABLE_OCV_UPDATE | 8 | 4 | yes | enable (byte) | error |
-| 0x80190FD0 | 1012 | IOCTL_PM_GAUGE_BMS_CONFIGURE | 36 | 4 | yes | 8 dwords (mode, 3 parameters, 4 thresholds, −1 = unchanged); handled by sub_4121C8 | error |
+| 0x80190FD0 | 1012 | IOCTL_PM_GAUGE_BMS_CONFIGURE | 36 | 4 | yes | 8 dwords (mode, 3 parameters, 4 thresholds, −1 = unchanged); handled by `PmicBmsConfigure` (0x4121C8) | error |
 
 ---
 
@@ -585,7 +585,7 @@ This IOCTL is processed by Qcpmic8930.sys
 |-------|----|------|----|-----|--------------------------|--------|
 | 0x801D0FA0 | 1000 | IOCTL_PM_VIB_CONTROL_REGISTER | 8 | 4 | value (voltage/level ?) | error |
 
-Handler 0x410C94 (IDB: `PM_CLK_SET_MP3_1_GPIO_DIV_REGISTE_0`, trace name `PM_VIB_CONTROL_REGISTER`).
+Handler `PM_VIB_CONTROL_REGISTER` (0x410C94).
 
 ---
 
@@ -635,7 +635,6 @@ Present only in the name table; sending them returns `STATUS_INVALID_DEVICE_REQU
 
 * `EvtIoDefault` (`OnIoDefault`, 0x40F75C) only traces and never completes the request: a read or write sent to `\\.\QCOMPMIC` stays pending.
 * The queue context holds a 10-second WDF timer (`TimerCreate` / `OnTimer`) that completes a stored request with a stored status; nothing in the driver stores a request there, so it looks unused.
-* Several block handlers are misnamed in the IDB because they share code patterns: `HandlePmicAudioRequest_0` = clock handler, `HandlePmicCoinChgRequest_0` = vibrator handler, `ValidatePmicAudioRequest_0` (0x41235C) = `ValidatePmicClkRequest`, `ValidatePmicHardwareRequest_0` (0x413470) = `ValidatePmicPwmRequest`, `ValidatePmicCoinChgRequest_0` (0x413880) = `ValidatePmicVibRequest`.
 
 ---
 
