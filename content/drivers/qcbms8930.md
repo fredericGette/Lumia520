@@ -1,7 +1,7 @@
 ## Qcbms8930.sys
 
 PMIC Battery Management System (BMS) / fuel-gauge driver.  
-It provides the battery state-of-charge, voltage, current and charging-state control for Qualcomm MSM8930-class platforms. It exposes a set of `IOCTL_BMS_*` controls (device type `0x8018`) that are consumed by the Windows battery stack (`BATTC` → `NokiaEnergyDriver`), and it drives the actual PMIC fuel-gauge hardware through a companion PMIC device using `IOCTL_PM_GAUGE_*` (device type `0x8019`) and `IOCTL_PM_CCADC_*` (device type `0x8002`) controls.  
+It provides the battery state-of-charge, voltage, current and charging-state control for Qualcomm MSM8930-class platforms. It exposes a set of `IOCTL_BMS_*` controls (device type `0x8018`) that are consumed by the Windows battery stack (`BATTC` → `NokiaEnergyDriver`), and it drives the actual PMIC fuel-gauge hardware through the PMIC driver [qcpmic8930.sys](./qcpmic8930.md) using `IOCTL_PM_GAUGE_*` (device type `0x8019`) and `IOCTL_PM_CCADC_*` (device type `0x8002`) controls.  
 The battery profile — OCV/RBAT/FCC curves and charging limits — is loaded from the file `BATTERY.PROVISION` on the EFIESP partition, and is (re)selected by the battery-ID resistor ADC reading received through `IOCTL_BMS_SET_SYSTEM_INFO`.  
 The state-of-charge is computed from a blend of coulomb counting and an OCV-vs-temperature-vs-SOC lookup, load-compensated with the battery internal resistance (Rbat), then temperature/aging-derated and slew-limited before being reported. The coulomb accumulator is persisted in a UEFI variable.
 
@@ -68,7 +68,7 @@ Content of `BmsDataVariables` as written by `PmicBmsUpdateAndPersistAccumulator`
 | 14-17 | ? | `dword_4254D0` |
 | 18-1B | ? | `dword_42C8E0` (flags/status ?) |
 
-ACPI: at `EvtDevicePrepareHardware` the driver evaluates the method `PMCF` on its ACPI node (`IOCTL_ACPI_EVAL_METHOD` 0x32C004, no arguments). It expects a package of 7 integers, stored in the device context at `+0x04`…`+0x1C`:  
+ACPI: at `EvtDevicePrepareHardware` the driver evaluates the method `PMCF` on its ACPI node (`IOCTL_ACPI_EVAL_METHOD` 0x32C004, no arguments). It expects a package of 7 integers, stored in the device context at `+0x04`…`+0x1C` (not the same content as the `PMCF` method of [qcpmic8930.sys](./qcpmic8930.md#acpi-pmcf), which returns 9 integers describing the SSBI buses):  
 | Index | Comment |
 |-------|---------|
 | 0 | Sense resistor in µΩ (overridable by the registry) |
@@ -85,9 +85,9 @@ None. `EtwWrite` is called with a `RegHandle` of 0 (the driver never calls `EtwR
 It communicates with the following devices (all found with `IoRegisterPlugPlayNotification` on their interface class, then opened with `IoGetDeviceObjectPointer`):  
 | Interface class GUID | Driver | Comment |
 |----------------------|--------|---------|
-| `{D17B2593-7189-4E1E-91F1-00798E07B8AB}` | ? (PMIC driver) | Primary companion. Target of all `IOCTL_PM_GAUGE_*` (`0x8019xxxx`) and `IOCTL_PM_CCADC_*` (`0x8002xxxx`) requests. Its removal stops the BMS and disables this driver's interface |
-| `{61630799-922A-4980-99D9-90C39084A979}` | ? (PMIC RTC) | Time source via `IOCTL_PM_RTC_GET_TIME` (`0x800A0FA8`) |
-| `{A942B3D9-EC95-4754-AE45-49C48735B893}` | ? | Only awaited: its arrival sets a flag, no IOCTL is sent to it |
+| `{D17B2593-7189-4E1E-91F1-00798E07B8AB}` | [qcpmic8930.sys](./qcpmic8930.md) | Primary companion. Target of all `IOCTL_PM_GAUGE_*` (`0x8019xxxx`) and `IOCTL_PM_CCADC_*` (`0x8002xxxx`) requests. Its removal stops the BMS and disables this driver's interface |
+| `{61630799-922A-4980-99D9-90C39084A979}` | [qcpmic8930.sys](./qcpmic8930.md) | Time source via `IOCTL_PM_RTC_GET_TIME` (`0x800A0FA8`) |
+| `{A942B3D9-EC95-4754-AE45-49C48735B893}` | ? (not qcpmic8930.sys) | Only awaited: its arrival sets a flag, no IOCTL is sent to it |
 | ACPI node of the device | acpi.sys | `IOCTL_ACPI_EVAL_METHOD` `PMCF` |
 | `\Device\Harddisk0`…`5` | disk.sys | `IOCTL_DISK_GET_DRIVE_LAYOUT_EX` (0x70050) to find the EFIESP partition |
 | — | NokiaEnergyDriver / BATTC | Consumer of the `IOCTL_BMS_*` controls below (observed caller) |
@@ -320,14 +320,15 @@ Outputbuffer (three dwords; `BytesReturned` misreports 4, but the descriptor req
 
 ### Outbound IOCTLs (sent by qcbms8930.sys to the companion PMIC devices)
 
-All are sent synchronously through `PmicBmsSendIoctlToDevice` (`IoBuildDeviceIoControlRequest`, with a timeout and `IoCancelIrp`). All use METHOD_BUFFERED / FILE_ANY_ACCESS. The first input dword is always the PMIC/BMS instance id.
+All are sent synchronously through `PmicBmsSendIoctlToDevice` (`IoBuildDeviceIoControlRequest`, with a timeout and `IoCancelIrp`). All use METHOD_BUFFERED / FILE_ANY_ACCESS. The first input dword is always the PMIC/BMS instance id (for [qcpmic8930.sys](./qcpmic8930.md) it is the PMIC index, 0 or 1).  
+They are all processed by [qcpmic8930.sys](./qcpmic8930.md), which requires exact buffer sizes and returns a PMIC error code in the output (at `00-03`, or after the returned values); a non-zero PMIC error gives `STATUS_UNSUCCESSFUL`. See the [BMS](./qcpmic8930.md#ioctl-0x8019xxxx--bms-fuel-gauge), [ADC/CCADC](./qcpmic8930.md#ioctl-0x8002xxxx--adc--btm--ccadc) and [RTC](./qcpmic8930.md#ioctl-0x800axxxx--rtc) sections of that page for the buffer layouts.
 
 Sent to the `{D17B2593-…}` device, PMIC gauge (device type `0x8019`):  
 | IOCTL | Name | InputBuffer size | OutputBuffer Size | Comment |
 |-------|------|------------------|-------------------|---------|
 | 0x80190FD0 | IOCTL_PM_GAUGE_BMS_CONFIGURE | 36 | 4 | 9 dwords: id, mode, 3 parameters, 4 thresholds (−1 = unchanged). At init the thresholds carry `S1/S2/S3VsenseThrUV` scaled to bytes |
 | 0x80190FAC | IOCTL_PM_GAUGE_ENABLE_BMS | 8 | 4 | id, enable = 1 |
-| 0x80190FA4 | IOCTL_PM_GAUGE_READ_BMS_OUTPUT_REG_BMS | 8 | 8 | id, selector (4 = raw register, 5 = current, 6 = VBAT) |
+| 0x80190FA4 | IOCTL_PM_GAUGE_READ_BMS_OUTPUT_REG_BMS | 8 | 8 | id, selector (4 = raw register, 5 = current, 6 = VBAT). Output: `00-03` value, `04-07` PMIC error |
 | 0x80190FC4 | IOCTL_PM_GAUGE_BMS_OVERRIDE_VBAT_MODE | 8 | 4 | id, 2 byte flags (1,1 = on / 0,0 = off) |
 | 0x80190FC8 | IOCTL_PM_GAUGE_BMS_SET_CHARGING_STATE | 8 | 4 | id, byte flag (1 when the new state is 0) |
 | 0x80190FA8 | IOCTL_PM_GAUGE_CALIBRATE_BMS | 8 | 4 | Calibration step |
@@ -335,7 +336,7 @@ Sent to the `{D17B2593-…}` device, PMIC gauge (device type `0x8019`):
 Sent to the `{D17B2593-…}` device, CCADC (coulomb-counter ADC, device type `0x8002`):  
 | IOCTL | Name | InputBuffer size | OutputBuffer Size |
 |-------|------|------------------|-------------------|
-| 0x80021000 | IOCTL_PM_CCADC_READ_DATA | 4 | 8 |
+| 0x80021000 | IOCTL_PM_CCADC_READ_DATA | 4 | 8 (`00-03` data, `04-07` PMIC error; qcpmic8930 reports `BytesReturned` = 4) |
 | 0x80021004 | IOCTL_PM_CCADC_SET_ENABLE | 8 | 4 |
 | 0x80021008 | IOCTL_PM_CCADC_REQUEST_CONVERSION | 4 | 4 |
 | 0x8002100C | IOCTL_PM_CCADC_SET_DECIMATION_RATIO | 8 | 4 |
@@ -350,9 +351,9 @@ Sent to the `{D17B2593-…}` device, CCADC (coulomb-counter ADC, device type `0x
 Sent to the `{61630799-…}` device, PMIC RTC (device type `0x800A`):  
 | IOCTL | Name | InputBuffer size | OutputBuffer Size | Comment |
 |-------|------|------------------|-------------------|---------|
-| 0x800A0FA8 | IOCTL_PM_RTC_GET_TIME | 4 | 8 | Time source for elapsed-time and accumulator computations; first output dword = time |
+| 0x800A0FA8 | IOCTL_PM_RTC_GET_TIME | 4 | 8 | Time source for elapsed-time and accumulator computations; `00-03` = RTC time in seconds, `04-07` = PMIC error |
 
-The binary also contains a table of ~190 PMIC IOCTL names (`IOCTL_PM_*`, `IOCTL_BATT_MNGR_*`, `IOCTL_PMIC_BATT_MINI_*` at `.data:0x00419B20`–`0x00424B50`) with their codes, used only by `PmicIoctlCodeToTraceName` for tracing. It's a useful code ↔ name reference for the other Qualcomm PMIC drivers.
+The binary also contains a table of ~190 PMIC IOCTL names (`IOCTL_PM_*`, `IOCTL_BATT_MNGR_*`, `IOCTL_PMIC_BATT_MINI_*` at `.data:0x00419B20`–`0x00424B50`) with their codes, used only by `PmicIoctlCodeToTraceName` for tracing. It's a useful code ↔ name reference for the other Qualcomm PMIC drivers (the same table, with the buffer sizes, is in [qcpmic8930.sys](./qcpmic8930.md)).
 
 ---
 
@@ -385,13 +386,13 @@ The unit analysed carries the Nokia **BL-5J** profile. Key fields and their runt
 qcbms8930 device interface (published once the chip is online, disabled when the primary companion goes away)  
 `{23B7D0DD-101F-4EFE-A4D4-BED70E754419}`
 
-PMIC gauge / CCADC companion interface  
+PMIC gauge / CCADC companion interface (one of the device interfaces of [qcpmic8930.sys](./qcpmic8930.md))  
 `{D17B2593-7189-4E1E-91F1-00798E07B8AB}`
 
-PMIC RTC companion interface  
+PMIC RTC companion interface (one of the device interfaces of [qcpmic8930.sys](./qcpmic8930.md))  
 `{61630799-922A-4980-99D9-90C39084A979}`
 
-Third awaited companion interface  
+Third awaited companion interface (not created by qcpmic8930.sys; owner ?)  
 `{A942B3D9-EC95-4754-AE45-49C48735B893}`
 
 ### Other GUID

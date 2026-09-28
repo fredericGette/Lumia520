@@ -12,4 +12,5 @@
 [qcdiagrouter8930.sys](./qcdiagrouter8930.md)   
 [acpitime.sys](./acpitime.md)  
 [qcbms8930.sys](./qcbms8930.md)  
+[qcpmic8930.sys](./qcpmic8930.md)  
 
