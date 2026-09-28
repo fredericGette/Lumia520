@@ -26,7 +26,7 @@ Symbolic link: `\GLOBAL??\ACPI#ACPI000E#2&daba3ff&0#{97f99bf6-4497-4f18-bb22-4b9
 
 | Property   | Value                                             |
 |------------|---------------------------------------------------|
-| DeviceType | `0xA5`                                            |
+| DeviceType | `0x29`                                            |
 | Function   | `0x84`                                            |
 | Method     | `METHOD_BUFFERED`                                 |
 | Access     | `FILE_READ_ACCESS`                                |
@@ -45,10 +45,10 @@ Second, Milliseconds, Weekday).
 
 | Property   | Value                                             |
 |------------|---------------------------------------------------|
-| DeviceType | `0xA6`                                            |
+| DeviceType | `0x29`                                            |
 | Function   | `0x85`                                            |
 | Method     | `METHOD_BUFFERED`                                 |
-| Access     | `FILE_READ_ACCESS`                                |
+| Access     | `FILE_WRITE_ACCESS`                               |
 | Input      | `TIME_FIELDS` (16 bytes)                          |
 | Output     | None                                              |
 | Handler    | `WaHandleAcpiSetRealTime`                         |
@@ -63,10 +63,10 @@ Writes a new time to the RTC via the ACPI firmware.
 
 | Property   | Value                                             |
 |------------|---------------------------------------------------|
-| DeviceType | `0xA7`                                            |
+| DeviceType | `0x29`                                            |
 | Function   | `0x82` / `0x83`                                   |
 | Method     | `METHOD_BUFFERED`                                 |
-| Access     | `FILE_ANY_ACCESS`                                 |
+| Access     | `READ_AND_WRITE`                                  |
 | Input      | `WA_ALARM_INPUT` (8 bytes, see below)             |
 | Output     | `WA_ALARM_OUTPUT` (8 bytes, see below)            |
 | Handler    | `WaHandleWakeAlarmControl`                        |
