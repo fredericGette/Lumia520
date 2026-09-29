@@ -180,7 +180,7 @@ Function table: `g_PmAdcFuncTable` (61 entries per PMIC), only for models 1 and 
 | 0x80020FB4 | 1005 | IOCTL_PM_ADC_SET_INPUT | 8 | 4 | input | error |
 | 0x80020FB8 | 1006 | IOCTL_PM_ADC_SET_DECIMATION_RATIO | 8 | 4 | ratio | error |
 | 0x80020FBC | 1007 | IOCTL_PM_ADC_SET_CONVERSION_RATE | 8 | 4 | rate | error |
-| 0x80020FC0 | 1008 | IOCTL_PM_ADC_GET_PRESCALAR | 8 | 12 | channel ? | `00-03` numerator ?, `04-07` denominator ?, `08-0B` error |
+| 0x80020FC0 | 1008 | IOCTL_PM_ADC_GET_PRESCALAR | 8 | 12 | AMUX channel (0–14, see below) | `00-03` numerator, `04-07` denominator, `08-0B` error |
 | 0x80020FC4 | 1009 | IOCTL_PM_ADC_CONFIG_PREMUX | 8 | 4 | premux | error |
 | 0x80020FC8 | 1010 | IOCTL_PM_ADC_CONFIG_CONVERSION_SEQUENCER | 16 | 4 | 3 values, applied as 3 calls: `in[2]`, then `in[1]`, then `in[3]` | error |
 | 0x80020FCC | 1011 | IOCTL_PM_ADC_ENABLE_CONVERSION_SEQUENCER | 8 | 4 | enable (byte) | error |
@@ -210,6 +210,27 @@ Function table: `g_PmAdcFuncTable` (61 entries per PMIC), only for models 1 and 
 | 0x8002102C | 1035 | IOCTL_PM_BTM_SET_PREMUX_OUTPUT | 8 | 4 | output | error |
 | 0x80021030 | 1036 | IOCTL_PM_CCADC_SET_SEL_SHIFT | 8 | 4 | shift | error |
 
+`IOCTL_PM_ADC_GET_PRESCALAR` on a Lumia 520 (PM8038). The ratios match the PM8921/PM8038 XOADC AMUX channel table (channel names from the Linux `pm8xxx-adc` driver). Channel 15 (MUXOFF ?) → `STATUS_UNSUCCESSFUL`:  
+| Channel | Prescaler | Name (Linux) |
+|---------|-----------|--------------|
+| 0 | 1/3 | VCOIN |
+| 1 | 1/3 | VBAT |
+| 2 | 1/6 | DCIN |
+| 3 | 1/1 | ICHG |
+| 4 | 1/3 | VPH_PWR |
+| 5 | 1/1 | IBAT |
+| 6 | 1/1 | MPP_1 |
+| 7 | 1/3 | MPP_2 |
+| 8 | 1/1 | BATT_THERM |
+| 9 | 1/1 | BATT_ID |
+| 10 | 1/4 | USBIN |
+| 11 | 1/1 | DIE_TEMP |
+| 12 | 1/1 | 0.625 V reference |
+| 13 | 1/1 | 1.25 V reference |
+| 14 | 1/1 | CHG_TEMP |
+
+Values read on a Lumia 520: `ADC_READ_DATA` = 0x9814, `ADC_GET_CONVERSION_STATUS` = 1, `ADC_BTM_READ_DATA` = 0x7F27, `ADC_BTM_GET_CONVERSION_STATUS` = 0, both sequencer flags = 0, `CCADC_READ_DATA` = 0xCD29 (only 4 bytes returned, as expected), `CCADC_GET_CONVERSION_STATUS` = 1.
+
 `PM_ADC_SET_PREMUX_OUTPUT` (0x403120) reads the PMIC index and value from the *output* buffer pointer; it only works because METHOD_BUFFERED uses the same system buffer for input and output.
 
 ---
@@ -233,6 +254,8 @@ Function table: `g_PmGpioFuncTable` (36 entries per PMIC).
 | 0x80030FC4 | 1009 | IOCTL_PM_GPIO_GET_GPIO_CONFIG | 12 | 2816 | yes | pointer to a GPIO number array, count | 44 bytes per GPIO (see below) |
 
 `GET_GPIO_STATE` (`PmicGpioGetGpioState`, 0x409A3C): when `in[2]` ≠ 0 the state is read with the GPIO function; when it is 0 the real-time status of interrupt `192 + gpio` is read through the IRQ block instead.
+
+On a Lumia 520 (PM8038): `GET_NUMBER_OF_GPIOS` returns 12. With source ≠ 0, `GET_GPIO_STATE` returns state 0 for all 12 GPIOs; with source = 0 (interrupt real-time status) GPIOs 0, 2, 3, 7, 9 and 10 read 1. These are the same bits as `IOCTL_PM_IRQ_GET_INTERRUPTS_STATUS` block 3, type 1.
 
 `GET_GPIO_CONFIG` (0x80030FC4) Inputbuffer:  
 | Bytes | Value | Comment |
@@ -263,6 +286,8 @@ Function tables: `g_PmKeypadFuncTable` (keypad, 13 entries per PMIC) and `g_PmPw
 | 0x80040FB4 | 1005 | IOCTL_PM_KEYPAD_CONFIG_POWER_KEY | 12 | 4 | 2 values | error |
 | 0x80040FB8 | 1006 | IOCTL_PM_KEYPAD_CONFIG_HARD_RESET | 24 | 4 | 5 values, applied as 3 calls: `(in[1])`, `(in[2])`, `(in[4], in[5], in[3])` | error |
 
+On a Lumia 520 (PM8038), `IOCTL_PM_KEYPAD_GET_POWER_KEY` fails with `STATUS_UNSUCCESSFUL` and returns 0 bytes, so the PMIC error code isn't visible. The power-key function is probably missing for model 3 (error 19 ?).
+
 ---
 
 ### IOCTL 0x8005xxxx — MPP (multi-purpose pins)
@@ -283,6 +308,8 @@ Function table: `g_PmMppFuncTable` (24 entries per PMIC), only for models 1–3.
 | 0x80050FC0 | 1008 | IOCTL_PM_MPP_SET_OUTPUT_STATE | 12 | 4 | yes | mpp, state | error |
 | 0x80050FC4 | 1009 | IOCTL_PM_MPP_REGISTER | 4 | 4 | — | | |
 | 0x80050FC8 | 1010 | IOCTL_PM_MPP_UNREGISTER | 0 | 4 | — | | |
+
+On a Lumia 520 (PM8038), `GET_INPUT_STATE` with source ≠ 0 fails with `STATUS_UNSUCCESSFUL` for every MPP (0–11). With source = 0 it succeeds for MPPs 0–11, all reading 0, even though the PM8038 has fewer MPPs. The interrupt path doesn't check the MPP number.
 
 ---
 
@@ -320,12 +347,39 @@ The regulators are managed by a vote-aggregation layer (`PmicCommonInterface.c`,
 Inputbuffer of `IOCTL_PM_VREG_VOTE_FOR_POWER_SETTINGS` (also the Outputbuffer of `IOCTL_PM_VREG_GET_POWER_SETTINGS`):  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | ? | ? (client ?) |
+| 00-03 | 00 00 00 00 | ? (client ?). Always 0 in `GET_POWER_SETTINGS` |
 | 04-07 | ? | Resource id, 0–54 (see table below) |
-| 08-0B | ? | Resource kind 0–8 (selects the aggregation routine: 0 SMPS ?, 1 LDO ?, 2 VS ?, 3/4 NCP ?, 5 CXO buffers ?, 6/7 CXO clock / VDDCX corner ?, 8 discrete ?). Other values → error 36 |
-| 0C-3B | ? | Kind-specific settings (voltage, mode, …) ? |
+| 08-0B | ? | Resource kind 0–8 (selects the aggregation routine in `VRegAggregateVote`, 0x422C6C). 0 = LDO, 1 = SMPS, 3 = LVS (the library routines `pm_vreg_config_ldo_01`, `pm_vreg_config_smps_01` and `pm_vreg_config_lvs_01` require kind 0, 1 and 3), 5 = CXO buffers, 6 = CXO clock. 2 MVS ?, 4 NCP ? (shares the routines of kind 3), 7 VDDCX corner ? (shares the routines of kind 6), 8 discrete ?. Other values → error 36. The vote compares 10 dwords (`00-27`) for kind 0, 13 dwords (`00-33`) for kind 1 and 8 dwords for kinds 3/4 |
+| 0C-0F | ? | Voltage in µV (e.g. `90 05 10 00` = 1 050 000 = 1.05 V) |
+| 10-17 | ? | LVS: both dwords = 1 when switched on (enable ?, ?) |
+| 18-23 | ? | ? |
+| 24-27 | ? | LDO: 1 on the LDOs above 1.8 V and on some 1.8 V ones, 0 on the low-voltage ones (LDO1/2/20/24/26) ? |
+| 28-3B | ? | ? |
 
 `IOCTL_PM_VREG_GET_POWER_SETTINGS` (`GetPmicPowerSettings`, 0x422B30): input `00-03` = resource id; output = the 60-byte structure above (current aggregated setting).
+
+Aggregated settings read on a Lumia 520 (PM8038):  
+| Resource | Kind | Voltage | Comment |
+|----------|------|---------|---------|
+| SMPS1 | 1 | 1.050 V | |
+| SMPS2 | 1 | 0.550 V | |
+| SMPS3, SMPS4 | 1 | 0 | |
+| SMPS5 | 1 | 1.050 V | |
+| SMPS6 | 1 | 0.975 V | |
+| SMPS7, SMPS8 | — | — | `STATUS_UNSUCCESSFUL` |
+| LDO1 / LDO2 | 0 | 1.300 V / 1.200 V | |
+| LDO3 / LDO4 / LDO5 | 0 | 3.075 V / 1.800 V / 2.850 V | `24-27` = 1 |
+| LDO8 / LDO10 / LDO11 | 0 | 2.800 V / 3.000 V / 1.800 V | `24-27` = 1 |
+| LDO14 / LDO17 | 0 | 1.800 V / 2.800 V | `24-27` = 1 |
+| LDO20 | 0 | 1.250 V | |
+| LDO22 / LDO23 | 0 | 1.850 V / 1.800 V | `24-27` = 1 |
+| LDO24 / LDO26 | 0 | 1.1875 V / 1.050 V | |
+| other LDOs up to LDO29 | 0 | 0 | Off |
+| LVS1, LVS2 | 3 | — | `10-17` = 1, 1 |
+| LVS3–LVS7 | — | — | Success, but the whole structure is zero (resource id 0 too): not present |
+| MVS1, MVS2, NCP, VDDCX_CORNER, DV1–DV5 | — | — | `STATUS_UNSUCCESSFUL` |
+| CXO_BUFFERS | 5 | — | All settings 0 |
+| CXO_CLOCK | 6 | — | All settings 0 |
 
 Resource ids, in the order of the `PM_VREG_RESOURCE_ID_*` string table (`.data:0x0042A170`):  
 | Id | Resource |
@@ -352,10 +406,14 @@ Function table: `g_PmIrqFuncTable` (28 entries per PMIC), only for models 1 and 
 |-------|----|------|----|-----|--------------------------|--------|
 | 0x80070FA0 | 1000 | IOCTL_PM_IRQ_CONFIG_INTERRUPT | 24 | 4 | `04` block, `08` bit, `14` trigger — interrupt id = block × 64 + bit | error |
 | 0x80070FA4 | 1001 | IOCTL_PM_IRQ_CLEAR_ACTIVE_INTERRUPTS | 16 | 4 | `04` block (byte), `08-0F` 64-bit mask | error |
-| 0x80070FA8 | 1002 | IOCTL_PM_IRQ_GET_INTERRUPTS_STATUS | 24 | 16 | `04` block (byte), `08-0F` 64-bit mask, `10` type (0 = real-time status, 1 = latched status ?) | `00-07` 64-bit status, `08-0B` error |
+| 0x80070FA8 | 1002 | IOCTL_PM_IRQ_GET_INTERRUPTS_STATUS | 24 | 16 | `04` block (byte), `08-0F` 64-bit mask, `10` type (0 = latched status, 1 = real-time status) | `00-07` 64-bit status, `08-0B` error, `0C-0F` not written |
 | 0x80070FAC | 1003 | IOCTL_PM_IRQ_MASK_INTERRUPTS | 16 | 4 | `04` block (byte), `08-0F` 64-bit mask | error |
 | 0x80070FB0 | 1004 | IOCTL_PM_IRQ_UNMASK_INTERRUPT | 24 | 4 | `04` block, `08` bit, `10` trigger | error |
 | 0x80070FB4 | 1005 | IOCTL_PM_IRQ_TRIGGER_INTERRUPT | 8 | 4 | interrupt id | error |
+
+`PM_IRQ_GET_INTERRUPTS_STATUS` (0x40B568) calls function-table entry 1 (`sub_41A780`) for type 0 and entry 2 (`sub_41A460`) for type 1, always with interrupt master 2. Both write the block number to register `0x1C0` (IRQ_BLK_SEL). Type 0 then reads `0x1C1` (IT_STATUS, latched) and type 1 reads `0x1C3` (RT_STATUS, real-time). The register names come from the Linux `pm8xxx-irq` driver (base `0x1BB`). The single-interrupt read used by `GET_GPIO_STATE` / `MPP_GET_INPUT_STATE` with source 0 (entry 8, `sub_41A398`) reads the same `0x1C3` register. The IRQ function table is filled by `sub_414EF4` for models 1 and 3.
+
+Type 1 is therefore the real-time status: on a Lumia 520, block 3 type 1 returns `0x68D` (bits 0, 2, 3, 7, 9, 10). These are exactly the GPIOs (interrupts 192 + n) that `IOCTL_PM_GPIO_GET_GPIO_STATE` with source 0 reports as 1. Type 0 returned 0 for blocks 0–3. Type 1 also returned `0x000613000502B000` for block 0 and `0xA000000000000000` for block 1 (interrupts 125 and 127). The driver leaves output bytes `0C-0F` untouched but reports 16 bytes returned.
 
 `GET_INTERRUPTS_STATUS` with a type other than 0/1 returns `STATUS_INVALID_PARAMETER` (0xC000000D) and error 95.  
 `TRIGGER_INTERRUPT` (0x40BE60) has no hardware "software trigger": it reads the current trigger type of the interrupt and temporarily reprograms its polarity/edge so that it fires, and remembers it in `g_IrqSwTriggerState`. `CLEAR_ACTIVE_INTERRUPTS` restores the original trigger of such interrupts before clearing them.
@@ -388,6 +446,12 @@ Function table: `g_PmChgFuncTable` (57 entries per PMIC), only for models 1 and 
 | 0x80080FE0 | 1016 | IOCTL_PM_CHG_CLOCK_KICKSTART_CRITICAL | 4 | 4 | — | error |
 | 0x80080FE4 | 1017 | IOCTL_PM_CHG_READ_CHARGING_PARAMTERS | 4 | 28 | — | 6 dwords (`00`–`17`, written in the order `04`, `00`, `10`, `08`, `0C`, `14`), `18-1B` error |
 
+Values read on a Lumia 520 (connected to USB):
+* `GET_STATE`: `00-03` = 0, charger state = 7, byte `08` = 1, byte `09` = 0.
+* `GET_BATTSAFE`: `00-03` = 4200, `04-07` = 925. These look like the safety limits in mV / mA (VMAX_SAFE, IMAX_SAFE ?).
+* `GET_REGULATION_LOOP`: flags 1, 0, 0, 0.
+* `READ_CHARGING_PARAMTERS`: 500, 875, 200, 60, 4200, 4500. Possible meaning: input current limit (mA) ?, battery current (mA, ≤ the 925 safety limit) ?, VBATDET delta (mV) ?, ITERM (mA) ?, VMAX 4200 mV, VIN_MIN 4500 mV ?
+
 ---
 
 ### IOCTL 0x800Axxxx — RTC
@@ -408,6 +472,8 @@ Function table: `g_PmRtcFuncTable` (25 entries per PMIC, `perhaps_InitRtcFunctio
 | 0x800A0FC0 | 1008 | IOCTL_PM_RTC_GET_ALARM_STATUS | 4 | 8 | — | `00-03` status (byte), `04-07` error |
 
 `IOCTL_PM_RTC_GET_TIME` is used by [qcbms8930.sys](./qcbms8930.md) as its time base.
+
+On a Lumia 520 the RTC read 603 536 s (about 7 days). It is **not** a Unix time, so the wall-clock offset is kept elsewhere. `GET_TIME_ADJUST` = 69, `GET_ALARM_STATUS` = 0, and `GET_ALARM_TIME` for alarm 0 = `0xFFFFFFFF` (no alarm set).
 
 ---
 
@@ -447,7 +513,7 @@ This IOCTL is processed by Qcpmic8930.sys
 | 0x800F0FA4 | 1001 | IOCTL_GET_LED_INTERFACE | 0 | 8 | — | 2 function pointers (see below) |
 | 0x800F0FA8 | 1002 | IOCTL_PM_LED_SLEEP_CONFIG | 20 | 4 | 4 dwords ? | error |
 
-`IOCTL_GET_LED_INTERFACE` (`PM_LED_GET_INTERFACE`, 0x40CEE0) returns the **kernel addresses** of `PM_LED_CONFIG` (`00-03`) and `PM_LED_CONFIG_SLEEP` (`04-07`), so that another kernel driver can call them directly.
+`IOCTL_GET_LED_INTERFACE` (`PM_LED_GET_INTERFACE`, 0x40CEE0) returns the **kernel addresses** of `PM_LED_CONFIG` (`00-03`) and `PM_LED_CONFIG_SLEEP` (`04-07`), so that another kernel driver can call them directly. Example from a Lumia 520: `0x87345F69` and `0x873460A1`. Bit 0 is set because these are Thumb-2 entry points, and it also shows where the driver is loaded.
 
 ---
 
@@ -527,8 +593,10 @@ This IOCTL is processed by Qcpmic8930.sys
 | 04-07 | ? | PMIC 0 index |
 | 08-0B | ? | PMIC 0 model (see [PMIC detection](#pmic-detection)) |
 | 0C-0F | ? | PMIC 0 revision |
-| 10-1B | ? | Same for PMIC 1 |
+| 10-1B | ? | Same for PMIC 1 (all zero when there's only one PMIC) |
 | 1C-1F | ? | Error |
+
+On a Lumia 520: `01 00 00 00 00 00 00 00 03 00 00 00 02 00 00 00` followed by zeros, i.e. 1 PMIC, model 3 (PM8038), revision 2.
 
 ---
 
@@ -553,6 +621,20 @@ Function table: `g_PmBmsFuncTable` (29 entries per PMIC), only for models 1 and 
 | 0x80190FCC | 1011 | IOCTL_PM_GAUGE_BMS_ENABLE_OCV_UPDATE | 8 | 4 | yes | enable (byte) | error |
 | 0x80190FD0 | 1012 | IOCTL_PM_GAUGE_BMS_CONFIGURE | 36 | 4 | yes | 8 dwords (mode, 3 parameters, 4 thresholds, −1 = unchanged); handled by `PmicBmsConfigure` (0x4121C8) | error |
 
+`READ_BMS_OUTPUT_REG_BMS` (library `sub_4183A4`, function-table entry 4) writes the selection into bits 4:2 (mask `0x1C`) of register `0x224` (BMS_CONTROL), then reads the 16-bit value from `0x230`/`0x231` (BMS_OUTPUT0/1). The IOCTL selector doesn't map one-to-one to the hardware selection; the hardware names are those of the Linux `pm8921-bms` driver:  
+| Selector | Hardware selection | Value | Lumia 520 |
+|----------|--------------------|-------|-----------|
+| 0 | 0 OCV_FOR_RBATT | 16 bits | 0 |
+| 1 | 1 VSENSE_FOR_RBATT | 16 bits | 0 |
+| 2 | 2 VBATT_FOR_RBATT | 16 bits | 0 |
+| 3 | 3 CC_MSB then 4 CC_LSB | 32 bits: `(MSB << 16) \| LSB`, coulomb counter (signed) | `0xFFAF6713` (−5 282 029) |
+| 4 | 5 LAST_GOOD_OCV_VALUE | 16 bits | `0x96F0` |
+| 5 | 6 VSENSE_AVG | 16 bits (signed) | `0xFF11` (−239) |
+| 6 | 7 VBATT_AVG | 16 bits | `0x9814` |
+| ≥ 7 | none (the selection isn't changed) | whatever is currently selected | `0x9814` (still VBATT_AVG) |
+
+The values are raw ADC codes. `IOCTL_PM_ADC_READ_DATA` returned the same `0x9814` as VBATT_AVG.
+
 ---
 
 ### IOCTL 0x801Axxxx — Battery alarm
@@ -563,7 +645,7 @@ This IOCTL is processed by Qcpmic8930.sys
 |-------|----|------|----|-----|--------------------------|--------|
 | 0x801A0FA0 | 1000 | IOCTL_PM_BATALRM_CONFIG_CONTROL_REGISTER | 16 | 4 | 3 values | error |
 | 0x801A0FA4 | 1001 | IOCTL_PM_BATALRM_ENABLE_CONTROL_REGISTER | 16 | 4 | 3 values | error |
-| 0x801A0FA8 | 1002 | IOCTL_PM_BATALRM_READ_ALARM_STATUS | 4 | 12 | — | 3 dwords (2 status values + error ?) |
+| 0x801A0FA8 | 1002 | IOCTL_PM_BATALRM_READ_ALARM_STATUS | 4 | 12 | — | 3 dwords (2 status values + error ?). All 0 on a Lumia 520 |
 
 ---
 
