@@ -26,8 +26,9 @@ When in power off state, the phone can be started by applying the following curr
 | min/max 4.3v / 6.0v | min 250ms | 1.5mA |
 
 > [!Note]
-> It looks like the RTC of the phone doesn't have an alarm wake function (see [acpitime driver](https://github.com/fredericGette/Lumia520/blob/main/content/drivers/acpitime.md))  
-> __But we can use the USB port to periodically start the phone.__  
+> The RTC of the phone (in the PM8038 PMIC) does have an alarm wake function: when the alarm expires, it turns on the phone even from the power off state (tested).  
+> It's not exposed by the ACPI time driver (see [acpitime driver](https://github.com/fredericGette/Lumia520/blob/main/content/drivers/acpitime.md): no wake alarm capability), but it can be armed through the PMIC driver with `IOCTL_PM_RTC_ENABLE_ALARM` (0x800A0FB4): PMIC index, alarm id and a delay in seconds relative to the current RTC time (see [qcpmic8930 driver](https://github.com/fredericGette/Lumia520/blob/main/content/drivers/qcpmic8930.md#ioctl-0x800axxxx--rtc)).  
+> __We can also use the USB port to periodically start the phone.__  
 > See this example of [an electronic pulse generator](https://github.com/fredericGette/Lumia520/blob/main/content/power/pulse_generator/README.md) to start the phone every few hours.
 
 In the power off state, the resistance mesured between Vcc and Gnd at the USB port is ~43K&Omega;

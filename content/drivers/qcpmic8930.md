@@ -473,6 +473,8 @@ Function table: `g_PmRtcFuncTable` (25 entries per PMIC, `perhaps_InitRtcFunctio
 
 `IOCTL_PM_RTC_GET_TIME` is used by [qcbms8930.sys](./qcbms8930.md) as its time base.
 
+The RTC alarm armed with `IOCTL_PM_RTC_ENABLE_ALARM` stays active when the phone is powered off, and turns the phone on when it expires (tested on a Lumia 520). By contrast, the ACPI time device ([acpitime.sys](./acpitime.md)) doesn't report any wake alarm capability.
+
 On a Lumia 520 the RTC read 603 536 s (about 7 days). It is **not** a Unix time, so the wall-clock offset is kept elsewhere. `GET_TIME_ADJUST` = 69, `GET_ALARM_STATUS` = 0, and `GET_ALARM_TIME` for alarm 0 = `0xFFFFFFFF` (no alarm set).
 
 ---
