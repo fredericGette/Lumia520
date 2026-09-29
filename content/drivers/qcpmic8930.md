@@ -665,9 +665,17 @@ This IOCTL is processed by Qcpmic8930.sys
 
 | IOCTL | Fn | Name | In | Out | Input (after PMIC index) | Output |
 |-------|----|------|----|-----|--------------------------|--------|
-| 0x801D0FA0 | 1000 | IOCTL_PM_VIB_CONTROL_REGISTER | 8 | 4 | value (voltage/level ?) | error |
+| 0x801D0FA0 | 1000 | IOCTL_PM_VIB_CONTROL_REGISTER | 8 | 4 | drive voltage in 100 mV units: 0 = off, 12–31 = 1.2 V–3.1 V | error |
 
-Handler `PM_VIB_CONTROL_REGISTER` (0x410C94).
+Handler `PM_VIB_CONTROL_REGISTER` (0x410C94) → function table `dword_43B640` (5 dwords per PMIC, filled by `sub_414018` for models 1 and 3 only), entry 1 = `sub_42068C`. Any value other than 0 or 12–31 (`0x0C`–`0x1F`) returns PMIC error 10 → `STATUS_UNSUCCESSFUL`. Otherwise the value is written, shifted left by 3, into bits 7:3 (mask `0xF8`) of PMIC register `0x04A` (VIB_DRV in the Linux `pm8xxx-vibrator` driver, which uses the same 1.2–3.1 V range). There's no timer: the motor keeps running until 0 is sent. At start-up, entry 0 (`sub_420644`) clears the register under mask `0xFB` (motor off).
+
+Inputbuffer:  
+| Bytes | Value | Comment |
+|-------|-------|---------|
+| 00-03 | 00 00 00 00 | PMIC index |
+| 04-07 | e.g. `1E 00 00 00` | Level: 0 = stop, 12–31 = 1.2–3.1 V (30 = 3.0 V) |
+
+On a Lumia 520 a level of 10 fails with `STATUS_UNSUCCESSFUL` (out of range).
 
 ---
 
