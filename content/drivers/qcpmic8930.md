@@ -625,6 +625,25 @@ Slots:
 | 9 | `PmWledSetBrightness` 0x420E60 | `IOCTL_PM_WLED_DIMMING_CONFIG` | 12-bit brightness of a string (0–2) + sync pulse, i.e. step 3 without the flag |
 | 10 | `PmWledSetAdditionalParams` 0x420F8C | `IOCTL_PM_WLED_CONFIG_ADDITIONAL_PARAM` | Programs the fields reset by slot 0, plus `0x25B`/`0x25C` bits 7:5 for string 0/1 |
 
+#### WLED consumers
+
+On a Lumia 520 none of the WLED IOCTLs are sent: only `PmWledInitFuncTable` and `PmWledResetDefaults` run (at start-up), and changing the screen brightness doesn't reach qcpmic8930. The WLED modulator, string currents and brightness are left as configured before Windows starts (UEFI ?), since `PmWledResetDefaults` doesn't touch them.
+
+The only client found is [oempanel.sys](./oempanel.md) (Nokia Panel Driver, service `NOKIA_PANEL`), through the interface `{5B9DF049-70D3-4698-8E48-85B26C1AA59F}` (#14 in [Interface GUID](#interface-guid)). It sends the WLED IOCTLs in two cases:  
+| Case | Condition | IOCTLs |
+|------|-----------|--------|
+| Backlight current control (`sendIoctlQcpmic8930_LedCurrentMilliAmp`, oempanel 0x41789C) | Bit 2 of the registry value `Flags` is set | `IOCTL_PM_WLED_CONFIG` on panel on and on each brightness update (`UpdateWledCurrent`, oempanel 0x417BD0); `IOCTL_PM_WLED_ENABLE` with 1 at the end of the panel power-on sequence and with 0 at panel off |
+| Panel power-on sequence (`_sub_417A8C`, oempanel 0x417A8C) | Panel model 198 (Jaywalk) or 204 (Barbie), **whatever `Flags`** | `IOCTL_PM_WLED_CONFIG` twice, then `IOCTL_PM_WLED_CONFIG_ADDITIONAL_PARAM` |
+
+`HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NOKIA_PANEL\Parameters\Settings`  
+| Registry value | value | comment |
+|----------------|-------|---------|
+| Flags | 0 | REG_DWORD. Bit 2: drive the backlight current through the WLED IOCTLs. 0 on a Lumia 520 |
+
+With `Flags` bit 2, `IOCTL_PM_WLED_CONFIG` is sent for string 0, then for the panel's string (each retried once on error), with a fixed configuration: `08`/`09` = 1/1, `0C` = current in mA (clamped to 1–25), `10` = `0xFFF` (brightness always maximum), `15` = 1, `24` = 1, `28` = 5, `30` = 3, `34` = 2, everything else 0. The backlight is then dimmed by changing the string current, not the WLED brightness. The buffers of the panel power-on sequence are similar (current from the panel configuration, `18` = 2, `1C` = 3, `28` = 4); see [oempanel.sys](./oempanel.md#ioctl-0x80140fa0--ioctl_pm_wled_config).
+
+When `Flags` bit 2 is clear (Lumia 520), oempanel sets the brightness through the panel itself: `ComputeBacklightLevel` (oempanel 0x403098) computes a 0–255 level, `call_CreateDisplaySequence_18` turns it into MIPI DCS commands (`0x51` set display brightness, `0x53` = `0x24`/`0x2C` display control, `0x55` CABC mode, vendor `0xD7`) sent to the panel by the display driver `qcdxkm8930`. The panel controller probably dims the backlight with a PWM signal on the WLED external dimming input.
+
 ---
 
 ### IOCTL 0x8015xxxx — Hardware info
@@ -803,7 +822,7 @@ The driver creates 22 device interfaces on the same device, in this order (`Regi
 | 11 | `{61630799-922A-4980-99D9-90C39084A979}` | Used by qcbms8930 for `IOCTL_PM_RTC_GET_TIME` (RTC) |
 | 12 | `{248F196D-BB0A-4960-B11C-7EE9479B290F}` | ? |
 | 13 | `{A5B9E9A8-EE02-46DC-B9EF-562A78C3E5C9}` | ? |
-| 14 | `{5B9DF049-70D3-4698-8E48-85B26C1AA59F}` | ? |
+| 14 | `{5B9DF049-70D3-4698-8E48-85B26C1AA59F}` | Used by [oempanel.sys](./oempanel.md) for the `IOCTL_PM_WLED_*` controls (WLED) |
 | 15 | `{1CF4643A-F9BF-42D3-88E8-F37EE6C0677C}` | ? |
 | 16 | `{1408ACF4-24D1-43AB-8F80-2F7D8AEDD372}` | ? |
 | 17 | `{F9938F2D-3756-4760-A044-CB29AFBA5A69}` | ? |
