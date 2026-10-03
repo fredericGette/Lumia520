@@ -74,7 +74,7 @@ For each PMIC, `PmicDetectModelRevision` (0x413BD4) reads register `0x002` (REV)
 | 0xE | — | 0 | ? |
 | 0xF | 0x06 | 1 | PM8921 ? |
 | 0xF | 0x0B | 2 | ? |
-| 0xF | 0x09 | 3 | PM8038 ? (Lumia 520). Some blocks (sub_416D1C table, filled by `PmicLibraryInit` 0x41259C) are only initialised for this model |
+| 0xF | 0x09 | 3 | PM8038 ? (Lumia 520). Some blocks (e.g. the WLED table `g_PmWledFuncTable`, filled by `PmicLibraryInit` 0x41259C) are only initialised for this model |
 | other | other | 4 | Unknown, the PMIC is skipped |
 
 REV[3:0] is kept as the revision. The result is stored in `g_PmicsInfo` (count, then index/model/revision per PMIC) and returned by `IOCTL_PM_HARDWARE_GET_PMICS_INFO`. Most blocks are only populated for models 1 and 3; for the others their function table is zeroed and the IOCTLs return PMIC error 19.
@@ -565,10 +565,65 @@ This IOCTL is processed by Qcpmic8930.sys
 
 | IOCTL | Fn | Name | In | Out | Input (after PMIC index) | Output |
 |-------|----|------|----|-----|--------------------------|--------|
-| 0x80140FA0 | 1000 | IOCTL_PM_WLED_CONFIG | 56 | 4 | mixed bytes/dwords at `04`, `08`, `09`, `0C`, `14`, `15`, `17`, `18`, `1C`, `24`–`34` (programmed as ~8 separate calls) | error |
+| 0x80140FA0 | 1000 | IOCTL_PM_WLED_CONFIG | 56 | 4 | see below (programmed as 7 separate library calls) | error |
 | 0x80140FA4 | 1001 | IOCTL_PM_WLED_ENABLE | 8 | 4 | enable (byte) | error |
 | 0x80140FA8 | 1002 | IOCTL_PM_WLED_DIMMING_CONFIG | 12 | 4 | 2 values | error |
 | 0x80140FAC | 1003 | IOCTL_PM_WLED_CONFIG_ADDITIONAL_PARAM | 56 | 4 | `04`, `08` (byte), `0C`, `10`, `14`, `18`, `1C` | error |
+
+`IOCTL_PM_WLED_CONFIG` (`PM_WLED_CONFIG`, 0x41140C) calls slots 1 to 7 of the per-PMIC WLED function table `g_PmWledFuncTable` (0x43B560, see [WLED function table](#wled-function-table)) in sequence and stops at the first error (traced as `"E1"`…`"E7"`). Every step is a masked write `g_pfnPmicRegWrite(bus, addr, mask, value)`. Output: PMIC error (9 = PMIC index not 0/1 or invalid string, 19 = table not filled); the NTSTATUS is `STATUS_UNSUCCESSFUL` when the error is not 0.  
+The register names below come from the Linux `leds-pm8xxx` driver (PM8038 WLED) and are not confirmed by the binary.
+
+Inputbuffer of `IOCTL_PM_WLED_CONFIG`:  
+| Bytes | Step (routine) | Register (mask) | Comment |
+|-------|----------------|-----------------|---------|
+| 00-03 | all | — | PMIC index (0 or 1) |
+| 04-07 | 1–4 | — | String number (0–2) |
+| 08 | 1 (`PmWledSetModCtrl`) | `0x25A` bit 1 (string 0) / bit 2 (string 1) | Modulator control flag ? Nothing is written for string 2 |
+| 09 | 1 | `0x25A` bit 4 (string 0) / bit 5 (string 1) | Modulator control flag ? |
+| 0C-0F | 2 (`PmWledSetMaxCurrent`) | `0x25B` / `0x25C` / `0x25D` (`0x1F`) | Full-scale current of string 0/1/2, then pulse of the sync bit (`0x264` bit 2/1/0) |
+| 10-13 | 3 (`PmWledConfigStringBrightness`) | `0x25E`+`0x25F` / `0x260`+`0x261` / `0x262`+`0x263` | 12-bit brightness: bits 11:8 → first register (`0x0F`), bits 7:0 → second register (`0xFF`), then pulse of the sync bit |
+| 14 | 3 | first brightness register bit 7 (`0x80`) | Per-string flag (CABC enable ?) |
+| 15 | 4 (`PmWledSetSyncCfg`) | `0x264` bit 3/4/5 (string 0/1/2) | ? |
+| 16 | — | — | Not used |
+| 17 | 5 (`PmWledSetCtrl12`) | `0x265` bit 7 | ? |
+| 18-1B | 5 | `0x265` bits 4:3 | ? |
+| 1C-1F | 5 | `0x265` bits 2:1 | ? |
+| 20 | 5 | `0x265` bit 0 | ? |
+| 21-23 | — | — | Not used |
+| 24-27 | 6 (`PmWledSetOvpBoost`) | `0x266` bits 5:4 (`0x30`) | OVP threshold ? |
+| 28-2B | 6 | `0x267` bits 7:5 | Boost current limit ? |
+| 2C-2F | 6 | `0x267` bits 4:2 | Feedback selection ? |
+| 30-33 | 7 (`PmWledSetCompCap`) | `0x268` bits 7:4 (`0xF0`) | Resistor compensation ? |
+| 34-37 | 7 | `0x269` bits 6:5 (`0x60`) | High-pole capacitor ? |
+
+Steps 1–4 only touch the string selected by `04-07`, but steps 5–7 rewrite the shared registers `0x265`–`0x269` on every call.
+
+#### WLED function table
+
+`g_PmWledFuncTable` (0x43B560) holds one 0x70-byte entry per PMIC (index 0/1). For model 3 (PM8038) `PmicLibraryInit` fills it with `PmWledInitFuncTable` (0x416D1C), then immediately calls slot 0 (`PmWledResetDefaults`); for any other model the entry is zeroed and all WLED IOCTLs return PMIC error 19. `PmWledInitFuncTable` only stores constants (no register access) and always returns 0.
+
+Layout of an entry:  
+| Bytes | Content |
+|-------|---------|
+| 00-2B | 11 function pointers (slots 0–10, see below) |
+| 2C-4B | 16 `u16` register addresses `0x25A`…`0x269` (in order) |
+| 4C-6A | 31 bit masks, passed as the `mask` argument of `g_pfnPmicRegWrite`: `70 0F FF C0 08 10 20 9F 30 FC F0 60 01 04 02 01 01 1F 80 80 E0 60 C0 0E 03 0F 80 0C 03 12 24` |
+| 6B-6F | Not used |
+
+Slots:  
+| Slot | Function | Used by | Comment |
+|------|----------|---------|---------|
+| 0 | `PmWledResetDefaults` 0x4206E4 | `PmicLibraryInit` | Writes the defaults of the fields also programmed by slot 10: `0x25A` bit 7 = 0, `0x25B`/`0x25C` bits 7:5 = 0, `0x25E` bits 6:4 = 7, `0x264` bits 7:6 = 0, `0x265` bits 6:5 = 0, `0x266` bits 7:6 = 1, bits 3:1 = 2, bit 0 = 1, `0x267` bits 1:0 = 3, `0x268` bits 3:0 = 0xF, `0x269` bit 7 = 0, bits 3:2 = 3, bits 1:0 = 0 |
+| 1 | `PmWledSetModCtrl` 0x42080C | `IOCTL_PM_WLED_CONFIG` step 1 | `0x25A` (mask `0x12` or `0x24`) |
+| 2 | `PmWledSetMaxCurrent` 0x420884 | step 2 | Full-scale current of a string + sync pulse |
+| 3 | `PmWledConfigStringBrightness` 0x42097C | step 3 | Flag (bit 7) + 12-bit brightness of a string + sync pulse |
+| 4 | `PmWledSetSyncCfg` 0x420AD8 | step 4 | `0x264` bit 3/4/5 |
+| 5 | `PmWledSetCtrl12` 0x420B7C | step 5 | `0x265` (mask `0x9F`) |
+| 6 | `PmWledSetOvpBoost` 0x420BC4 | step 6 | `0x266` (`0x30`), `0x267` (`0xFC`) |
+| 7 | `PmWledSetCompCap` 0x420C20 | step 7 | `0x268` (`0xF0`), `0x269` (`0x60`) |
+| 8 | `PmWledEnable` 0x420C74 | `IOCTL_PM_WLED_ENABLE` | Enable: sets `0x25A` bit 0. Disable: saves `0x25A`–`0x25D` and `0x267`, writes `0x267` = `0x20`, clears the low nibble of `0x25B`–`0x25D`, pulses the sync bits (`0x264` bits 2:0), writes `0x25A` bits 3:1 = 4, waits 1 ms, clears `0x25A` bit 0, then restores the saved values (uses hard-coded masks, and `g_pfnPmicRegRead`) |
+| 9 | `PmWledSetBrightness` 0x420E60 | `IOCTL_PM_WLED_DIMMING_CONFIG` | 12-bit brightness of a string (0–2) + sync pulse, i.e. step 3 without the flag |
+| 10 | `PmWledSetAdditionalParams` 0x420F8C | `IOCTL_PM_WLED_CONFIG_ADDITIONAL_PARAM` | Programs the fields reset by slot 0, plus `0x25B`/`0x25C` bits 7:5 for string 0/1 |
 
 ---
 
