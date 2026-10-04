@@ -3,7 +3,7 @@
 Nokia Panel Driver (service `NOKIA_PANEL`, ACPI device `ACPI\NOKIA_PANEL\0`, KMDF, build `E:\build_e\subtask\BE09332C_98\output\display\fre\oempanel.pdb`, "Jan 28 2015").  
 It is the display "brain" of the Nokia phones: it knows the panel models, builds the MIPI DCS command sequences (power on/off, brightness, CABC, gamma/colour) that the Qualcomm display driver `qcdxkm8930.sys` sends to the panel, and it computes the backlight level from the ambient light sensor (auto-brightness, Lux→Nit tables), the user settings and the battery/power-save state.  
 It also drives a few GPIOs (through the resource hub), the capacitive key LEDs (through `hwnled`) and, on some panels only, the PMIC WLED backlight block of [qcpmic8930.sys](./qcpmic8930.md). The colour calibration is read from `C:\Windows\System32\DRIVERS\ColorData.bin`.  
-Most of the work is done by a dedicated system thread: IOCTLs, timers, registry notifications and power events are posted to it as internal "messages" (`process_ioctl` → `process_type`, 0x416C14) and the caller waits for the result.
+Most of the work is done by a dedicated system thread: IOCTLs, timers, registry notifications and power events are posted to it as internal "messages" (`process_ioctl` → `PanelWorkerThread` 0x417434 → `process_type` 0x416C14) and the caller waits for the result.
 
 There's no named `\Device\` object and no symbolic link: the device is opened through its device interface, e.g. `\\?\ACPI#NOKIA_PANEL#0#{0d4a3f63-0d08-49a1-b91c-c60576894174}` (see [Interface GUID](#interface-guid)).
 
@@ -15,7 +15,7 @@ Registries of the driver:
 `HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Enum\ACPI\NOKIA_PANEL\0`  
 `HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\Class\{4d36e97d-e325-11ce-bfc1-08002be10318}\0081`  
 
-Registry key `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NOKIA_PANEL\Parameters\Settings` (opened by `settings` 0x417C34, read by `ReadPanelSettingsFromRegistry` 0x423AF4 and `RegReadAlcRegistries`). The first six values are written back with their default when they are missing (`WdfRegistryAssignULong`). Values observed on a Lumia 520 unless stated otherwise:  
+Registry key `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NOKIA_PANEL\Parameters\Settings` (opened by `settings` 0x417C34, read by `ReadPanelSettingsFromRegistry` 0x423AF4 and `RegReadAlcRegistries` 0x424190). The first six values are written back with their default when they are missing (`WdfRegistryAssignULong`). Values observed on a Lumia 520 unless stated otherwise:  
 | Registry value | value | comment |
 |----------------|-------|---------|
 | EsdEnabled | 1 | REG_DWORD, default 1. Periodic ESD check of the panel (reset/re-init when it fails) |
@@ -24,19 +24,19 @@ Registry key `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NOKIA_PANEL\P
 | IsUpsideDown | 0 | REG_DWORD, default 0 |
 | HwPlatform | 1 | REG_DWORD, default 0. Device context `+0x38AC` |
 | Flags | 0 | REG_DWORD, default 0. Device context `+0x38B0`. Bit 0: ? (tested in `_sub_402A2C`). Bit 1: ? (tested in `_sub_408DD0`). Bit 2: drive the backlight current through the PMIC WLED (`IOCTL_PM_WLED_*`, see [IOCTLs sent to qcpmic8930.sys](#ioctl-0x80140fa0--ioctl_pm_wled_config)) |
-| LIGHT_SRELimitLow/Med/High_Vendor_0/1 | e.g. `0xE3004E20`, `0x88B8`, `0xC350` | Sunlight Readability Enhancement lux thresholds, per panel vendor ? |
-| LIGHT_CAbcLevel_Vendor_0/1 | 0 | CABC level per panel vendor ? |
+| LIGHT_SRELimitLow/Med/High_Vendor_0/1 | e.g. `0xE3004E20`, `0x88B8`, `0xC350` | Sunlight Readability Enhancement lux thresholds, per panel vendor. Bits 0–23 = lux. The top byte of `SRELimitLow_Vendor_N` is the panel vendor ID (Vendor_0: a value of 0 is replaced by 0xE3). Defaults when missing: Vendor_0 = 5000 / 20000 / 35000 lux with vendor 0xE3, Vendor_1 = 0 |
+| LIGHT_CAbcLevel_Vendor_0/1 | 0 | CABC level per panel vendor: bits 0–2 = level, top byte also kept (purpose unknown). `CAbcLevel_Vendor_0` is written back with 2 when it is missing |
 | LIGHT_GlassDampingCompensationFactor | 0x64 | Percent applied to the ALS reading ? |
 | LIGHT_LedBoostBrightness_1 | 0x16D | ? |
 | LIGHT_LedGroup0_Pct … LIGHT_LedGroup3_Pct | 0 | Intensity of the 4 key-LED groups. All 0 on a Lumia 520 (no lit keys), so nothing is sent to `hwnled` |
 | LIGHT_LedBackButton, LIGHT_LedWinButton, LIGHT_LedSearchButton | 0xF | Key → LED group mapping ? |
-| LIGHT_AssertiveDisplayEnabled | (absent) | Assertive Display ? |
-| AD_RegsInUse, AD_MaxIterations, AD_TFilterControl, AD_StrengthLimit, AD_CalibrationA…D | e.g. 0, 0x40, 5, 0x80, 0x12, 0x5F, 0, 0 | Assertive Display parameters ? |
-| LIGHT_LuxToNitD_LuxIn0…11, LIGHT_LuxToNitD_NitOut0…11 | 0 → 12 nit … 100000 lux → 800 nit | Auto-brightness curve ("D" = day ?), 12 points |
-| LIGHT_LuxToNitK_LuxIn0…3, LIGHT_LuxToNitK_NitOut0…3 | 0 → 10 nit … | Second curve ("K" = ?), 4 points |
-| DevicePanelCalibParam | 0xFFFFFF | Panel calibration ? |
+| LIGHT_AssertiveDisplayEnabled | (absent) | Assertive Display on/off. When 0 (or when `AD_RegsInUse` is 0) the `AD_*` values are not read. Forced off when `ManufacturingOS\ManufacturingMode` can be read |
+| AD_RegsInUse, AD_MaxIterations, AD_TFilterControl, AD_StrengthLimit, AD_CalibrationA…D | e.g. 0, 0x40, 5, 0x80, 0x12, 0x5F, 0, 0 | Assertive Display parameters, each kept as one byte |
+| LIGHT_LuxToNitD_LuxIn0…11, LIGHT_LuxToNitD_NitOut0…11 | 0 → 12 nit … 100000 lux → 800 nit | Auto-brightness curve ("D" = day ?), 12 points. Indexes are read from 0 until a value is missing (`read_indexed_ulong_array` 0x424B4C). If the LuxIn and NitOut counts differ or are 0, a built-in 5-point curve is used: 3→20, 10→50, 450→150, 1200→500, 30000→700 (lux→nit) |
+| LIGHT_LuxToNitK_LuxIn0…3, LIGHT_LuxToNitK_NitOut0…3 | 0 → 10 nit … | Second curve ("K" = ?), 4 points. Same reading and same fallback as the D curve. Its last non-zero LuxIn is kept as the maximum lux |
+| DevicePanelCalibParam | 0xFFFFFF | REG_DWORD. Converged refresh-rate trimming value of the panel ("RRparam", device context `+0xD08`), written by `DevicePanelCalibParam_Save` (0x418BD0). `0xFF` in the low byte = not calibrated. See [Refresh-rate calibration](#refresh-rate-calibration) |
 
-Other registry keys read (and, for the first five, watched with `ZwNotifyChangeKey` by `sub_423D40`):  
+Other registry keys read (and, for the first five, watched with `ZwNotifyChangeKey` by `RegisterRegistryChangeNotify` 0x423D40):  
 | Key | Values | Comment |
 |-----|--------|---------|
 | `HKLM\System\ControlSet001\services\powernotif\Estimations` | ? | Battery estimations |
@@ -44,11 +44,11 @@ Other registry keys read (and, for the first five, watched with `ZwNotifyChangeK
 | `HKLM\Software\OEM\Nokia\Display` | `PowerSaveState`, `BatteryChargePercent` | |
 | `HKLM\Software\OEM\Nokia\BrightnessInterface` | `BrightnessPct` | |
 | `HKLM\Software\OEM\Nokia\Display\ColorAndLight` | `UserSettingSreEnabled`, `UserSettingBsmDimmingEnabled`, `UserSettingKeyLightsEnabled`, `UserSettingFingerFilterEnabled`, `UserSettingDarkConditionBrightness`, `UserSettingWhitePoint`, `UserSettingColorSaturation` | Lumia "Display settings" |
-| `HKLM\Software\OEM\Nokia\Display\MotionClarity` | `WindowSize`, `Framecount`, `Overdrive` ? | |
+| `HKLM\Software\OEM\Nokia\Display\MotionClarity` | `Enabled`, `WindowSize`, `Framecount`, `Overdrive` | Created at panel init if the panel supports MotionClarity, seeded with the driver defaults (except `Overdrive`), then read back and watched for changes. Deleted at init if the panel does not support it. |
 | `HKLM\Software\OEM\Nokia\Display\Lpm` | `OPR_Low`, `OPR_Med` | Low Power Mode (glance screen) |
 | `HKLM\Software\OEM\Nokia\lpm` | `Mode` | |
 | `HKLM\SOFTWARE\OEM\Nokia\Touch\Improved` | `Enabled` | |
-| `HKLM\Software\Microsoft\ManufacturingOS` ? | `ManufacturingMode` | |
+| `HKLM\Software\Microsoft\ManufacturingOS` | `ManufacturingMode` | Read by `RegReadAlcRegistries` (not watched). If the value can be read, Assertive Display is disabled and a flag records whether it is non-zero |
 | `HKLM\System\ControlSet001\services\Sensors\ALS\TestInterface`, `…\Sensors\PS\TestInterface` | `Enable`, `Value` | Written by `IOCTL_SET_REGISTRY_VALUE2` |
 | `HKLM\Software\OEM\Nokia\Display` ? | `AidRegistryExist`, `AidRegistry1_1` … `AidRegistry3_9` | ? |
 
@@ -68,9 +68,9 @@ Power setting callback (`PoRegisterPowerSettingCallback`, `my_PowerSettingCallba
 
 ### Start-up
 
-1. `DriverEntry` (`sub_426000`) → `WdfDriverCreate` with `EvtDriverDeviceAdd` = `sub_423560` and `EvtDriverUnload` = `sub_423800`.
-2. `sub_423570` (device add): PnP/power callbacks (`EvtDeviceD0Entry` 0x40650C, `EvtDeviceD0Exit` 0x406574, `EvtDevicePrepareHardware` = `sub_4237E0`, `EvtDeviceReleaseHardware` 0x405FA0), an in-caller-context callback (`receive_ioctl_from_wdf_DispathToInCallerContextCallback` 0x406724), `WdfDeviceCreate`, a 0x3938-byte device context, `ReadPanelSettingsFromRegistry`, the 3 device interfaces, the worker thread, timers and work items (`call_call_writeFile_processIoctl` 0x416854), the query interface (`sub_4234C0`), the power setting callback, power capabilities / S0 idle settings, and the default queue (`sub_423834`, `EvtIoDeviceControl` 0x406974).
-3. `EvtDevicePrepareHardware` (`sub_423954`): walks the translated resources and keeps the connection resources (type 0x84) of class 1 / type 2 (GPIO I/O, up to 16) at device context `+0x08 + 8*n`. GPIO connection #1 is opened as I/O target `+0x88` and connection #2 as `+0x8C` (`IoRoutine` 0x4084F8 builds `\Device\RESOURCE_HUB\` + 16-digit hex connection id). Connection #0 is kept but not opened here.
+1. `DriverEntry` (0x426000) → `WdfDriverCreate` with `EvtDriverDeviceAdd` (0x423560) and `NopEvtDriverUnload` (0x423800, empty).
+2. `PanelDeviceCreate` (0x423570, device add): PnP/power callbacks (`EvtDeviceD0Entry` 0x40650C, `EvtDeviceD0Exit` 0x406574, `EvtDevicePrepareHardware` 0x4237E0, `EvtDeviceReleaseHardware` 0x405FA0), an in-caller-context callback (`receive_ioctl_from_wdf_DispathToInCallerContextCallback` 0x406724), `WdfDeviceCreate`, a 0x3938-byte device context, `ReadPanelSettingsFromRegistry`, the 3 device interfaces, the worker thread, timers and work items (`InitWorkerResources` 0x416854), the query interface (`AddPanelQueryInterface` 0x4234C0), the power setting callback, power capabilities / S0 idle settings, and the default queue (`CreateDefaultIoQueue` 0x423834, `EvtIoDeviceControl` 0x406974).
+3. `EvtDevicePrepareHardware` → `ParseGpioConnectionResources` (0x423954): walks the translated resources and keeps the connection resources (type 0x84) of class 1 / type 2 (GPIO I/O, up to 16) at device context `+0x08 + 8*n`. GPIO connection #1 is opened as I/O target `+0x88` and connection #2 as `+0x8C` (`OpenResourceHubIoTarget` 0x4084F8 builds `\Device\RESOURCE_HUB\` + 16-digit hex connection id). Connection #0 is kept but not opened here.
 
 ### GPIO lines
 
@@ -88,6 +88,15 @@ Both are written with `GpioWritePin` (0x4238E8), which sends `IOCTL_GPIO_WRITE_P
 * otherwise the HBM GPIO (`+0x8C`) is updated.
 
 ### Panels
+
+The panel identity comes from the ACPI method `DPID` of the panel device. At init, `initDeviceContext` calls `AcpiEvalDPID` (0x423A1C). It sends `IOCTL_ACPI_EVAL_METHOD` (0x32C004) to the device's default I/O target and expects an integer result. `init_values` (0x40B930) splits that integer into three bytes:  
+| Byte | Device context | Meaning |
+|------|----------------|---------|
+| 0 | `+0xD70` | Panel model id (table below) |
+| 1 | `+0xD78` | Panel revision |
+| 2 | `+0xD74` | Panel vendor (`0xC1`, `0xE3` or `0xFE` = Samsung) |
+
+If the method fails or does not return an integer, the driver uses `0xE380B0`: model 0xB0 (Jessica), revision 0x80, vendor 0xE3.
 
 The panel model id is at device context `+0xD70`. `findDisplayCodeName` (0x4146CC) gives the code names; many functions (`call_CreateDisplaySequence_*`) switch on it:  
 | Id | Code name |
@@ -177,17 +186,40 @@ Notes on this output:
 * "HBM … GPIO 0x0" and "Conf HBM (nit) 0/0/0": High Brightness Mode is not configured, so the GPIO `+0x8C` stays low.
 * "Keyleds 0%", "Conf keys 0%": no key LEDs (`LIGHT_LedGroupN_Pct` = 0).
 
+### Refresh-rate calibration
+
+`CalibrateRefreshRate` (0x415520) trims a panel-specific parameter ("RRparam", device context `+0xD08`) so that the measured frame period (`+0xD68`, average in µs over `+0xD64` vsyncs, "Refresh avg" in the [panel info](#panel-info)) gets close to **16667 µs (60.00 Hz)**. It switches on the panel model (`+0xD70`):  
+| Model | Panel | Routine | Default | Range | Step |
+|-------|-------|---------|---------|-------|------|
+| 0xB0 | Jessica | `RrCalib_Jessica` 0x414C68 | ? | ? | ? |
+| 0xB1, 0xB4 | Wendy, Wavehouse | `RrCalib_WendyWavehouse` 0x414F94 | 132 | 84–196 | 10 × error / 177, multiple of 4. Only for vendor `0xFE` (Samsung) with panel revision (`+0xD78`) > `0x83`, otherwise `0xC00000BB` |
+| 0xB3 | Teisko | `RrCalib_Teisko` 0x415030 | 28 | 14–56 | 100 × error / 3890 |
+| 0xBA | Watson | `RrCalib_Watson` 0x415114 | 16 \| 96 << 8 | low byte 16–254, high byte 92–96 | error / 20, carried into the high byte |
+| 0xBC, 0xBF, 0xC2 | Jasmine, Suvi, Tanya | `RrCalib_JasmineSuviTanya` 0x4150AC | 221 | 214–240 | error / 75 |
+| 0xC4 | Smokey | `RrCalib_Smokey` 0x4151E4 | ? | ? | ? |
+| 0xCC | Barbie | `RrCalib_Barbie` 0x415490 | 0x2000 | 2–176 (both bytes) | error / 16, dead band 16640–16667 µs |
+| other | — | — | — | — | Nothing done (returns 0) |
+
+"error" is the difference between the measured period and 16667 µs; the default is used when the low byte of the parameter is `0xFF`. The routine returns `0xC00000A3` when the parameter changed (used as "measure again", not as an error) and 0 when it is unchanged.
+
+It is called, once more than 1200 vsyncs (`+0xD64` > 0x4B0) have been measured, by:
+* `type_0x8000001C` (periodic message): parameter changed → the vsync count and average are reset to measure with the new value; unchanged → converged, saved to the registry value `DevicePanelCalibParam` (`DevicePanelCalibParam_Save`);
+* `type_0x2B` (sent at LCD off): same, then the panel is switched off (`type_0x02`).
+
+The parameter is presumably sent to the panel (oscillator / frame-rate register) in the power-on sequences (not traced).  
+On a Lumia 520 the panel (Race, 0xC0) is not calibrated: `DevicePanelCalibParam` stays `0xFFFFFF` ("RRparam 0xffffff") with a measured period of 16629 µs (≈ 60.1 Hz).
+
 ### ColorData.bin
 
 `load_colordata_bin` (0x404D2C) opens `\??\C:\Windows\System32\DRIVERS\ColorData.bin`, reads a 20-byte header (magic `0x6E646264`, "dbdn" ?) then 12-byte records, and looks up the entry of the current panel (`+0xD70`, `+0xD74`). Format otherwise ?
 
 ### Test proxy
 
-`writeFile` (0x4175E0), run from a work item (`EvtWdfWorkitem_calledBy_WorkItem1`), opens the first interface `{30EBFBF8-DF5F-4D4D-9FC5-A26C7FD1DF4A}` (`TestGetDeviceName`; DbgPrint prefix `TEST_PROXY`) and writes the 2-byte records `00 01` then, 100 ms later, `00 00` (a pulse). It then waits up to 5 s on a semaphore, retries once, and pulses again. Purpose ?
+`TestProxyPulse` (0x4175E0), run from a work item (`EvtWdfWorkitem_calledBy_WorkItem1`), opens the first interface `{30EBFBF8-DF5F-4D4D-9FC5-A26C7FD1DF4A}` (`TestGetDeviceName`; DbgPrint prefix `TEST_PROXY`) and writes the 2-byte records `00 01` then, 100 ms later, `00 00` (a pulse). It then waits up to 5 s on a semaphore, retries once, and pulses again. Purpose ?
 
 ### Query interface
 
-`sub_4234C0` registers a query interface `{ECBE47A8-C498-4BB9-BD70-E867E0940D22}` (`WdfDeviceAddQueryInterface`, Size 0x1C, Version 1). Its only callback (`sub_4065E0`) posts message 0x1B with one value to the worker thread (display transition ?). Consumer ?
+`AddPanelQueryInterface` (0x4234C0) registers a query interface `{ECBE47A8-C498-4BB9-BD70-E867E0940D22}` (`WdfDeviceAddQueryInterface`, Size 0x1C, Version 1). Its only callback (`QueryInterfaceCb_PostMsg1B` 0x4065E0; reference/dereference = `QueryInterfaceNop` 0x406500) posts message 0x1B with one value to the worker thread (display transition ?). Consumer ?
 
 ---
 
@@ -283,7 +315,7 @@ This IOCTL is processed by Oempanel.sys (presumably sent by qcdxkm8930.sys)
 |------|-------------------|--------------------|
 | ? | 32 | 0 |
 
-`call_HandleNokiaIoCtlRequest` accepts it with code `0x83214000` or `0x4000`, before the device is ready. The input buffer is a table of 8 function pointers of the display driver, copied to device context `+0x94` (`init_deviceContext_32bytes` 0x405760; any other length → `0xC000000D`). Entry `+0x04` (`ctx+0x98`) sends a command sequence to the panel, entry `+0x0C` (`ctx+0xA0`) returns its status. oempanel then calls entry 0 with its own callback table (version `0x02010005`, 6 callbacks: `sub_408A44`, `sub_408D68`, `sub_408A64`, `sub_408AC8`, `sub_408D80`, `query_process_thread_interruptTime`) and fills a second table at `ctx+0xC8` (`call_qcdxkm8930`, `call_qcdxkm8930_2`, `sub_406184`, `sub_4061CC`, …).
+`call_HandleNokiaIoCtlRequest` accepts it with code `0x83214000` or `0x4000`, before the device is ready. The input buffer is a table of 8 function pointers of the display driver, copied to device context `+0x94` (`RegisterDisplayDriverCallbacks` 0x405760; any other length → `0xC000000D`). Entry `+0x04` (`ctx+0x98`) sends a command sequence to the panel, entry `+0x0C` (`ctx+0xA0`) returns its status. oempanel then calls entry 0 with its own callback table (version `0x02010005`, 6 callbacks: `sub_408A44`, `sub_408D68`, `sub_408A64`, `sub_408AC8`, `sub_408D80`, `query_process_thread_interruptTime`) and fills a second table at `ctx+0xC8` (`call_qcdxkm8930`, `call_qcdxkm8930_2`, `sub_406184`, `sub_4061CC`, …).
 
 > [!NOTE]
 > The buffer contains kernel function pointers: this IOCTL can only come from a kernel-mode driver.
@@ -340,10 +372,10 @@ This IOCTL is sent by Oempanel.sys to [qcpmic8930.sys](./qcpmic8930.md#ioctl-0x8
 
 Sent only if the qcpmic8930 target is open (`ctx+0x12B4`), from two places:
 * `sendIoctlQcpmic8930_LedCurrentMilliAmp` (0x41789C), when `Flags` bit 2 is set: on panel on (`type_0x80000003`, `type_0x80000004`) and on each backlight update (`UpdateWledCurrent`). Sent for string 0, then for the panel's string (`ctx+0xE07`), each retried once on failure.
-* `_sub_417A8C`, from the panel power-on sequence (`call_CreateDisplaySequence_16`) of panels 198 (Jaywalk) and 204 (Barbie) only, **whatever `Flags`**, followed by `IOCTL_PM_WLED_CONFIG_ADDITIONAL_PARAM`.
+* `WledPanelPowerOnConfig`, from the panel power-on sequence (`call_CreateDisplaySequence_16`) of panels 198 (Jaywalk) and 204 (Barbie) only, **whatever `Flags`**, followed by `IOCTL_PM_WLED_CONFIG_ADDITIONAL_PARAM`.
 
 Inputbuffer (field meanings from the qcpmic8930 page):  
-| Bytes | `sendIoctl…` | `_sub_417A8C` | Comment |
+| Bytes | `sendIoctl…` | `WledPanelPowerOnConfig` | Comment |
 |-------|--------------|---------------|---------|
 | 00-03 | 00 00 00 00 | 00 00 00 00 | PMIC index |
 | 04-07 | 0, then `ctx+0xE07` | 0, then `ctx+0xE07` | WLED string |
@@ -373,7 +405,7 @@ This IOCTL is sent by Oempanel.sys to [qcpmic8930.sys](./qcpmic8930.md)
 
 This IOCTL is sent by Oempanel.sys to [qcpmic8930.sys](./qcpmic8930.md)
 
-Sent by `_sub_417A8C` (panels 198 and 204). 56-byte input: `10` = 7, `1C` = 1, `20` = 2, `24` = 3, `28` = 0xF, `30` = 3, all other bytes 0.
+Sent by `WledPanelPowerOnConfig` (panels 198 and 204). 56-byte input: `10` = 7, `1C` = 1, `20` = 2, `24` = 3, `28` = 0xF, `30` = 3, all other bytes 0.
 
 ---
 

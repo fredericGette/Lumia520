@@ -633,7 +633,7 @@ The only client found is [oempanel.sys](./oempanel.md) (Nokia Panel Driver, serv
 | Case | Condition | IOCTLs |
 |------|-----------|--------|
 | Backlight current control (`sendIoctlQcpmic8930_LedCurrentMilliAmp`, oempanel 0x41789C) | Bit 2 of the registry value `Flags` is set | `IOCTL_PM_WLED_CONFIG` on panel on and on each brightness update (`UpdateWledCurrent`, oempanel 0x417BD0); `IOCTL_PM_WLED_ENABLE` with 1 at the end of the panel power-on sequence and with 0 at panel off |
-| Panel power-on sequence (`_sub_417A8C`, oempanel 0x417A8C) | Panel model 198 (Jaywalk) or 204 (Barbie), **whatever `Flags`** | `IOCTL_PM_WLED_CONFIG` twice, then `IOCTL_PM_WLED_CONFIG_ADDITIONAL_PARAM` |
+| Panel power-on sequence (`WledPanelPowerOnConfig`, oempanel 0x417A8C) | Panel model 198 (Jaywalk) or 204 (Barbie), **whatever `Flags`** | `IOCTL_PM_WLED_CONFIG` twice, then `IOCTL_PM_WLED_CONFIG_ADDITIONAL_PARAM` |
 
 `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NOKIA_PANEL\Parameters\Settings`  
 | Registry value | value | comment |
