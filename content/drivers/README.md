@@ -14,3 +14,4 @@
 [qcbms8930.sys](./qcbms8930.md)  
 [qcpmic8930.sys](./qcpmic8930.md)  
 [oempanel.sys](./oempanel.md)  
+[acpi.sys](./acpi.md)  
