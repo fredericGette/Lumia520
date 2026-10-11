@@ -9,7 +9,8 @@ The PDOs and filter devices themselves are unnamed (`IoCreateDevice` in `ACPIBui
 
 Registries of the driver:  
 `HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\services\ACPI`  
-`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Enum\ACPI\<_HID>\<instance>` (one per ACPI device node; the ACPI root is `ACPI\PNP0C08`)
+`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Enum\ACPI\<_HID>\<instance>` (one per ACPI device node)  
+`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Enum\ACPI_HAL\PNP0C08\0` (ACPI root device: parent of the `ACPI\…` devices, e.g. `\_SB.AGR0` of [acpipagr.sys](./acpipagr.md#lumia-520-device-node))
 
 Registry key `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\ACPI\Parameters` (read with `OSReadRegValue`, which uses this key when no handle is given):  
 | Registry value | value | comment |
@@ -141,11 +142,11 @@ This IOCTL is processed by Acpi.sys
 Inputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | `41 65 6F 48` 'AeoH' ? | Signature (0x486F6541) |
-| 04-07 | | AccessType |
-| 08-0B | | RegionSpace (e.g. 0x80+ for OEM region spaces) |
-| 0C-0F | | Handler function pointer ? |
-| 10-13 | | ? (only 04-0F are passed to `RegisterOperationRegionHandler`) |
+| 00-03 | `41 65 6F 48` 'AeoH' | Signature (0x486F6541) |
+| 04-07 | 01 00 00 00 | AccessType (acpiex.sys uses 1) |
+| 08-0B | | RegionSpace (acpiex.sys registers 8 = GeneralPurposeIO and 9 = GenericSerialBus) |
+| 0C-0F | | Handler function pointer |
+| 10-13 | | Context ? |
 
 Outputbuffer:  
 | Bytes | Value | Comment |
@@ -153,7 +154,7 @@ Outputbuffer:
 | 00-03 | `41 72 6F 48` 'AroH' | Signature |
 | 04-07 | | Handle of the registered handler (to pass to the unregister IOCTL) |
 
-Backend: `RegisterOperationRegionHandler`. Kernel pointers in the buffer: kernel-mode only.
+Backend: `RegisterOperationRegionHandler`. Kernel pointers in the buffer: kernel-mode only. On the Lumia this is used by [acpiex.sys](./acpiex.md#operation-regions).
 
 ---
 
@@ -289,7 +290,7 @@ This IOCTL is processed by Acpi.sys
 |------|------------------|-------------------|
 | ? | 0 | name length + 2 |
 
-Backend: `ACPIIoctlQueryDeviceBiosName` → `ACPIQueryDeviceBiosName`. Returns the full ACPI path of the device (e.g. `\_SB.xxxx`), as a NUL-terminated string (UTF-16 ?). `STATUS_BUFFER_TOO_SMALL` when the output is too small (nothing returned).
+Backend: `ACPIIoctlQueryDeviceBiosName` → `ACPIQueryDeviceBiosName`. Returns the full ACPI path of the device (e.g. `\_SB.xxxx`), as a NUL-terminated UTF-16 string (acpiex.sys reads it as one). `STATUS_BUFFER_TOO_SMALL` when the output is too small (nothing returned).
 
 ---
 
@@ -364,14 +365,17 @@ Inputbuffer:
 | Bytes | Value | Comment |
 |-------|-------|---------|
 | 00-03 | `41 44 66 52` 'ADfR' / `41 44 66 55` 'ADfU' | Signature: register / unregister |
-| 04-05 | | Version (must be non-zero) |
-| 08-0B | | Register: parameter 1 of `AcpiRegisterDeviceFirmwareLockHandler` (handler ?). Unregister: parameter 1 |
+| 04-05 | 01 00 | Version (must be non-zero) |
+| 08-0B | 84 00 00 00 | Register: resource type handled (0x84 = `CmResourceTypeConnection`, value used by acpiex.sys). Unregister: parameter 1 |
 | 0C-0F | | Unregister: parameter 2 |
-| 10-13, 14-17 | | Register: parameters 2 and 3 (context ?) |
+| 10-13 | | Register: handler (`RhpDeviceFirmwareLockHandler` for acpiex.sys) |
+| 14-17 | | Register: context |
+
+Only known user: [acpiex.sys](./acpiex.md#device-firmware-lock).
 
 ---
 
-### IOCTL 0x2AC028 — query Resource Hub translator interface (?)
+### IOCTL 0x2AC028 — query Resource Hub translator interface
 
 This IOCTL is sent by Acpi.sys to acpiex.sys
 
@@ -386,14 +390,14 @@ This IOCTL is sent by Acpi.sys to acpiex.sys
 |------|-------------|------------------|-------------------|
 | ? | `\Device\RESOURCE_HUB` | 56 | 56 |
 
-Sent by `QueryExternalTranslatorInterface` to the top of the `\Device\RESOURCE_HUB` stack. The same 56-byte buffer is used in both directions:  
+Sent by `QueryExternalTranslatorInterface` to the top of the `\Device\RESOURCE_HUB` stack. The same 56-byte buffer is used in both directions (details of the returned interface in [acpiex.sys](./acpiex.md#ioctl-0x2ac028--query-translator-interface)):  
 | Bytes | Value | Comment |
 |-------|-------|---------|
 | 00-01 | 38 00 | Size (56) |
 | 02-03 | 01 00 | Version |
-| 10-11 | 28 00 | ? (40) |
-| 1C-1F | | Returned: must be non-zero (translator function ?) |
-| 28-2B | | ACPI root PDO |
+| 10-11 | 28 00 | Offset of the ACPI block (28-37) |
+| 1C-1F | | Returned: `RhTranslateBiosToNtResources`, must be non-zero |
+| 28-2B | | ACPI root PDO (acpiex.sys opens an I/O target on it) |
 | 2C-2F | | `AcpiExternalInterfaceUnload` |
 | 30-33 | | `AcpiGetFullyQualifiedBiosName` |
 | 34-37 | | `AcpiAllocateGsivForSecondaryInterrupt` (GPIO interrupts are given secondary GSIVs) |
