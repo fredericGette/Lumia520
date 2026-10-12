@@ -36,7 +36,7 @@ Registry key `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NOKIA_PANEL\P
 | LIGHT_LuxToNitK_LuxIn0…3, LIGHT_LuxToNitK_NitOut0…3 | 0 → 10 nit … | Second curve ("K" = ?), 4 points. Same reading and same fallback as the D curve. Its last non-zero LuxIn is kept as the maximum lux |
 | DevicePanelCalibParam | 0xFFFFFF | REG_DWORD. Converged refresh-rate trimming value of the panel ("RRparam", device context `+0xD08`), written by `DevicePanelCalibParam_Save` (0x418BD0). `0xFF` in the low byte = not calibrated. See [Refresh-rate calibration](#refresh-rate-calibration) |
 
-Other registry keys read (and, for the first five, watched with `ZwNotifyChangeKey` by `RegisterRegistryChangeNotify` 0x423D40):  
+Other registry keys read (and, for the first five and `MotionClarity`, watched with `ZwNotifyChangeKey` by `RegisterRegistryChangeNotify` 0x423D40; the notification is one-shot and is re-armed by `arm_registry_change_notify` 0x423E5C: asynchronous, whole tree, `REG_NOTIFY_CHANGE_LAST_SET`, completion through a work item):  
 | Key | Values | Comment |
 |-----|--------|---------|
 | `HKLM\System\ControlSet001\services\powernotif\Estimations` | ? | Battery estimations |
@@ -44,8 +44,8 @@ Other registry keys read (and, for the first five, watched with `ZwNotifyChangeK
 | `HKLM\Software\OEM\Nokia\Display` | `PowerSaveState`, `BatteryChargePercent` | |
 | `HKLM\Software\OEM\Nokia\BrightnessInterface` | `BrightnessPct` | |
 | `HKLM\Software\OEM\Nokia\Display\ColorAndLight` | `UserSettingSreEnabled`, `UserSettingBsmDimmingEnabled`, `UserSettingKeyLightsEnabled`, `UserSettingFingerFilterEnabled`, `UserSettingDarkConditionBrightness`, `UserSettingWhitePoint`, `UserSettingColorSaturation` | Lumia "Display settings" |
-| `HKLM\Software\OEM\Nokia\Display\MotionClarity` | `Enabled`, `WindowSize`, `Framecount`, `Overdrive` | Created at panel init if the panel supports MotionClarity, seeded with the driver defaults (except `Overdrive`), then read back and watched for changes. Deleted at init if the panel does not support it. |
-| `HKLM\Software\OEM\Nokia\Display\Lpm` | `OPR_Low`, `OPR_Med` | Low Power Mode (glance screen) |
+| `HKLM\Software\OEM\Nokia\Display\MotionClarity` | `Enabled`, `WindowSize`, `Framecount`, `Overdrive` | Created at panel init if the panel supports MotionClarity, seeded with the driver defaults (except `Overdrive`), then read back and watched for changes. Deleted at init if the panel does not support it. See [MotionClarity](#motionclarity) |
+| `HKLM\Software\OEM\Nokia\Display\Lpm` | `OPR_Low`, `OPR_Med` | Low Power Mode (glance screen). Read once at panel init by `init_motionclarity_lpm_registry` (0x423EC8) into device context `+0x38DC` / `+0x38E0` (not watched) |
 | `HKLM\Software\OEM\Nokia\lpm` | `Mode` | |
 | `HKLM\SOFTWARE\OEM\Nokia\Touch\Improved` | `Enabled` | |
 | `HKLM\Software\Microsoft\ManufacturingOS` | `ManufacturingMode` | Read by `RegReadAlcRegistries` (not watched). If the value can be read, Assertive Display is disabled and a flag records whether it is non-zero |
@@ -82,7 +82,7 @@ Both are written with `GpioWritePin` (0x4238E8), which sends `IOCTL_GPIO_WRITE_P
 
 ### Backlight
 
-`ComputeBacklightLevel` (0x403098) computes a 0–255 level (ALS lux → nit curves, user settings, minimum `ctx+0xDFD`, dimming, LPM). Then:
+`ComputeBacklightLevel` (0x403098) computes a 0–255 level (ALS lux → nit curves, user settings, minimum `ctx+0xDFD`, dimming, LPM). Between two points of a curve the value is interpolated linearly by `LinearInterpolate` (0x423494): `y = y0 + (x - x0) × (y1 - y0) / (x1 - x0)` (a zero `x1 - x0` is replaced by 1). The same helper is used when reading the curves (`read_registry`), in `UpdateWledCurrent` and in `process_type`. Then:
 * the level is sent to the panel by `call_CreateDisplaySequence_18` (0x41147C) as MIPI DCS commands: `0x51` (set display brightness), `0x53` = `0x24` or `0x2C` (display control: backlight control on, backlight on, + dimming), `0x55` (CABC mode) and the vendor command `0xD7`. The panel controller then dims the backlight (on a Lumia 520 the PM8038 WLED is never touched at run time);
 * if `Flags` bit 2 is set, `UpdateWledCurrent` (0x417BD0) also sets the PMIC WLED string current through `sendIoctlQcpmic8930_LedCurrentMilliAmp` (0x41789C);
 * otherwise the HBM GPIO (`+0x8C`) is updated.
@@ -97,6 +97,8 @@ The panel identity comes from the ACPI method `DPID` of the panel device. At ini
 | 2 | `+0xD74` | Panel vendor (`0xC1`, `0xE3` or `0xFE` = Samsung) |
 
 If the method fails or does not return an integer, the driver uses `0xE380B0`: model 0xB0 (Jessica), revision 0x80, vendor 0xE3.
+
+When `init_values` reports a new panel, its callers (`type_0x80000007` 0x409714, i.e. `IOCTL_DISPLAY_ID_QUERY`, and `_sub_40B32C`) call `_sub_408DD0`, then `init_motionclarity_lpm_registry` (0x423EC8, see [MotionClarity](#motionclarity)) and `load_colordata_bin`. For Herwood (182) with revision ≤ 0x85 and Jasmine (188) with revision < 0x88, both from vendor `0xFE` (Samsung), they also clear the dword at device context `+0x10E0` (meaning ?). `type_0x80000007` then returns the id as `model | revision << 8 | vendor << 16`.
 
 The panel model id is at device context `+0xD70`. `findDisplayCodeName` (0x4146CC) gives the code names; many functions (`call_CreateDisplaySequence_*`) switch on it:  
 | Id | Code name |
@@ -209,6 +211,28 @@ It is called, once more than 1200 vsyncs (`+0xD64` > 0x4B0) have been measured, 
 The parameter is presumably sent to the panel (oscillator / frame-rate register) in the power-on sequences (not traced).  
 On a Lumia 520 the panel (Race, 0xC0) is not calibrated: `DevicePanelCalibParam` stays `0xFFFFFF` ("RRparam 0xffffff") with a measured period of 16629 µs (≈ 60.1 Hz).
 
+### MotionClarity
+
+MotionClarity is a panel feature set by a vendor DCS register; it seems to reduce motion blur (`Overdrive`, a window of frames ?). Its state is a block of 5 bytes in the device context:  
+| Device context | Registry value | Meaning |
+|----------------|----------------|---------|
+| `+0x1055` | — | Panel supports MotionClarity (set at panel init; where ?) |
+| `+0x1056` | `Enabled` | On/off |
+| `+0x1057` | `WindowSize` | |
+| `+0x1058` | `Framecount` | |
+| `+0x1059` | `Overdrive` | Read only, never written back by the driver |
+
+`init_motionclarity_lpm_registry` (0x423EC8), called after the panel id is known:
+* panel without MotionClarity: deletes `HKLM\Software\OEM\Nokia\Display\MotionClarity` if it exists;
+* otherwise creates the key (creating `Software\OEM\Nokia\Display` one level at a time if needed). If the key is new, it writes `Enabled`, `WindowSize` and `Framecount` with the driver defaults. It then reads the four values (`read_motionclarity_settings` 0x4189DC) and registers a change notification (`on_motionclarity_registry_change` 0x42380C). On a change, it re-arms the notification and posts message 0x1A to the worker thread;
+* in both cases it then reads `Display\Lpm` `OPR_Low` / `OPR_Med`.
+
+Message 0x1A (`process_type`): returns `0xC00000BB` STATUS_NOT_SUPPORTED if the panel has no MotionClarity. Otherwise it re-reads the registry values and, if `+0xCC3` is set (display on ?), sends them to the panel with `call_CreateDisplaySequence_36` (0x413BD4). The same sequence is also appended to the power-on sequences built by `call_CreateDisplaySequence_5`, `_6` and `_7`:
+1. if `WindowSize` ≠ 0: DSI long write (data type 0x39) of vendor command `0xDF` with 2 parameters `WindowSize`, `Framecount`;
+2. DSI short write (data type 0x15) of vendor command `0xDD` with 1 parameter: `0x11` (`0x19` if `Overdrive` ≠ 0), `| 0x04` if `Enabled`, `| 0x02` if `WindowSize` = 0 and `Framecount` ≠ 0. If neither `WindowSize` nor `Framecount` is set, the parameter is 0.
+
+Nothing is sent when `+0x1055` is 0. The command buffers are static: `0xDF` at `.data:0x420448`, `0xDD` at `.data:0x42055C`. They lie in the `.data` area 0x420000–0x422000, where IDA found false functions (named `bad_*` in the database).
+
 ### ColorData.bin
 
 `load_colordata_bin` (0x404D2C) opens `\??\C:\Windows\System32\DRIVERS\ColorData.bin`, reads a 20-byte header (magic `0x6E646264`, "dbdn" ?) then 12-byte records, and looks up the entry of the current panel (`+0xD70`, `+0xD74`). Format otherwise ?
@@ -315,7 +339,8 @@ This IOCTL is processed by Oempanel.sys (presumably sent by qcdxkm8930.sys)
 |------|-------------------|--------------------|
 | ? | 32 | 0 |
 
-`call_HandleNokiaIoCtlRequest` accepts it with code `0x83214000` or `0x4000`, before the device is ready. The input buffer is a table of 8 function pointers of the display driver, copied to device context `+0x94` (`RegisterDisplayDriverCallbacks` 0x405760; any other length → `0xC000000D`). Entry `+0x04` (`ctx+0x98`) sends a command sequence to the panel, entry `+0x0C` (`ctx+0xA0`) returns its status. oempanel then calls entry 0 with its own callback table (version `0x02010005`, 6 callbacks: `sub_408A44`, `sub_408D68`, `sub_408A64`, `sub_408AC8`, `sub_408D80`, `query_process_thread_interruptTime`) and fills a second table at `ctx+0xC8` (`call_qcdxkm8930`, `call_qcdxkm8930_2`, `sub_406184`, `sub_4061CC`, …).
+`call_HandleNokiaIoCtlRequest` accepts it with code `0x83214000` or `0x4000`, before the device is ready. The input buffer is a table of 8 function pointers of the display driver, copied to device context `+0x94` (`RegisterDisplayDriverCallbacks` 0x405760; any other length → `0xC000000D`). Entry `+0x04` (`ctx+0x98`) sends a command sequence to the panel, entry `+0x0C` (`ctx+0xA0`) returns its status. oempanel then calls entry 0 with its own callback table (version `0x02010005`, 6 callbacks: `sub_408A44`, `sub_408D68`, `sub_408A64`, `sub_408AC8`, `sub_408D80`, `query_process_thread_interruptTime`) and fills a second table at `ctx+0xC8` (`call_qcdxkm8930`, `call_qcdxkm8930_2`, `sub_406184`, `sub_4061CC`, …).  
+`DisplayCb_StoreInfo20` (0x405F60) copies a 20-byte structure from the display driver to `ctx+0xB4`, just after the 8-pointer table. It returns 0, or 3 on a NULL argument. It has no static reference, so it is presumably an entry of one of these callback tables. The content of the structure is unknown.
 
 > [!NOTE]
 > The buffer contains kernel function pointers: this IOCTL can only come from a kernel-mode driver.
