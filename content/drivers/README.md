@@ -5,7 +5,7 @@
 [qcscm8930.sys TODO](./qcscm8930.md)  
 [qcsmd8930.sys](./qcsmd8930.md)  
 [qcsmsm8930.sys](./qcsmsm8930.md)  
-[qcrpen8930.sys TODO](./qcrpen8930.md)  
+[qcrpen8930.sys](./qcrpen8930.md)  
 [wpcrdmp.sys](./wpcrdmp.md)  
 [qcchipinfo8930.sys TODO](./qcchipinfo8930.md)  
 [qcsmem8930.sys](./qcsmem8930.md)  
@@ -17,3 +17,4 @@
 [acpi.sys](./acpi.md)  
 [acpiex.sys](./acpiex.md)  
 [acpipagr.sys](./acpipagr.md)  
+[qcpmicapps8930.sys](./qcpmicapps8930.md)  
