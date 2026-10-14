@@ -18,3 +18,4 @@
 [acpiex.sys](./acpiex.md)  
 [acpipagr.sys](./acpipagr.md)  
 [qcpmicapps8930.sys](./qcpmicapps8930.md)  
+[wppower.sys](./wppower.md)  

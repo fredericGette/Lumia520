@@ -46,7 +46,7 @@ GUID of the ETW provider:
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| \Device\SMD | qcsmd8930.sys | Shared Memory Device. One WDF I/O target per channel. |
+| \Device\SMD | [qcsmd8930.sys](./qcsmd8930.md) | Shared Memory Device. One WDF I/O target per channel (a `\Device\SMD` handle is bound to a single channel) |
 
 ### SMD channels
 
@@ -159,12 +159,14 @@ Inputbuffer:
 | Bytes | Value | Comment |
 |-------|-------|---------|
 | 00-03 | ? | Pointer to the ANSI name of the SMD channel (`APPS_RIVA_BT_CMD` or `APPS_RIVA_BT_ACL`) |
-| 04-07 | 06 00 00 00 | ? |
-| 08-0B | 11 00 00 00 | ? |
-| 0C-0F | 00 20 00 00 | 0x2000, FIFO size ? |
-| 10-13 | 00 00 00 00 | ? |
-| 14-17 | 00 00 00 00 | ? |
-| 18-1B | 00 00 00 00 | ? |
+| 04-07 | 06 00 00 00 | Edge: 6 = `SMD_APPS_RIVA` (APPS↔WCNSS) |
+| 08-0B | 11 00 00 00 | Flags. 0x10 = wait until the RIVA has opened its side of the channel before completing. 0x01 is ignored by qcsmd8930.sys. 0x02 is not set, so the channel is in packet mode |
+| 0C-0F | 00 20 00 00 | FIFO size: 0x2000 bytes (also the default) |
+| 10-13 | 00 00 00 00 | No `PKEVENT` for "data received" |
+| 14-17 | 00 00 00 00 | No `PKEVENT` for "channel opened" |
+| 18-1B | 00 00 00 00 | No `PKEVENT` for "remote close ?" |
+
+See [qcsmd8930.sys](./qcsmd8930.md#internal-ioctl-0x22003) for the processing and the error codes. Because of flag 0x10, the request stays pending in qcsmd8930.sys until the WCNSS opens the channel, hence the 60-second timeout.
 
 ---
 
@@ -182,6 +184,8 @@ This IOCTL is sent by QcBluetooth8930.sys to qcsmd8930.sys (`send_Ioctl_0x22007_
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|-------------------|
 | Close a SMD channel | \Device\SMD | 0 | 0 |
+
+qcsmd8930.sys completes it once the close is acknowledged, or returns `STATUS_INVALID_DEVICE_STATE` if no channel is open on the handle (see [qcsmd8930.sys](./qcsmd8930.md#internal-ioctl-0x22007)).
 
 ---
 
