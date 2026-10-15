@@ -2,7 +2,7 @@
 [qcwcn8930.sys](./qcwcn8930.md)  
 [qcpil8930.sys](./qcpil8930.md)  
 [qccdi8930.sys](./qccdi8930.md)  
-[qcscm8930.sys TODO](./qcscm8930.md)  
+[qcscm8930.sys](./qcscm8930.md)  
 [qcsmd8930.sys](./qcsmd8930.md)  
 [qcsmsm8930.sys](./qcsmsm8930.md)  
 [qcrpen8930.sys](./qcrpen8930.md)  
@@ -19,3 +19,4 @@
 [acpipagr.sys](./acpipagr.md)  
 [qcpmicapps8930.sys](./qcpmicapps8930.md)  
 [wppower.sys](./wppower.md)  
+[qcabd8930.sys](./qcabd8930.md)  

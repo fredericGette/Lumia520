@@ -2,7 +2,7 @@
 
 PMIC "apps" driver: real-time clock (wall-clock time) on top of the PMIC RTC (Qualcomm KMDF driver, PDB `pmicapps\fre\qcpmicapps8930.pdb`, 76 functions).  
 The PMIC RTC of [qcpmic8930.sys](./qcpmic8930.md) is only a free-running seconds counter (it's not a Unix time). This driver turns it into a date: it keeps the offset between the counter and the real time in the UEFI variable `RTCInfo`, and converts `counter + offset` (seconds since 1980-01-06, the GPS epoch) into the 16-byte ACPI `_GRT`/`_SRT` time structure.  
-It exposes two IOCTLs, `IOCTL_PM_ABD_GET_PMIC_RTC_DATA` and `IOCTL_PM_ABD_SET_PMIC_RTC_DATA`, and registers them with a time service reached through the `{2B0FDE10-…}` interface (owner unknown).  
+It exposes two IOCTLs, `IOCTL_PM_ABD_GET_PMIC_RTC_DATA` and `IOCTL_PM_ABD_SET_PMIC_RTC_DATA`, and registers them with [qcabd8930.sys](./qcabd8930.md) (`{2B0FDE10-…}` interface). That driver is a software I²C target: an ACPI `GenericSerialBus` operation region access on the I²C slave address given by `GEPT` reaches these two IOCTLs. ACPI `_GRT` / `_SRT` ([acpitime.sys](./acpitime.md)) probably get to the PMIC RTC this way: AML → [acpiex.sys](./acpiex.md) → qcabd8930.sys → this driver → qcpmic8930.sys ?  
 It also writes `0` to up to two GPIO lines listed in its ACPI resources each time the device enters D0.
 
 There's no named device and no `\DosDevices` link. The driver registers a device interface (`WdfDeviceCreateDeviceInterface`):  
@@ -21,7 +21,7 @@ Registry value, read and written in the driver's **service key** (`WdfDriverGetR
 |----------------|-------|---------|
 | IsRTCTimeValid | 0 | REG_DWORD. Despite its name, it's the PMIC RTC counter (seconds) at the moment the time was last set with `IOCTL_PM_ABD_SET_PMIC_RTC_DATA` (written by `sub_4010C0`, read by `sub_401008`). At start-up the time is considered valid if the current counter is **greater** than this value, i.e. the RTC hasn't been reset since the last set |
 
-UEFI variable (read with internal IOCTL 0x520004, written with internal IOCTL 0x520008, attribute 1 = NON_VOLATILE):  
+UEFI variable (read with internal IOCTL 0x520004, written with internal IOCTL 0x520008 of [qcscm8930.sys](./qcscm8930.md), attribute 1 = NON_VOLATILE, extended to 7 = NV+BS+RT by qcscm8930.sys):  
 | Name | Vendor GUID | Size | Comment |
 |------|-------------|------|---------|
 | RTCInfo | `{882F8C2B-9646-435F-8DE5-F208FF80C1BD}` | 8 | Offset between the PMIC RTC counter and the real time. Same vendor GUID as `BmsDataVariables` of [qcbms8930.sys](./qcbms8930.md) |
@@ -41,8 +41,8 @@ It communicates with the following devices:
 |--------|--------|---------|
 | ACPI node of the device (default I/O target) | [acpi.sys](./acpi.md) | `IOCTL_ACPI_EVAL_METHOD` (0x32C004) on method `GEPT` (see below) |
 | `{61630799-922A-4980-99D9-90C39084A979}` | [qcpmic8930.sys](./qcpmic8930.md) | PMIC RTC: `IOCTL_PM_RTC_GET_TIME` (0x800A0FA8), `IOCTL_PM_RTC_START` (0x800A0FA0) |
-| `{2B0FDE10-DED1-40C1-AF2E-031836A066A8}` | ? | Time service: registration (0xC3502FA4) / unregistration (0xC3502FA8) of the two IOCTLs of this driver |
-| `{A942B3D9-EC95-4754-AE45-49C48735B893}` | ? | UEFI variable service: internal IOCTLs 0x520004 (get) and 0x520008 (set) for `RTCInfo` |
+| `{2B0FDE10-DED1-40C1-AF2E-031836A066A8}` | [qcabd8930.sys](./qcabd8930.md) | ABD (software I²C target for ACPI): attach (0xC3502FA4) / detach (0xC3502FA8) of the two IOCTLs of this driver. In return, qcabd8930.sys sends them to this driver |
+| `{A942B3D9-EC95-4754-AE45-49C48735B893}` | [qcscm8930.sys](./qcscm8930.md) | UEFI variable service `GUID_SYSENV_INTERFACE` (`\Device\SysEnv`): internal IOCTLs 0x520004 (`IOCTL_SYSENV_GET_VARIABLE`) and 0x520008 (`IOCTL_SYSENV_SET_VARIABLE`) for `RTCInfo`. Also awaited by [qcbms8930.sys](./qcbms8930.md) and [wpcrdmp.sys](./wpcrdmp.md) |
 | `\Device\RESOURCE_HUB\<connection id>` | GPIO controller | Up to two GPIO lines from the ACPI resources, written to 0 on D0 entry (`IOCTL_GPIO_WRITE_PINS` 0x480004) |
 
 The three interfaces are found with `IoRegisterPlugPlayNotification(EventCategoryDeviceInterfaceChange, PNPNOTIFY_DEVICE_INTERFACE_INCLUDE_EXISTING_INTERFACES)` (`sub_401588`), callback `sub_4014F8`; on arrival the symbolic link is opened with `IoGetDeviceObjectPointer(GENERIC_ALL)`.
@@ -59,13 +59,13 @@ The three interfaces are found with `IoRegisterPlugPlayNotification(EventCategor
 4. When the qcpmic8930 interface arrives (`sub_4012A8`): reads `IsRTCTimeValid`, sends `IOCTL_PM_RTC_GET_TIME`.
    * PMIC error 30 (RTC not running ?) → `IOCTL_PM_RTC_START` with start time 0.
    * no error and counter > `IsRTCTimeValid` → time valid flag `byte_411AA8` = 1.
-5. When both the qcpmic8930 and the `{2B0FDE10-…}` interfaces are present: sends the registration IOCTL 0xC3502FA4. When one of them goes away: sends 0xC3502FA8.
+5. When both the qcpmic8930 and the `{2B0FDE10-…}` ([qcabd8930.sys](./qcabd8930.md)) interfaces are present: sends the attach IOCTL 0xC3502FA4. When one of them goes away: sends 0xC3502FA8.
 6. `EvtWdfDeviceD0Entry` (0x402200) → `sub_401F98`: for each GPIO connection, opens `\Device\RESOURCE_HUB\<id as %016I64x>` (`FILE_GENERIC_WRITE`) and sends `IOCTL_GPIO_WRITE_PINS` with 1 byte = `00` (synchronous, 1 s timeout). The status is ignored by D0Entry.
 7. `EvtWdfDeviceSelfManagedIoInit` / `Restart` start the queue, `Suspend` stops it. `EvtWdfDeviceD0Exit` does nothing. `EvtWdfDeviceReleaseHardware` unregisters the PnP notifications.
 
 ### ACPI `GEPT`
 
-`GEPT` is evaluated without argument (`ACPI_EVAL_INPUT_BUFFER` signature `'AeiB'`, 20-byte output buffer). If the output signature is `'AeoB'` and the count is non-zero, the **low byte** of the first argument's data is stored as a WORD at context `+0x28` (offset `0x10` of the registration block). The argument type isn't checked. Meaning ?
+`GEPT` is evaluated without argument (`ACPI_EVAL_INPUT_BUFFER` signature `'AeiB'`, 20-byte output buffer). If the output signature is `'AeoB'` and the count is non-zero, the **low byte** of the first argument's data is stored as a WORD at context `+0x28` (offset `0x10` of the registration block). The argument type isn't checked. This value is the I²C slave address that [qcabd8930.sys](./qcabd8930.md) matches against the `I2cSerialBus` connection of the operation region, so `GEPT` probably returns the slave address of the "RTC" behind that operation region ? (only the low byte is kept, so a 10-bit address can't be used).
 
 ### Time format
 
@@ -112,6 +112,8 @@ This IOCTL is processed by Qcpmicapps8930.sys
 |------|------------------|-------------------|
 | IOCTL_PM_ABD_GET_PMIC_RTC_DATA | ignored | 16 |
 
+Sent by [qcabd8930.sys](./qcabd8930.md#ioctl-0x41808--ioctl_spb_execute_sequence) when the last transfer of an SPB sequence on the registered slave address is a read. The input is 4 bytes holding the read buffer length, and the output is the read buffer itself.
+
 Handler `sub_40199C`:
 1. OutputBufferLength must be exactly 16, otherwise `STATUS_INVALID_PARAMETER_4` (0xC00000F2).
 2. Reads the PMIC RTC counter (`IOCTL_PM_RTC_GET_TIME`). Its status is ignored once the offset is loaded.
@@ -147,6 +149,8 @@ Inputbuffer:
 |-------|-------|---------|
 | 00-0F | | ACPI time structure, see [Time format](#time-format). Only Year…Second and TimeZone are used |
 
+Sent by [qcabd8930.sys](./qcabd8930.md#ioctl-0x41808--ioctl_spb_execute_sequence) when the last transfer of an SPB sequence on the registered slave address is a write. The input is the write buffer, with no output.
+
 Handler `sub_401A58`:
 1. InputBufferLength must be exactly 16, otherwise `STATUS_INVALID_PARAMETER_2` (0xC00000F0).
 2. Converts the date into seconds since 1980-01-06, plus `60 × TimeZone`.
@@ -163,7 +167,7 @@ The output buffer isn't touched, but Information is set to OutputBufferLength.
 
 ### IOCTL 0xC3502FA4
 
-This IOCTL is sent by Qcpmicapps8930.sys to the `{2B0FDE10-DED1-40C1-AF2E-031836A066A8}` device (owner ?)  
+This IOCTL is sent by Qcpmicapps8930.sys to [qcabd8930.sys](./qcabd8930.md#ioctl-0xc3502fa4--attach) (`{2B0FDE10-DED1-40C1-AF2E-031836A066A8}` interface)  
 
 | Property | Value |
 |----------|-------|
@@ -174,25 +178,25 @@ This IOCTL is sent by Qcpmicapps8930.sys to the `{2B0FDE10-DED1-40C1-AF2E-031836
 
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|-------------------|
-| Register a time provider ? | `{2B0FDE10-…}` interface | 32 | 0 |
+| ABD attach | `{2B0FDE10-…}` interface | 32 | 0 |
 
 Sent by `sub_4013B0` once both the `{2B0FDE10-…}` and the qcpmic8930 interfaces are present. The block is stored in the device context at `+0x18`.
 
 Inputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-0F | B1 CE 95 CA 82 A3 06 4F B6 5E 0A 90 11 56 09 A5 | `{CA95CEB1-A382-4F06-B65E-0A90115609A5}`, interface of this driver |
-| 10-11 | ? | Low byte of the ACPI `GEPT` result |
+| 00-0F | B1 CE 95 CA 82 A3 06 4F B6 5E 0A 90 11 56 09 A5 | `{CA95CEB1-A382-4F06-B65E-0A90115609A5}`, interface of this driver. qcabd8930.sys waits for it with a PnP notification to get the device object |
+| 10-11 | ? | Low byte of the ACPI `GEPT` result: the I²C slave address served |
 | 12-13 | 00 00 | |
-| 14-17 | A0 0F 10 80 | 0x80100FA0 `IOCTL_PM_ABD_GET_PMIC_RTC_DATA` |
-| 18-1B | A4 0F 10 80 | 0x80100FA4 `IOCTL_PM_ABD_SET_PMIC_RTC_DATA` |
-| 1C-1F | 10 00 00 00 | 16, size of the time structure |
+| 14-17 | A0 0F 10 80 | 0x80100FA0 `IOCTL_PM_ABD_GET_PMIC_RTC_DATA`, sent for a read |
+| 18-1B | A4 0F 10 80 | 0x80100FA4 `IOCTL_PM_ABD_SET_PMIC_RTC_DATA`, sent for a write |
+| 1C-1F | 10 00 00 00 | 16, size of the time structure (stored but unused by qcabd8930.sys) |
 
 ---
 
 ### IOCTL 0xC3502FA8
 
-This IOCTL is sent by Qcpmicapps8930.sys to the `{2B0FDE10-DED1-40C1-AF2E-031836A066A8}` device (owner ?)  
+This IOCTL is sent by Qcpmicapps8930.sys to [qcabd8930.sys](./qcabd8930.md#ioctl-0xc3502fa8--detach) (`{2B0FDE10-DED1-40C1-AF2E-031836A066A8}` interface)  
 
 | Property | Value |
 |----------|-------|
@@ -203,7 +207,7 @@ This IOCTL is sent by Qcpmicapps8930.sys to the `{2B0FDE10-DED1-40C1-AF2E-031836
 
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|-------------------|
-| Unregister a time provider ? | `{2B0FDE10-…}` interface | 16 | 0 |
+| ABD detach | `{2B0FDE10-…}` interface | 16 | 0 |
 
 Sent by `sub_401240` when the `{2B0FDE10-…}` or the qcpmic8930 interface goes away.
 
@@ -269,9 +273,9 @@ Outputbuffer:
 
 ---
 
-### internal IOCTL 0x520004
+### internal IOCTL 0x520004 — IOCTL_SYSENV_GET_VARIABLE
 
-This IOCTL is sent by Qcpmicapps8930.sys to the `{A942B3D9-EC95-4754-AE45-49C48735B893}` device (owner ?) to read a UEFI variable  
+This IOCTL is sent by Qcpmicapps8930.sys to [qcscm8930.sys](./qcscm8930.md) (`{A942B3D9-EC95-4754-AE45-49C48735B893}` interface) to read a UEFI variable  
 
 | Property | Value |
 |----------|-------|
@@ -282,7 +286,7 @@ This IOCTL is sent by Qcpmicapps8930.sys to the `{A942B3D9-EC95-4754-AE45-49C487
 
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|-------------------|
-| Get UEFI variable ? | `{A942B3D9-…}` interface | 36 | 20 |
+| IOCTL_SYSENV_GET_VARIABLE | `{A942B3D9-…}` interface | 36 | 20 |
 
 Inputbuffer (`sub_401854`):  
 | Bytes | Value | Comment |
@@ -294,15 +298,15 @@ Inputbuffer (`sub_401854`):
 Outputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | ? | ? (attributes ?) |
+| 00-03 | | Attributes of the variable |
 | 04-07 | 08 00 00 00 | Data size, used as the copy length |
 | 08-13 | | Data (`RTCInfo`, 8 bytes) |
 
 ---
 
-### internal IOCTL 0x520008
+### internal IOCTL 0x520008 — IOCTL_SYSENV_SET_VARIABLE
 
-This IOCTL is sent by Qcpmicapps8930.sys to the `{A942B3D9-EC95-4754-AE45-49C48735B893}` device (owner ?) to write a UEFI variable  
+This IOCTL is sent by Qcpmicapps8930.sys to [qcscm8930.sys](./qcscm8930.md) (`{A942B3D9-EC95-4754-AE45-49C48735B893}` interface) to write a UEFI variable  
 
 | Property | Value |
 |----------|-------|
@@ -313,7 +317,7 @@ This IOCTL is sent by Qcpmicapps8930.sys to the `{A942B3D9-EC95-4754-AE45-49C487
 
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|-------------------|
-| Set UEFI variable ? | `{A942B3D9-…}` interface | 56 | 0 |
+| IOCTL_SYSENV_SET_VARIABLE | `{A942B3D9-…}` interface | 56 | 0 |
 
 Inputbuffer (`sub_401720`):  
 | Bytes | Value | Comment |
@@ -321,7 +325,7 @@ Inputbuffer (`sub_401720`):
 | 00-03 | 00 00 00 00 | |
 | 04-07 | 30 00 00 00 | Offset of the data (48) |
 | 08-0B | 08 00 00 00 | Data size |
-| 0C-0F | 01 00 00 00 | Attributes: NON_VOLATILE ? |
+| 0C-0F | 01 00 00 00 | Attributes: NON_VOLATILE. qcscm8930.sys always adds BOOTSERVICE_ACCESS \| RUNTIME_ACCESS |
 | 10-1F | 2B 8C 2F 88 46 96 5F 43 8D E5 F2 08 FF 80 C1 BD | Vendor GUID `{882F8C2B-9646-435F-8DE5-F208FF80C1BD}` |
 | 20-2F | `R\0T\0C\0I\0n\0f\0o\0\0\0` | Name `RTCInfo`, UTF-16 |
 | 30-37 | | Data, see the content of `RTCInfo` above |
@@ -358,10 +362,10 @@ qcpmicapps8930 device interface
 PMIC RTC companion interface (one of the device interfaces of [qcpmic8930.sys](./qcpmic8930.md))  
 `{61630799-922A-4980-99D9-90C39084A979}`
 
-Time service interface, receiver of the registration (owner ?)  
+Interface of [qcabd8930.sys](./qcabd8930.md), receiver of the attach / detach  
 `{2B0FDE10-DED1-40C1-AF2E-031836A066A8}`
 
-UEFI variable service interface (owner ?, also awaited by [qcbms8930.sys](./qcbms8930.md))  
+UEFI variable service interface `GUID_SYSENV_INTERFACE` of [qcscm8930.sys](./qcscm8930.md) (also awaited by [qcbms8930.sys](./qcbms8930.md) and [wpcrdmp.sys](./wpcrdmp.md))  
 `{A942B3D9-EC95-4754-AE45-49C48735B893}`
 
 ### Other GUID

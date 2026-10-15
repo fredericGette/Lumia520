@@ -1,134 +1,242 @@
 ## Qccdi8930.sys
 
-As indicated in the binary, this is the _Crash dump injectory driver that interfaces with the Windows crash dump driver and is responsible for generating crash dumps_
+Crash Dump Injector (CDI) driver. As indicated in the binary, this is the _Crash dump injectory driver that interfaces with the Windows crash dump driver and is responsible for generating crash dumps_.  
+It maintains a list of physical memory regions ("subsystems") to include in the memory dump in case of crash. The address of some of these memory regions are hardcoded in the driver, the others are found by querying other drivers with their driver-defined interface ([qcrpen8930.sys](./qcrpen8930.md) for the RPE clients, [qcpil8930.sys](./qcpil8930.md) for the loaded images).  
+Each region is cut into dump segments that are added to the Windows crash dump with `KeRegisterBugCheckReasonCallback(KbCallbackSecondaryDumpData)`, and is also announced to the Windows Phone crash dump driver [wpcrdmp.sys](./wpcrdmp.md) (CDD) for the offline dump.  
+At startup it also gives a 4 KB buffer to the TrustZone (through [qcscm8930.sys](./qcscm8930.md)) to receive the _watchdog bark_ context.  
+PDB path: `P:\RPE\rel\8.3\arm\Release\qccdi8930.pdb`.
 
-It maintains a list of memory regions to include in the memory dump in case of crash. The address of some of these memory regions are hardcoded in the driver, whereas some other memory regions are found by querying other drivers with their driver-defined interface. 
+There's no device name and no symbolic link. The device only registers the device interface `{6EA2C81E-AC5E-4583-8767-37D4DBFBD6AB}` (see [IOCTL](#ioctl)).  
 
 Registry driver's Parameters:  
 | Registry value | value | comment |
 |----------------|-------|---------|
-|ExpectedCrashDumpSegmentSize | | ULong (default=0xA00000, 10MB) |
-|UserDefinedCrashDumpSegmentSize | | ULong (default=0) |
-|UserDefinedCrashDumpSegmentAddress | | ULong (default=0x00000000) |
+| ExpectedCrashDumpSegmentSize | | ULong (default=0xA00000, 10MB). Maximum size of a dump segment: each memory run is cut into segments of this size |
+| UserDefinedCrashDumpSegmentSize | | ULong (default=0). Size in bytes of the `TZ_LOG` region |
+| UserDefinedCrashDumpSegmentAddress | | ULong (default=0x00000000). Physical address of the `TZ_LOG` region. `TZ_LOG` is registered only when both values are not 0 |
 
 Crash dump cookies used in Offline Dump:  
 `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CrashControl\SVVariables`  
 | Registry value | value | comment |
 |----------------|-------|---------|
-| WpMemoryCaptureModeAddr | | ULong | 
-| WpSvLegacyFlagAddr | | |
+| WpMemoryCaptureModeAddr | | ULong. Physical address of the `WpMemoryCaptureMode` cookie. The driver maps 4 bytes at this address and only logs its value (e.g. 0xFFFFFFFF) |
+| WpSvLegacyFlagAddr | | ULong. Physical address of the `WpSvLegacyFlag` cookie. Same processing |
+
+The CDD is used only if the key `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\WpCrDmp` exists.
+
+There's no ETW provider: the driver writes its logs as text in a 128 KB buffer, the `TRACE_LOG` region (see [Example of startup logs](#example-of-startup-logs)). When the buffer is full, a single warning is printed with `DbgPrintEx(DPFLTR_IHVDRIVER_ID, …)` ("qccdi: WARNING: Crash dump trace log bu…") and the next logs are lost.
+
+Pool tags: `qcd0` (driver), `qcda` (dump segment directory), `qcdb` (dump segments of a subsystem), `qcdc` (bugcheck callback records), `qcdd` (segment names), `qcde` (memory runs), `qcdf` (subsystem map entry), `qcdg` (subsystem descriptors).
+
+It communicates with the following devices:  
+| Device | Driver | Comment |
+|--------|--------|---------|
+| \??\ACPI#QCOM0E90#0#{41c66d2a-a9f1-40ca-a329-ae096c03ee68} | [qcscm8930.sys](./qcscm8930.md) | Secure Channel Manager. [internal IOCTL 0xC3514018](#internal-ioctl-0xc3514018) |
+| \??\ACPI#QCOM0E30#2&daba3ff&0#{0b28c6f2-f696-4580-acb5-bf16c614b1c2} | [qcrpen8930.sys](./qcrpen8930.md) | RPE Notifier. [WPCD query-interface](./qcrpen8930.md#wpcd-interface) |
+| \??\ACPI#QCOM0E00#2&daba3ff&0#{20e0709d-af59-4ce8-9d91-39e11b4c0231} | [qcpil8930.sys](./qcpil8930.md) | Peripheral Image Loader. [PIL query-interface](#pil-interface) |
+| \??\Root#wpcrdmp#0000#{933b95c6-f9cf-4424-a9f8-f497f760aee5} | [wpcrdmp.sys](./wpcrdmp.md) | Crash Dump Driver (CDD). [CDD query-interface](#cdd-interface) |
+
+The 4 targets are found with `IoRegisterPlugPlayNotification(EventCategoryDeviceInterfaceChange)` on their interface class GUID; on arrival a work item opens the target with `WdfIoTargetOpen` (with query-remove / remove-cancel / remove-complete callbacks) and gets the interface with `WdfIoTargetQueryForInterface`.
+
+### Initialisation
+
+`DriverEntry` (0x410008) creates the WDF driver (pool tag `qcd0`), allocates the `TRACE_LOG` buffer (128 KB, non cached MDL pages) and initialises the subsystem list.  
+`qccdiEvtDeviceAdd` (0x40E9FC → 0x40E8A8):
+1. `WdfDeviceCreate`, `WdfDeviceSetDeviceState` (not disableable), `WdfDeviceCreateDeviceInterface({6EA2C81E-…})`, default parallel queue.
+2. Reads `UserDefinedCrashDumpSegmentSize` / `UserDefinedCrashDumpSegmentAddress` (0x403CA8).
+3. Reads `ExpectedCrashDumpSegmentSize` and registers the bugcheck callback of the [Dump Segment Directory](#dump-segment-directory) (0x402008).
+4. Allocates the TZ buffers and waits for the SCM interface (0x4054B4), see [internal IOCTL 0xC3514018](#internal-ioctl-0xc3514018).
+5. Registers the non-RPE subsystems (0x404878): `TRACE_LOG`, `AMSS`, `ADSP`, `RPM`, `SYS_IMEM`, `MDSP_RAM`, `QDSS_ETB_REG`, `MISC_REG` (registered twice: the second call only logs "Bugcheck registration already performed"), `AP_REG`, `WCN` and `TZ_LOG` (only if user defined). `AMSS`, `ADSP` and `WCN` are flagged as xPU protected.
+6. Reads the crash dump cookies, and waits for the CDD interface (0x402E1C).
+7. Waits for the PIL interface (0x403620) and the Notifier interface (0x4032D4).
+
+When the Notifier interface arrives, qccdi8930.sys calls `Notifier_WpcdClientInit(RpeClientAdd, RpeClientRemove)`, then gets all the already registered RPE clients with `Notifier_WpcdGetAllSubsystemDescriptors` (228-byte descriptors, see [qcrpen8930.sys](./qcrpen8930.md#wpcd-interface)) and registers each of them. Later clients arrive through `RpeClientAdd` (0x403530) / `RpeClientRemove` (0x4035B0).  
+When the CDD interface arrives, every known subsystem is registered with the CDD.
+
+### Memory layout of a subsystem
+
+`GetMemoryLayout` (0x4045B8) tries, in this order:
+1. Hard coded entries (0x4040A0), by subsystem name:
+
+| Subsystem | Physical ranges | xPU protected |
+|-----------|-----------------|:-------------:|
+| AMSS | 0x89000000–0x8DA00000 | yes |
+| WCN | 0x8F000000–0x8F700000 | yes |
+| RPM | 0x00020000–0x00044000, 0x00108000–0x0010E000 | |
+| ADSP | 0x28400000–0x28420000, 0x8DA00000–0x8EC00000 | yes |
+| SYS_IMEM | 0x2A000000–0x2A03F000, 0x2A03F000–0x2A04F000 | |
+| MDSP_RAM | 0x09000000–0x09008000, 0x09200000–0x09208000, 0x09400000–0x0940F800 | |
+| QDSS_ETB_REG | 0x01A01000–0x01A02000 | |
+| MISC_REG | 0x80385000–0x80389400 | |
+
+2. Internal memory regions (0x40449C): `AP_REG` = the 4 KB watchdog bark buffer given to TZ, `TRACE_LOG` = the 128 KB log buffer.
+3. User defined region (0x403DB8): `TZ_LOG` = `UserDefinedCrashDumpSegmentAddress` / `UserDefinedCrashDumpSegmentSize`.
+4. Memory segments given by the RPE client in its descriptor (0x403EB4), e.g. `SMD (MODEM)` = 0x80000000–0x80200000. Each segment is 16 bytes: physical address (8 bytes), number of pages (8 bytes).
+5. Memory runs given by the [PIL interface](#pil-interface) (0x4037F8).
+
+Every range is mapped with `MmMapIoSpace(MmNonCached)`. If nothing is found ("The crash dump memory layout is not defined for subsystem"), the registration fails with 0xE0148107. That's the case for `BAMMUX`, `SMD (RIVA)`, `SMSM (MODEM)` and `SMSM (RIVA)` on the Lumia 520.
+
+### Dump segments
+
+`RegisterBugCheckCallbacks` (0x40E008) cuts each memory run into segments of at most `ExpectedCrashDumpSegmentSize` bytes (AMSS: 0x4A00 pages = 74 MB → 8 segments). For each segment it calls `KeRegisterBugCheckReasonCallback(KbCallbackSecondaryDumpData)` with the callback `BcSecondaryDumpDataCallback` (0x402698) and the component name `<subsystem>-<index>` (e.g. `AMSS-3`).  
+The GUID of the secondary dump data of a segment is the GUID of the subsystem whose last byte is incremented by the index of the segment.
+
+`BcSecondaryDumpDataCallback`:
+- First call (size query, `OutBuffer` = NULL): returns the size of the segment. If the subsystem has not been halted yet, it sends the AP error state 7 to the subsystem through callback [1] of its RPE descriptor (`PerformHalt`, 0x4029C0). The halt is skipped for `ADSP` ("Bypassing halt for this subsystem (ADSP) due to a known issue").
+- Second call: if the subsystem is xPU protected, unlocks the memory with the PIL `SetMemoryProtection` function (protection 0x20 `PAGE_EXECUTE_READ`), which actually sends the PAS "Shutdown" command to the TrustZone. When `AMSS` (modem SW region) is unlocked, the modem FW region `{BA58766D-…}` is unlocked too. Then it returns the virtual address and the size of the segment.
+
+If the maximum size allowed by the kernel is smaller than `ExpectedCrashDumpSegmentSize`, the segment is skipped.
+
+### Dump Segment Directory
+
+A table describing all the registered segments, added to the dump by a separate bugcheck callback (`BcSecondaryDumpDataDirectoryCallback`, 0x4025EC, component `Crash Dump Directory`) with the GUID `{ADCDC296-12B8-44C0-B61F-2CDD7CE10377}`. Total size = 64 + 184 × number of segments. It is rebuilt each time a subsystem is registered ("Repopulating the Dump Segment Directory").
+
+Header:  
+| Bytes | Value | Comment |
+|-------|-------|---------|
+| 00-0F | 18 54 CC A4 63 E6 9A 46 BD 10 10 02 71 5F 4A E5 | Signature `{A4CC5418-E663-469A-BD10-1002715F4AE5}` |
+| 10-13 | 2C 00 00 00 | Offset of the first entry (44) |
+| 14-17 | 00 00 00 00 | Is online dump. Set to 1 by the bugcheck callback |
+| 18-1B | ?? ?? ?? ?? | Number of segments |
+| 1C-2B | 18 54 CC A4 … | Signature again |
+
+Then one 184-byte entry per segment:  
+| Bytes | Value | Comment |
+|-------|-------|---------|
+| 00-03 | B8 00 00 00 | Entry size (184) |
+| 04-13 | ? | GUID of the secondary dump data of the segment |
+| 14-17 | ? | Index of the segment in the run |
+| 18-1B | ? | Index of the run |
+| 20-27 | ? | Physical address of the segment |
+| 28-2B | ? | Virtual address of the segment |
+| 30-37 | ? | Size in bytes of the segment |
+| 38-B7 | ? | Subsystem name (128 chars, ANSI) |
+
+After the last entry: the signature GUID followed by `14 00 00 00` (20) ?
+
+---
+
+### IOCTL
+
+The device interface `{6EA2C81E-AC5E-4583-8767-37D4DBFBD6AB}` has a default queue with only `EvtIoDeviceControl` (`qccdiEvtIoDeviceControl`, 0x403914). It logs the request and completes **every** IOCTL code with `STATUS_SUCCESS` without reading or writing the buffers. There's no `EvtIoInternalDeviceControl`.
+
+---
 
 ### internal IOCTL 0xC3514018
 
-This IOCTL is sent by qccdi8930.sys to qcscm8930.sys
+This IOCTL is sent by qccdi8930.sys to [qcscm8930.sys](./qcscm8930.md)
 
 | Property | Value |
 |----------|-------|
-| Device | 0x351 |
+| Device | 0xC351 |
 | Function | 0x6 |
 | Access | FILE_READ_ACCESS |
 | Method | METHOD_BUFFERED |
 
-
-| Name | Device symbolic link name | InputBuffer size | OutputBuffer Size |
-|------|-------------|------------------|--------------------|
+| Name | Device name | InputBuffer size | OutputBuffer Size |
+|------|-------------|------------------|-------------------|
 | Configure the watchdog bark FIQ | \??\ACPI#QCOM0E90#0#{41c66d2a-a9f1-40ca-a329-ae096c03ee68} | 24 | 24 |
+
+Sent once by `TzAssignDogBarkToFIQ` (0x4056DC), when the SCM interface arrives, with `WdfIoTargetSendInternalIoctlSynchronously`. The same 24-byte buffer is used as input and output.
 
 #### Command 0xC02 "Configure the watchdog bark FIQ"
 
 InputBuffer:  
-| Position | Value | Comment |
-|----------|-------|---------|
-| Bytes 00-03 | 18 00 00 00 | Packet size ? |
-| Bytes 04-07 | 10 00 00 00 | Packet type ? |
-| Bytes 08-0B | 00 00 00 00 | ? |
-| Bytes 0C-0F | 02 0C 00 00 | Command |
-| Bytes 10-13 | ?? ?? ?? ?? | physical address of the watchdog bark FIQ handler ? |
-| Bytes 14-18 | 00 10 00 00 | ? |
+| Bytes | Value | Comment |
+|-------|-------|---------|
+| 00-03 | 18 00 00 00 | Packet size ? |
+| 04-07 | 10 00 00 00 | Packet type ? |
+| 08-0B | 00 00 00 00 | Status |
+| 0C-0F | 02 0C 00 00 | Command |
+| 10-13 | ?? ?? ?? ?? | Physical address of the watchdog bark buffer (e.g. 0x9FEB6000). 4 KB of non cached pages allocated by qccdi8930.sys, then dumped as the `AP_REG` subsystem |
+| 14-17 | 00 10 00 00 | Size of the buffer (0x1000) |
 
 OutputBuffer:  
-| Position | Value | Comment |
-|----------|-------|---------|
-| Bytes 00-03 | 18 00 00 00 | Packet size ? |
-| Bytes 04-07 | 10 00 00 00 | Packet type ? |
-| Bytes 08-0B | 01 00 00 00 | 1 = success |
-| Bytes 0C-0F | 02 0C 00 00 | Command |
-| Bytes 10-13 | ?? ?? ?? ?? | physical address of the watchdog bark FIQ handler ? |
-| Bytes 14-18 | 00 10 00 00 | ? |
+| Bytes | Value | Comment |
+|-------|-------|---------|
+| 00-03 | 18 00 00 00 | Packet size ? |
+| 04-07 | 10 00 00 00 | Packet type ? |
+| 08-0B | 01 00 00 00 | 1 = success |
+| 0C-0F | 02 0C 00 00 | Command |
+| 10-13 | ?? ?? ?? ?? | Physical address of the watchdog bark buffer |
+| 14-17 | 00 10 00 00 | Size of the buffer |
+
+If no byte is returned: "SCM return value not available", 0xC0000190 (`STATUS_TRUST_FAILURE`). If the status isn't 1: "Returning error from call to assign wdog…".
+
+### Direct TZ call
+
+> [!NOTE]
+> `PerformControlClassSysCallFuncPtr` (0x405620) bypasses qcscm8930.sys: it writes a 20-byte command (`14 00 00 00`, `10 00 00 00`, status, command 0x806 "Reload image", secured channel ID) in a 32-byte non cached buffer and executes `SMC #0` with its physical address in R0.  
+> It's only called by `sub_4036A8`, which looks for the `AMSS`, modem FW and `WCN` subsystems, sends the AP state 7 to one of them, reloads the images 4 (AMSS), 5 (modem FW), 1 (ADSP) and 6 (WCN), then executes the undefined instruction `UDF #0xFE` (crash). `sub_4036A8` is called by the PIL arrival work item only if `dword_40CB1C` ≠ 0, but this variable is only written by `sub_4036A8` itself: it's dead (debug ?) code.
+
+---
 
 ### Interface GUID
 
-CDDriver interface class   
-`{933B95C6-F9CF-4424-A9F8-F497F760AEE5}`
-
-RPENotifier interface class     
-`{B28C6F-F696-4580-ACB5-BF16C614B1C2}`
-
-PIL interface class     
-`{20E0709D-AF59-4CE8-9D91-39E11B4C0231}`
-
-SCM interface class     
-`{41C66D2A-A9F1-40CA-A329-AE096C03EE68}`
-
-CDI interface class  
+CDI interface class (device interface of qccdi8930.sys)  
 `{6EA2C81E-AC5E-4583-8767-37D4DBFBD6AB}`
 
-CDD driver-defined interface    
-`{8BCB35C2-CB20-44E4-9A1E-33A016856CBF}`
+CDD interface class ([wpcrdmp.sys](./wpcrdmp.md))  
+`{933B95C6-F9CF-4424-A9F8-F497F760AEE5}`
 
-Unknown   
-`{93367D0F-35CE-4EC4-8E38-BB33030C58B2}`
+RPE Notifier (WPCD) interface class and query-interface ([qcrpen8930.sys](./qcrpen8930.md))  
+`{0B28C6F2-F696-4580-ACB5-BF16C614B1C2}`
+
+PIL interface class ([qcpil8930.sys](./qcpil8930.md))  
+`{20E0709D-AF59-4CE8-9D91-39E11B4C0231}`
+
+SCM interface class ([qcscm8930.sys](./qcscm8930.md))  
+`{41C66D2A-A9F1-40CA-A329-AE096C03EE68}`
+
+#### CDD interface
+
+Query-interface `{8BCB35C2-CB20-44E4-9A1E-33A016856CBF}`, size 24, version 1.  
+| Offset | Function | Comment |
+|--------|----------|---------|
+| 0x10 | `RegisterSubsystem(Descriptor, Callbacks, *Context, *NotificationTable)` | Descriptor: version 1, subsystem GUID, name (64 chars), second string (128 chars). Callbacks: `GetFailureRecordCallback` (0x4028A0), `PerformHaltCallback` (0x402954), `SetMemoryProtectionCallback` (0x402AA0). Returns a context (2, 3, 4…) and a function used to send the memory layout |
+| 0x14 | `DeregisterSubsystem(Context)` | |
+
+The memory layout sent to the CDD (`SUBSYSTEM_PHYSICAL_MEMORY_DESCRIPTOR`) is built in MDL pages: number of runs (8 bytes), total number of pages (8 bytes), then 16 bytes per run (physical address, number of pages).
+
+#### PIL interface
+
+Query-interface `{2872B2FA-2469-4862-BAB8-FB47D7A12EF9}`, size 24, version 1.  
+| Offset | Function | Comment |
+|--------|----------|---------|
+| 0x10 | `SetMemoryProtection(GUID *Subsystem, ULONG Protection)` | Unlocks the xPU protected memory of the image. In qcpil8930.sys (`sub_404448`) the value of `Protection` is only checked (1 → 0xC000000D): the function sends the SCM command 0x806 "Shutdown" (PAS_SHUTDOWN) for the channel of the image, and the TrustZone stops the subsystem and unlocks its memory. Returns 0xE0008000 if no image is known for this GUID, 0xE0008008 if the image has no channel ID |
+| 0x14 | `GetMemoryRuns(GUID *Subsystem, RUNS *Runs)` | Called once with no buffer to get the number of runs, then with a buffer of 24 bytes per run. qcpil8930.sys (`sub_4045DC`) always returns a single run covering the segments of the image, already mapped with `MmMapIoSpace` |
+
+Only the images authenticated by the TrustZone (IOCTL 0x9C412410 of qcpil8930.sys) are known by this interface. See [qcpil8930.sys](./qcpil8930.md#query-interface).
+
+### Other GUID
+
+Signature of the Dump Segment Directory  
+`{A4CC5418-E663-469A-BD10-1002715F4AE5}`
+
+Secondary dump data of the Dump Segment Directory  
+`{ADCDC296-12B8-44C0-B61F-2CDD7CE10377}`
 
 ### Memory region GUID
 
-TRACE_LOG  
-`{87d53509-c8cf-4528-b6e5-07839265cd61}`
-
-AMSS (modem SW region)     
-`{936dc601-5530-4b82-9d2a-72a488bec7c1}`
-
-modem FW region  
-`{BA58766D-ABF2-4402-88D7-90AB243F6C77}`
-
-ADSP  
-`{d58464d3-5b28-4ea6-a2e2-e8e57c5c69b8}`
-
-RPM  
-`{7f8e50dc-fad4-4a31-a243-3ab83708e49f}`
-
-SYS_IMEM  
-`{adf3b53c-6657-4d83-83da-a5f3b2544f3c}`
-
-MDSP_RAM  
-`{7d72d7e9-67df-48b3-8f07-be28c12009b5}`
-
-QDSS_ETB_REG   
-`{4f4f1970-8a20-40e2-b60b-99a52bb26700}`
-
-MISC_REG   
-`{d0be3202-f9fc-4c07-bf21-48799499a4d6}`
-
-AP_REG   
-`{ab3a051f-ef0b-4a5f-a79a-80c243ba0848}`
-
-WCN   
-`{93367d0f-35ce-4ec4-8e38-bb33030c58b2}`
-
-BAMMUX   
-`{cccb7664-4951-40c3-8eb1-fda3964a4479}`
-
-SMD (MODEM)  
-`{f9d15453-8335-434c-aa72-fcd925f135f3}`
-
-SMD (RIVA)   
-`{d30f94e9-9c90-4ed5-ae04-9266277c4721}`
-
-SMSM (MODEM)   
-`{1c90923a-df5c-4761-9fd0-835b80f5281d}`
-
-SMSM (RIVA)   
-`{3aabe343-4ea2-43f8-8404-8a4a01088dcf}`
-
+| Region | GUID | Origin |
+|--------|------|--------|
+| TRACE_LOG | `{87D53509-C8CF-4528-B6E5-07839265CD61}` | qccdi8930.sys |
+| AMSS (modem SW region) | `{936DC601-5530-4B82-9D2A-72A488BEC7C1}` | hard coded |
+| modem FW region | `{BA58766D-ABF2-4402-88D7-90AB243F6C77}` | unlocked with AMSS |
+| ADSP | `{D58464D3-5B28-4EA6-A2E2-E8E57C5C69B8}` | hard coded |
+| RPM | `{7F8E50DC-FAD4-4A31-A243-3AB83708E49F}` | hard coded |
+| SYS_IMEM | `{ADF3B53C-6657-4D83-83DA-A5F3B2544F3C}` | hard coded |
+| MDSP_RAM | `{7D72D7E9-67DF-48B3-8F07-BE28C12009B5}` | hard coded |
+| QDSS_ETB_REG | `{4F4F1970-8A20-40E2-B60B-99A52BB26700}` | hard coded |
+| MISC_REG | `{D0BE3202-F9FC-4C07-BF21-48799499A4D6}` | hard coded |
+| AP_REG | `{AB3A051F-EF0B-4A5F-A79A-80C243BA0848}` | qccdi8930.sys |
+| WCN | `{93367D0F-35CE-4EC4-8E38-BB33030C58B2}` | hard coded |
+| TZ_LOG | `{AA795F4D-3B0A-44A4-BB84-B7ECF3EE056A}` | registry |
+| BAMMUX | `{CCCB7664-4951-40C3-8EB1-FDA3964A4479}` | RPE client |
+| SMD (MODEM) | `{F9D15453-8335-434C-AA72-FCD925F135F3}` | RPE client |
+| SMD (RIVA) | `{D30F94E9-9C90-4ED5-AE04-9266277C4721}` | RPE client |
+| SMSM (MODEM) | `{1C90923A-DF5C-4761-9FD0-835B80F5281D}` | RPE client |
+| SMSM (RIVA) | `{3AABE343-4EA2-43F8-8404-8A4A01088DCF}` | RPE client |
 
 ### Example of memory regions 
 
@@ -143,13 +251,13 @@ SMSM (RIVA)
 | 0x28400000 | 0x28420000 | :no_entry: | ADSP | Application Digital Signal Processor |
 | 0x2A000000 | 0x2A03F000 | :white_circle: | SYS_IMEM | Internal Memory |
 | 0x2A03F000 | 0x2A04F000 | :white_circle: | SYS_IMEM | Internal Memory |
-| 0x80000000 | 0x80200000 | :white_circle: | SMD (MODEM) | Shared Memory Device of the Modem |
+| 0x80000000 | 0x80200000 | :white_circle: | SMD (MODEM) | Shared Memory Device of the Modem. Given by the RPE client |
 | 0x80385000 | 0x80389400 | :white_circle: | MISC_REG | Miscellaneous register ? |
 | 0x89000000 | 0x8DA00000 | :no_entry: | AMSS | Advanced Mobile Subscriber Software |
 | 0x8DA00000 | 0x8EC00000 | :no_entry: | ADSP | Application Digital Signal Processor |
 | 0x8F000000 | 0x8F700000 | :no_entry: | WCN | Wireless Connectivity Network |
-| 0x9fa35000 | 0x9FA55000 | :white_circle: | TRACE_LOG | Crash Dump Driver log buffer - memory allocated at the start of qccdi8930.sys |
-| 0x9feb6000 | 0x9FEB7000 | :white_circle: | AP_REG | Application register ? Contains the _watchdog bark timeout handler_ |
+| 0x9FA35000 | 0x9FA55000 | :white_circle: | TRACE_LOG | Crash Dump Driver log buffer - memory allocated at the start of qccdi8930.sys (e.g.) |
+| 0x9FEB6000 | 0x9FEB7000 | :white_circle: | AP_REG | Watchdog bark buffer given to TZ - memory allocated by qccdi8930.sys (e.g.) |
 
 ### Example of startup logs
 

@@ -28,7 +28,7 @@ The driver doesn't open any other device. The other drivers call into it:
 | Device | Driver | Comment |
 |--------|--------|---------|
 | \Device\RPEN, Helper interface | [qcsmsm8930.sys](./qcsmsm8930.md) | RPE client. Publishes the state of the MODEM and RIVA subsystems |
-| \Device\RPEN, Helper interface | [qcwcn8930.sys](./qcwcn8930.md) | RPE client "WCN", GUID `{93367D0F-35CE-4EC4-8E38-BB33030C58B2}` (`RpeClientInitMultiSegment`, `RegisterRPEStateNotification` in its traces) |
+| \Device\RPEN, Helper interface | [qcwcn8930.sys](./qcwcn8930.md) | RPE client "WCN", GUID `{93367D0F-35CE-4EC4-8E38-BB33030C58B2}` (`RpeClientInitMultiSegment`, `RegisterRPEStateNotification` in its traces). Sends the states 4, 5 and 7; watches the SMD (RIVA) and SMSM (RIVA) clients for state 4. See [qcwcn8930.sys RPE](./qcwcn8930.md#rpe) |
 | WPCD interface | [qccdi8930.sys](./qccdi8930.md) | Crash dump interface. Registers the `RpeClientAdd` / `RpeClientRemove` callbacks and reads the subsystem descriptors |
 
 ### WDF setup
@@ -57,11 +57,11 @@ Each client registered through `Notifier_HelperInit` is stored as an `RPE_NOTIFI
 | 0x00 | 16 | Client GUID |
 | 0x10 | 64 | Client name, ANSI, zero-terminated (e.g. `WCN`) |
 | 0x50 | 128 | Second string, ANSI, zero-terminated (description ?) |
-| 0xD0 | 4 | Callback table [0]. Never called by qcrpen8930.sys |
-| 0xD4 | 4 | Callback table [1]: "apps state" callback `void cb(Context, 2, ULONG *State)`. Also given to the WPCD client |
-| 0xD8 | 4 | Callback table [2]. Not called by qcrpen8930.sys, only given to the WPCD client (crash dump callback ?) |
-| 0xDC | 4 | Callback table [3]: command callback `cb(Context, RPE_COMMAND *Command, ULONG *State)` |
-| 0xE0 | 4 | Pointer to a pool copy of the memory segment array (16 bytes per segment) |
+| 0xD0 | 4 | Callback table [0]. Never called by qcrpen8930.sys. It's not a function: [qcwcn8930.sys](./qcwcn8930.md#rpe) puts the size of the table there (16, logged as "Size is 16") |
+| 0xD4 | 4 | Callback table [1]: "apps state" callback `void cb(Context, ULONG ApState, ULONG *State)`. Called by qcrpen8930.sys with 2. Also given to the WPCD client: [qccdi8930.sys](./qccdi8930.md) calls it with 7 (AP error) to halt the subsystem before the crash dump. In qcwcn8930.sys (`sub_401938`), 7 sets `SMSM_RESET` in `SMSM_APPS_STATE` and waits until the WCNSS sets its own `SMSM_RESET` bit (subsystem halted, caches flushed); any other value is ignored |
+| 0xD8 | 4 | Callback table [2]. Not called by qcrpen8930.sys, only given to the WPCD client (crash dump callback ?). No-op in qcwcn8930.sys (`sub_4019C8`) |
+| 0xDC | 4 | Callback table [3]: command callback `cb(Context, RPE_COMMAND *Command, ULONG *State)`. No-op in qcwcn8930.sys (`sub_401A48`) |
+| 0xE0 | 4 | Pointer to a pool copy of the memory segment array (16 bytes per segment: 64-bit base address, 64-bit size; qcwcn8930.sys builds it from the ACPI method `CONF`) |
 | 0xE4 | 1 | Number of memory segments |
 | 0xE8 | 4 | Client context, passed as the first argument of every callback |
 | 0xEC | 4 | 1 = registered with the WPCD (crash dump) client |
@@ -75,9 +75,18 @@ Used by `Notifier_HelperSendState`, `Notifier_HelperRegisterForStateNotification
 |-------|-------|---------|
 | 00-03 | 18 00 00 00 | Size (24) |
 | 04-13 | ? | GUID of the client whose state it is |
-| 14-17 | ? | State. 4 = the client is removed from the crash dump (see below). 9 = "any state" when it's used as a registration filter. 0 = initial state set by `Notifier_HelperInit` |
+| 14-17 | ? | State, see the table below |
 
-The symbolic names of the states are unknown. [qcwcn8930.sys](./qcwcn8930.md) logs `RPE_STATE_ID_READY_FOR_COMMANDS`.
+States:  
+| State | Name | Comment |
+|-------|------|---------|
+| 0 | ? | Initial state set by `Notifier_HelperInit` |
+| 4 | `RPE_STATE_ID_RESTARTING` | Name from the logs of [qcwcn8930.sys](./qcwcn8930.md#rpe), sent before the WCNSS is reloaded. The client is removed from the crash dump (see below) |
+| 5 | `RPE_STATE_ID_READY_FOR_COMMANDS` | Name from the logs of qcwcn8930.sys, sent when the WCNSS is up and its children are created |
+| 7 | `RPE_STATE_ID_ERROR` | Name from the logs of qcwcn8930.sys, sent when the WCNSS crashed. Same value as the "AP error" state that [qccdi8930.sys](./qccdi8930.md) sends to callback [1] |
+| 9 | ? | "Any state" when it's used as a registration filter |
+
+The names of the other states are unknown.
 
 ### RPE_COMMAND structure
 

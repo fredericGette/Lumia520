@@ -87,7 +87,7 @@ It communicates with the following devices (all found with `IoRegisterPlugPlayNo
 |----------------------|--------|---------|
 | `{D17B2593-7189-4E1E-91F1-00798E07B8AB}` | [qcpmic8930.sys](./qcpmic8930.md) | Primary companion. Target of all `IOCTL_PM_GAUGE_*` (`0x8019xxxx`) and `IOCTL_PM_CCADC_*` (`0x8002xxxx`) requests. Its removal stops the BMS and disables this driver's interface |
 | `{61630799-922A-4980-99D9-90C39084A979}` | [qcpmic8930.sys](./qcpmic8930.md) | Time source via `IOCTL_PM_RTC_GET_TIME` (`0x800A0FA8`) |
-| `{A942B3D9-EC95-4754-AE45-49C48735B893}` | ? (not qcpmic8930.sys) | Only awaited: its arrival sets a flag, no IOCTL is sent to it |
+| `{A942B3D9-EC95-4754-AE45-49C48735B893}` | [qcscm8930.sys](./qcscm8930.md) | UEFI variable service `GUID_SYSENV_INTERFACE` (`\Device\SysEnv`, see also [qcpmicapps8930.sys](./qcpmicapps8930.md)). Only awaited: its arrival sets a flag, no IOCTL is sent to it. [wpcrdmp.sys](./wpcrdmp.md) also waits for it before using the UEFI variables |
 | ACPI node of the device | acpi.sys | `IOCTL_ACPI_EVAL_METHOD` `PMCF` |
 | `\Device\Harddisk0`…`5` | disk.sys | `IOCTL_DISK_GET_DRIVE_LAYOUT_EX` (0x70050) to find the EFIESP partition |
 | — | NokiaEnergyDriver / BATTC | Consumer of the `IOCTL_BMS_*` controls below (observed caller) |
@@ -392,7 +392,7 @@ PMIC gauge / CCADC companion interface (one of the device interfaces of [qcpmic8
 PMIC RTC companion interface (one of the device interfaces of [qcpmic8930.sys](./qcpmic8930.md))  
 `{61630799-922A-4980-99D9-90C39084A979}`
 
-Third awaited companion interface (not created by qcpmic8930.sys; owner ?)  
+Third awaited companion interface: UEFI variable service `GUID_SYSENV_INTERFACE` of [qcscm8930.sys](./qcscm8930.md) (also used by [qcpmicapps8930.sys](./qcpmicapps8930.md) and awaited by [wpcrdmp.sys](./wpcrdmp.md))  
 `{A942B3D9-EC95-4754-AE45-49C48735B893}`
 
 ### Other GUID
