@@ -413,7 +413,8 @@ Function table: `g_PmIrqFuncTable` (28 entries per PMIC), only for models 1 and 
 
 `PM_IRQ_GET_INTERRUPTS_STATUS` (0x40B568) calls function-table entry 1 (`sub_41A780`) for type 0 and entry 2 (`sub_41A460`) for type 1, always with interrupt master 2. Both write the block number to register `0x1C0` (IRQ_BLK_SEL). Type 0 then reads `0x1C1` (IT_STATUS, latched) and type 1 reads `0x1C3` (RT_STATUS, real-time). The register names come from the Linux `pm8xxx-irq` driver (base `0x1BB`). The single-interrupt read used by `GET_GPIO_STATE` / `MPP_GET_INPUT_STATE` with source 0 (entry 8, `sub_41A398`) reads the same `0x1C3` register. The IRQ function table is filled by `sub_414EF4` for models 1 and 3.
 
-Type 1 is therefore the real-time status: on a Lumia 520, block 3 type 1 returns `0x68D` (bits 0, 2, 3, 7, 9, 10). These are exactly the GPIOs (interrupts 192 + n) that `IOCTL_PM_GPIO_GET_GPIO_STATE` with source 0 reports as 1. Type 0 returned 0 for blocks 0–3. Type 1 also returned `0x000613000502B000` for block 0 and `0xA000000000000000` for block 1 (interrupts 125 and 127). The driver leaves output bytes `0C-0F` untouched but reports 16 bytes returned.
+Type 1 is therefore the real-time status: on a Lumia 520, block 3 type 1 returns `0x68D` (bits 0, 2, 3, 7, 9, 10). These are exactly the GPIOs (interrupts 192 + n) that `IOCTL_PM_GPIO_GET_GPIO_STATE` with source 0 reports as 1. Type 0 returned 0 for blocks 0–3. Type 1 also returned `0x000613000502B000` for block 0 and `0xA000000000000000` for block 1 (interrupts 125 and 127). The driver leaves output bytes `0C-0F` untouched but reports 16 bytes returned.  
+[NokiaEnergyDriver.sys](./nokiaenergydriver.md#charging-control) reads interrupt 24 (block 0, mask `0x01000000`, type 1) during its end-of-charge detection: the charge is only terminated while that bit is set (charger interrupt, meaning ?).
 
 `GET_INTERRUPTS_STATUS` with a type other than 0/1 returns `STATUS_INVALID_PARAMETER` (0xC000000D) and error 95.  
 `TRIGGER_INTERRUPT` (0x40BE60) has no hardware "software trigger": it reads the current trigger type of the interrupt and temporarily reprograms its polarity/edge so that it fires, and remembers it in `g_IrqSwTriggerState`. `CLEAR_ACTIVE_INTERRUPTS` restores the original trigger of such interrupts before clearing them.
@@ -451,6 +452,8 @@ Values read on a Lumia 520 (connected to USB):
 * `GET_BATTSAFE`: `00-03` = 4200, `04-07` = 925. These look like the safety limits in mV / mA (VMAX_SAFE, IMAX_SAFE ?).
 * `GET_REGULATION_LOOP`: flags 1, 0, 0, 0.
 * `READ_CHARGING_PARAMTERS`: 500, 875, 200, 60, 4200, 4500. Possible meaning: input current limit (mA) ?, battery current (mA, ≤ the 925 safety limit) ?, VBATDET delta (mV) ?, ITERM (mA) ?, VMAX 4200 mV, VIN_MIN 4500 mV ?
+
+[NokiaEnergyDriver.sys](./nokiaenergydriver.md) (the charging controller, through interface 15) supports this reading of the order. It takes the first dword of `READ_CHARGING_PARAMTERS` as the initial USB input current. It sends `CHG_PARAMS` with the same layout: `04` USB input current (mA), `08` battery current (mA), `0C` 0, `10` 60, `14` charging voltage (mV, ramped up in 50 mV steps), `18` charging voltage + 300 mV. Its other charger calls: `PET_WDOG` (30), `CHGPATH_ENABLE`, `VIN_MIN` (`08` = 4300/4450 mV for USB, `WirelessInputVoltage` otherwise), `FSM_ENABLE` (`04` battery current > 0, `08` 1, `0C` USB current = 0), `GET_REGULATION_LOOP` (byte 3) and `GET_STATE` (charger state 7 = end-of-charge candidate, byte `08` ≠ 0 enables the USB current, byte `09` watched).
 
 ---
 
@@ -723,6 +726,8 @@ This IOCTL is processed by Qcpmic8930.sys
 | 0x801A0FA4 | 1001 | IOCTL_PM_BATALRM_ENABLE_CONTROL_REGISTER | 16 | 4 | 3 values | error |
 | 0x801A0FA8 | 1002 | IOCTL_PM_BATALRM_READ_ALARM_STATUS | 4 | 12 | — | 3 dwords (2 status values + error ?). All 0 on a Lumia 520 |
 
+[NokiaEnergyDriver.sys](./nokiaenergydriver.md#low-voltage-monitor) (through interface 19) arms the alarm when the battery voltage is high enough: `CONFIG_CONTROL_REGISTER` with 4500 (upper threshold, mV ?), ACPI `CUTF[2]` + 50 (lower threshold, mV ?) and 7, then `ENABLE_CONTROL_REGISTER` with 1, 0, enable.
+
 ---
 
 ### IOCTL 0x801Bxxxx — Coin-cell charger
@@ -806,14 +811,14 @@ Present only in the name table; sending them returns `STATUS_INVALID_DEVICE_REQU
 
 ### Interface GUID
 
-The driver creates 22 device interfaces on the same device, in this order (`RegisterDeviceInterfaces`, 0x407F44), presumably one per PMIC block. Only the two used by [qcbms8930.sys](./qcbms8930.md) are identified:  
+The driver creates 22 device interfaces on the same device, in this order (`RegisterDeviceInterfaces`, 0x407F44), presumably one per PMIC block. Only those used by [qcbms8930.sys](./qcbms8930.md), [oempanel.sys](./oempanel.md) and [NokiaEnergyDriver.sys](./nokiaenergydriver.md) are identified:  
 | # | GUID | Comment |
 |---|------|---------|
 | 1 | `{50EC8626-F080-48E2-9076-025BBB44A1A0}` | ? |
 | 2 | `{F1EFB001-D615-4EEF-8B1E-E8C13C8DB12A}` | ? |
 | 3 | `{D17B2593-7189-4E1E-91F1-00798E07B8AB}` | Used by qcbms8930 for the BMS (`0x8019`) and CCADC (`0x8002`) IOCTLs |
 | 4 | `{5186FCEA-68FC-420A-9400-601A6D0CA988}` | ? |
-| 5 | `{9A8FF884-5882-4B62-9E0F-172ACE2A9EC0}` | ? |
+| 5 | `{9A8FF884-5882-4B62-9E0F-172ACE2A9EC0}` | ? Awaited by [NokiaEnergyDriver.sys](./nokiaenergydriver.md), which sends nothing to it |
 | 6 | `{A0A0CA65-C6CA-4215-B78B-5201087131BC}` | ? |
 | 7 | `{D87538A4-32C4-46D8-985E-F7CA7731BA27}` | ? |
 | 8 | `{7C81CACE-8BB1-4C28-ABCF-58C09672CE71}` | ? |
@@ -823,11 +828,11 @@ The driver creates 22 device interfaces on the same device, in this order (`Regi
 | 12 | `{248F196D-BB0A-4960-B11C-7EE9479B290F}` | ? |
 | 13 | `{A5B9E9A8-EE02-46DC-B9EF-562A78C3E5C9}` | ? |
 | 14 | `{5B9DF049-70D3-4698-8E48-85B26C1AA59F}` | Used by [oempanel.sys](./oempanel.md) for the `IOCTL_PM_WLED_*` controls (WLED) |
-| 15 | `{1CF4643A-F9BF-42D3-88E8-F37EE6C0677C}` | ? |
+| 15 | `{1CF4643A-F9BF-42D3-88E8-F37EE6C0677C}` | Used by [NokiaEnergyDriver.sys](./nokiaenergydriver.md) for the charger (`0x8008`) and `IOCTL_PM_IRQ_GET_INTERRUPTS_STATUS` (`0x8007`) IOCTLs |
 | 16 | `{1408ACF4-24D1-43AB-8F80-2F7D8AEDD372}` | ? |
 | 17 | `{F9938F2D-3756-4760-A044-CB29AFBA5A69}` | ? |
 | 18 | `{CF19BFD2-31C2-47FC-A334-B78F00A8292D}` | ? |
-| 19 | `{FF22FC8B-383D-40D3-AFC0-2C37A30D060A}` | ? |
+| 19 | `{FF22FC8B-383D-40D3-AFC0-2C37A30D060A}` | Used by [NokiaEnergyDriver.sys](./nokiaenergydriver.md) for the battery alarm (`0x801A`) IOCTLs |
 | 20 | `{51840099-5AD1-48EE-9176-BEA2990D2758}` | ? |
 | 21 | `{219397E7-B8D9-4DA6-AF0D-1733612E8299}` | ? |
 | 22 | `{DB6DE05B-0144-4F22-A9E1-67C729658533}` | ? |

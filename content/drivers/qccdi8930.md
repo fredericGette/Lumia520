@@ -74,7 +74,7 @@ When the CDD interface arrives, every known subsystem is registered with the CDD
 4. Memory segments given by the RPE client in its descriptor (0x403EB4), e.g. `SMD (MODEM)` = 0x80000000–0x80200000. Each segment is 16 bytes: physical address (8 bytes), number of pages (8 bytes).
 5. Memory runs given by the [PIL interface](#pil-interface) (0x4037F8).
 
-Every range is mapped with `MmMapIoSpace(MmNonCached)`. If nothing is found ("The crash dump memory layout is not defined for subsystem"), the registration fails with 0xE0148107. That's the case for `BAMMUX`, `SMD (RIVA)`, `SMSM (MODEM)` and `SMSM (RIVA)` on the Lumia 520.
+Every range is mapped with `MmMapIoSpace(MmNonCached)`. If nothing is found ("The crash dump memory layout is not defined for subsystem"), the registration fails with 0xE0148107. That's the case for `BAMMUX`, `SMD (RIVA)`, `SMSM (MODEM)` and `SMSM (RIVA)` on the Lumia 520. For `BAMMUX` it's expected: [qcbamdmux8930.sys](./qcbamdmux8930.md#subsystem-restart) calls `RpeClientInitMultiSegment` without any memory segment.
 
 ### Dump segments
 
@@ -232,7 +232,7 @@ Secondary dump data of the Dump Segment Directory
 | AP_REG | `{AB3A051F-EF0B-4A5F-A79A-80C243BA0848}` | qccdi8930.sys |
 | WCN | `{93367D0F-35CE-4EC4-8E38-BB33030C58B2}` | hard coded |
 | TZ_LOG | `{AA795F4D-3B0A-44A4-BB84-B7ECF3EE056A}` | registry |
-| BAMMUX | `{CCCB7664-4951-40C3-8EB1-FDA3964A4479}` | RPE client |
+| BAMMUX | `{CCCB7664-4951-40C3-8EB1-FDA3964A4479}` | RPE client of [qcbamdmux8930.sys](./qcbamdmux8930.md#subsystem-restart), registered without memory segment. Also enabled by that driver as a device interface once the A2 is ready |
 | SMD (MODEM) | `{F9D15453-8335-434C-AA72-FCD925F135F3}` | RPE client |
 | SMD (RIVA) | `{D30F94E9-9C90-4ED5-AE04-9266277C4721}` | RPE client |
 | SMSM (MODEM) | `{1C90923A-DF5C-4761-9FD0-835B80F5281D}` | RPE client |

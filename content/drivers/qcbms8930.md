@@ -1,7 +1,7 @@
 ## Qcbms8930.sys
 
 PMIC Battery Management System (BMS) / fuel-gauge driver.  
-It provides the battery state-of-charge, voltage, current and charging-state control for Qualcomm MSM8930-class platforms. It exposes a set of `IOCTL_BMS_*` controls (device type `0x8018`) that are consumed by the Windows battery stack (`BATTC` → `NokiaEnergyDriver`), and it drives the actual PMIC fuel-gauge hardware through the PMIC driver [qcpmic8930.sys](./qcpmic8930.md) using `IOCTL_PM_GAUGE_*` (device type `0x8019`) and `IOCTL_PM_CCADC_*` (device type `0x8002`) controls.  
+It provides the battery state-of-charge, voltage, current and charging-state control for Qualcomm MSM8930-class platforms. It exposes a set of `IOCTL_BMS_*` controls (device type `0x8018`) that are consumed by the battery miniclass driver [NokiaEnergyDriver.sys](./nokiaenergydriver.md) (under `BATTC`), and it drives the actual PMIC fuel-gauge hardware through the PMIC driver [qcpmic8930.sys](./qcpmic8930.md) using `IOCTL_PM_GAUGE_*` (device type `0x8019`) and `IOCTL_PM_CCADC_*` (device type `0x8002`) controls.  
 The battery profile — OCV/RBAT/FCC curves and charging limits — is loaded from the file `BATTERY.PROVISION` on the EFIESP partition, and is (re)selected by the battery-ID resistor ADC reading received through `IOCTL_BMS_SET_SYSTEM_INFO`.  
 The state-of-charge is computed from a blend of coulomb counting and an OCV-vs-temperature-vs-SOC lookup, load-compensated with the battery internal resistance (Rbat), then temperature/aging-derated and slew-limited before being reported. The coulomb accumulator is persisted in a UEFI variable.
 
@@ -90,7 +90,7 @@ It communicates with the following devices (all found with `IoRegisterPlugPlayNo
 | `{A942B3D9-EC95-4754-AE45-49C48735B893}` | [qcscm8930.sys](./qcscm8930.md) | UEFI variable service `GUID_SYSENV_INTERFACE` (`\Device\SysEnv`, see also [qcpmicapps8930.sys](./qcpmicapps8930.md)). Only awaited: its arrival sets a flag, no IOCTL is sent to it. [wpcrdmp.sys](./wpcrdmp.md) also waits for it before using the UEFI variables |
 | ACPI node of the device | acpi.sys | `IOCTL_ACPI_EVAL_METHOD` `PMCF` |
 | `\Device\Harddisk0`…`5` | disk.sys | `IOCTL_DISK_GET_DRIVE_LAYOUT_EX` (0x70050) to find the EFIESP partition |
-| — | NokiaEnergyDriver / BATTC | Consumer of the `IOCTL_BMS_*` controls below (observed caller) |
+| — | [NokiaEnergyDriver.sys](./nokiaenergydriver.md) | Consumer of the `IOCTL_BMS_*` controls below: it opens this driver's interface `{23B7D0DD-…}` and sends `GET_BATTERY_CURRENT`, `GET_PERCENT_CHARGE`, `SET_CHARGING_STATE`, `SET_SYSTEM_INFO` and `SET_XOADC_CAL_VAL` |
 
 When all three companion interfaces are present, the driver brings the chip online (`PmicBmsProbeAndInitializeChip`: `IOCTL_PM_GAUGE_BMS_CONFIGURE`, CCADC init, `IOCTL_PM_GAUGE_ENABLE_BMS`), loads the persisted accumulator, reads the registry values, starts the 30-minute accumulator timer, then publishes its own device interface.
 
@@ -136,10 +136,11 @@ This IOCTL is processed by Qcbms8930.sys
 Outputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | e.g. `92 FE FF FF` | Battery current, signed mA. Negative = discharge (e.g. −302 mA), positive = charge. |
+| 00-03 | e.g. `92 FE FF FF` | Battery current, signed mA. Negative = discharge (e.g. −302 mA), positive = charge ? |
 
 Backend: `PmicBmsReadCalibratedCurrentSeed` (sub_402C44, via `pPmicBmsReadCalibratedCurrentSeed`). It reads BMS output register selector 5 (`IOCTL_PM_GAUGE_READ_BMS_OUTPUT_REG_BMS`), takes the signed low 16 bits, and scales them by the sense resistor (`dword_419198`, default 10000) and the CCADC gain (`g_CurrentGainScale`, default 1000).  
-Polled very frequently by the platform (coulomb counting, IR-drop/OCV compensation, charge regulation) — this is normal.
+Polled very frequently by the platform (coulomb counting, IR-drop/OCV compensation, charge regulation) — this is normal.  
+[NokiaEnergyDriver.sys](./nokiaenergydriver.md) reports **−value** as the BATTC `Rate` (negative = discharging in the Windows convention), and only computes an estimated time when the value is > 0. Both suggest that a positive value means **discharge**, the opposite of the sign given above: to be checked with a reading taken on battery.
 
 ---
 
@@ -211,9 +212,12 @@ This IOCTL is processed by Qcbms8930.sys
 Inputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | 01 00 00 00 | NewChargingState: 0 = not charging/idle, 1 = charging, 2 = charge-complete / nominal-current rescale |
+| 00-03 | 01 00 00 00 | NewChargingState: 0 = not charging/idle ?, 1 = charging ?, 2 = charge-complete / nominal-current rescale (see the note below) |
 
 Backend: `PmicBmsIoctlSetChargingState` (sub_42E060) → `PmicBmsSetChargingState` (sub_402F78). When leaving state 1 it stops the SOC-correction timer; when entering state 1 it arms it. When leaving state 0 it reloads and persists the accumulator (`BmsDataVariables`). On entry to state 2 it rescales `dword_4254D0`. Finally it forwards the state to the companion PMIC with `IOCTL_PM_GAUGE_BMS_SET_CHARGING_STATE` (0x80190FC8); the byte flag in that request is 1 only for state 0.
+
+> [!NOTE]
+> The only caller, [NokiaEnergyDriver.sys](./nokiaenergydriver.md#charging-control), sends **0 while charging**, **1 when not charging** and 2 when the charge is complete (or during the recharge phase that follows), when its charging state changes. This contradicts the 0/1 meaning given above, which is inferred from the handler only; the caller's mapping is the more direct evidence.
 
 ---
 
@@ -235,9 +239,9 @@ This IOCTL is processed by Qcbms8930.sys
 Inputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | e.g. `CC C6 00 00` | PMIC die temperature in milli-degrees-C ? (50892). Not a timestamp: a change of more than 5000 (5 °C) since the last CCADC calibration, or 5 minutes elapsed, restarts the CCADC calibration |
-| 04-07 | e.g. `40 9C 00 00` | Battery temperature in **milli-degrees-C** (40000 = 40.0 °C); indexes the OCV/FCC/RBAT temperature axes (`dword_419150`) |
-| 08-0B | e.g. `7E 03 00 00` | BatteryId — battery-ID **resistor ADC reading** (not a serial); matched against the profile's `BATTERY_ADC_MIN/MAX` to select the battery profile. 0 = battery removed |
+| 00-03 | e.g. `CC C6 00 00` | PMIC die temperature in milli-degrees-C ? (50892). Not a timestamp: a change of more than 5000 (5 °C) since the last CCADC calibration, or 5 minutes elapsed, restarts the CCADC calibration. NokiaEnergyDriver sends its `PMIC_THERM` ADC reading |
+| 04-07 | e.g. `40 9C 00 00` | Battery temperature in **milli-degrees-C** (40000 = 40.0 °C); indexes the OCV/FCC/RBAT temperature axes (`dword_419150`). NokiaEnergyDriver sends 1000 × its `BATT_THERM` ADC reading (°C) |
+| 08-0B | e.g. `7E 03 00 00` | BatteryId — battery-ID **resistor ADC reading** (not a serial); matched against the profile's `BATTERY_ADC_MIN/MAX` to select the battery profile. 0 = battery removed. NokiaEnergyDriver sends its `BATT_ID` ADC reading |
 
 Outputbuffer:  
 | Bytes | Value | Comment |
@@ -288,7 +292,7 @@ Inputbuffer:
 | 00-03 | e.g. `48 79 00 00` | RawPointA — raw ADC code for the XOADC 0.625 V reference (converts to 632) |
 | 04-07 | e.g. `30 92 00 00` | RawPointB — raw ADC code for the XOADC 1.25 V reference (converts to 1255) |
 
-Backend: `PmicBmsIoctlSetXoadcCalVal` (sub_42E080) → `PmicBmsSetXoadcCalibration` (sub_4030F0). Each point is converted with `(1000 × (raw − 0x6000) + 5120) / 10240` and stored to `dword_42C924` / `dword_42C8DC`; subsequent readings are remapped through `PmicBmsRemapViaTwoPointCalibration` to cancel ADC offset/gain error. Observed caller: `NokiaEnergyDriver` via `BATTC` at init.
+Backend: `PmicBmsIoctlSetXoadcCalVal` (sub_42E080) → `PmicBmsSetXoadcCalibration` (sub_4030F0). Each point is converted with `(1000 × (raw − 0x6000) + 5120) / 10240` and stored to `dword_42C924` / `dword_42C8DC`; subsequent readings are remapped through `PmicBmsRemapViaTwoPointCalibration` to cancel ADC offset/gain error. Caller: [NokiaEnergyDriver.sys](./nokiaenergydriver.md#capacity), at most every 300 s, with the **raw** values (output `10-13` of ADC IOCTL `0x8ADC2004`) of the ADC channels `V0P625` and `V1P25`.
 
 ---
 

@@ -26,7 +26,7 @@ It communicates with the following devices:
 |--------|--------|---------|
 | \Device\SMEM | [qcsmem8930.sys](./qcsmem8930.md) | Shared Memory table driver. [internal IOCTL 0x42000](#internal-ioctl-0x42000) (function table) and [internal IOCTL 0x42004](#internal-ioctl-0x42004) (address translation) |
 | \Device\SMSM | [qcsmsm8930.sys](./qcsmsm8930.md) | Shared Memory State Machine. [IOCTL 0x32000](#ioctl-0x32000), sent once by a work item at start |
-| Interface `{fb4f07cd-8d4c-4413-92c2-e2c9caed9f43}` | qcchipinfo8930.sys | Chip identification. [IOCTL 0x8C1F2008](#ioctl-0x8c1f2008) and [IOCTL 0x8C1F2004](#ioctl-0x8c1f2004), for the RIVA interrupt workaround |
+| Interface `{fb4f07cd-8d4c-4413-92c2-e2c9caed9f43}` | [qcchipinfo8930.sys](./qcchipinfo8930.md) | Chip identification. [IOCTL 0x8C1F2008](#ioctl-0x8c1f2008) and [IOCTL 0x8C1F2004](#ioctl-0x8c1f2004), for the RIVA interrupt workaround |
 | Interface `{59752ed7-b9d5-4121-818d-c69f1e667015}` (\Device\RPEN) | [qcrpen8930.sys](./qcrpen8930.md) | RPE notifier, Helper query-interface. See [RPE clients](#rpe-clients) |
 | ACPI node of the device | acpi.sys | [IOCTL 0x32C004](#ioctl-0x32c004) `IOCTL_ACPI_EVAL_METHOD`, method `INTR` |
 
@@ -70,7 +70,7 @@ Requests on a handle without a `SMD_PORT_CONTEXT` complete with `STATUS_INVALID_
 4. Creates the work item `SmdInitializeSmsmCommunication` (0x4052B8): opens `\Device\SMSM` and sends [IOCTL 0x32000](#ioctl-0x32000) with `SMSM_APPS_STATE`, clear 0, set `0x00800000` (`SMSM_SMD_LOOPBACK` in the Linux `smd_private.h`).
 5. `IoRegisterPlugPlayNotification` on the qcchipinfo8930.sys interface `{fb4f07cd-8d4c-4413-92c2-e2c9caed9f43}` (`qcchipinfo8930_interface_changed`, 0x405674).
 
-RIVA interrupt workaround (same as in [qcsmsm8930.sys](./qcsmsm8930.md)): when qcchipinfo8930.sys arrives, the driver sends [IOCTL 0x8C1F2008](#ioctl-0x8c1f2008) and [IOCTL 0x8C1F2004](#ioctl-0x8c1f2004). If the first returns 87 (0x57) and the second is lower than 0x20000, it maps the physical address `0x00801284` (GPIO_40 ?) with `MmMapIoSpace` and writes 0 then 2 to it. After that, every interrupt sent to the WCN (`smd_event_send`) is preceded by the same 0 / 2 write.
+RIVA interrupt workaround (same as in [qcsmsm8930.sys](./qcsmsm8930.md)): when qcchipinfo8930.sys arrives, the driver sends [IOCTL 0x8C1F2008](#ioctl-0x8c1f2008) and [IOCTL 0x8C1F2004](#ioctl-0x8c1f2004). If the chip id is 87 (0x57, MSM8960) and the chip version is lower than 0x20000 (2.0), i.e. on a MSM8960 v1 only (never on the Lumia 520, MSM8227), it maps the physical address `0x00801284` (GPIO_40 ?) with `MmMapIoSpace` and writes 0 then 2 to it. After that, every interrupt sent to the WCN (`smd_event_send`) is preceded by the same 0 / 2 write.
 
 Format of the `INTR` package (ACPI_EVAL_OUTPUT_BUFFER, signature `BoeA`, all arguments must be integers, at least 4):  
 | Argument | Comment |
@@ -469,7 +469,7 @@ It's first sent with a 20-byte OutputBuffer. On `STATUS_BUFFER_OVERFLOW` the req
 
 ### IOCTL 0x8C1F2004
 
-This IOCTL is sent by Qcsmd8930.sys to qcchipinfo8930.sys (`qcchipinfo8930_interface_changed`). Same use as in [qcsmsm8930.sys](./qcsmsm8930.md#ioctl-0x8c1f2004).
+This IOCTL is sent by Qcsmd8930.sys to [qcchipinfo8930.sys](./qcchipinfo8930.md#ioctl-0x8c1f2004) (`qcchipinfo8930_interface_changed`). Same use as in [qcsmsm8930.sys](./qcsmsm8930.md#ioctl-0x8c1f2004).
 
 | Property | Value |
 |----------|-------|
@@ -480,13 +480,13 @@ This IOCTL is sent by Qcsmd8930.sys to qcchipinfo8930.sys (`qcchipinfo8930_inter
 
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|-------------------|
-| Chip version ? | qcchipinfo8930.sys interface | 0 | 4 |
+| Get chip version | qcchipinfo8930.sys interface | 0 | 4 |
 
-The workaround is applied when the value is lower than 0x20000 (version < 2.0 ?).
+Returns the chip version as `major << 16 | minor`. The workaround is applied when the value is lower than 0x20000 (version < 2.0).
 
 ### IOCTL 0x8C1F2008
 
-This IOCTL is sent by Qcsmd8930.sys to qcchipinfo8930.sys (`qcchipinfo8930_interface_changed`). Same use as in [qcsmsm8930.sys](./qcsmsm8930.md#ioctl-0x8c1f2008).
+This IOCTL is sent by Qcsmd8930.sys to [qcchipinfo8930.sys](./qcchipinfo8930.md#ioctl-0x8c1f2008) (`qcchipinfo8930_interface_changed`). Same use as in [qcsmsm8930.sys](./qcsmsm8930.md#ioctl-0x8c1f2008).
 
 | Property | Value |
 |----------|-------|
@@ -497,9 +497,9 @@ This IOCTL is sent by Qcsmd8930.sys to qcchipinfo8930.sys (`qcchipinfo8930_inter
 
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|-------------------|
-| Chip id ? | qcchipinfo8930.sys interface | 0 | 4 |
+| Get chip id | qcchipinfo8930.sys interface | 0 | 4 |
 
-The workaround is applied when the value is 87 (0x57).
+Returns the chip id, see [qcchipinfo8930.sys](./qcchipinfo8930.md#chip-ids). The workaround is applied when the value is 87 (0x57, MSM8960). The MSM8227 of the Lumia 520 should return 121 (0x79) ?
 
 ---
 

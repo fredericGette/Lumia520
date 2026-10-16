@@ -29,7 +29,7 @@ It communicates with the following devices:
 | Device | Driver | Interface GUID | Comment |
 |--------|--------|----------------|---------|
 | `\Device\SMD` | [qcsmd8930.sys](./qcsmd8930.md) | `{f9d15453-8335-434c-aa72-fcd925f135f3}` | Shared Memory Driver. 3 DIAG data channels + 3 DIAG control channels, see [SMD channels](#smd-channels) |
-| `\??\QCOM_ChipInfo` | qcchipinfo8930.sys | `{fb4f07cd-8d4c-4413-92c2-e2c9caed9f43}` | Chip identification, used for the Build-ID answer (cmd `0x7C`) |
+| `\??\QCOM_ChipInfo` | [qcchipinfo8930.sys](./qcchipinfo8930.md) | `{fb4f07cd-8d4c-4413-92c2-e2c9caed9f43}` | Chip identification, used for the Build-ID answer (cmd `0x7C`) |
 | `\Device\USB_DIAG` | ? | `{39ab5403-6551-4dfe-a22c-6cc6f4ed2fd0}` | USB DIAG function. Host link when `TransportType`=1 |
 | `\Device\RESOURCE_HUB\%08X%08X` or `\DosDevices\COM5` | ? | `{86e0d1e0-8089-11d0-9ce4-08003e301f73}` (GUID_DEVINTERFACE_COMPORT) | UART. Host link when `TransportType`=2 |
 | `\Device\DiagCSI` | qcdiagcsi8930.sys ? | `{23ccade6-34e8-42e4-8845-99411146dc22}` | DCI (Diag Consumer Interface ?). Receives the packets starting with `0x93` |
@@ -423,7 +423,7 @@ Sent synchronously by `UsbDiag_Ioctl_0x808520C0` (0x40196C) after opening `\Devi
 
 ### IOCTL 0x8C1F2014
 
-This IOCTL is sent by Qcdiagrouter8930.sys to qcchipinfo8930.sys
+This IOCTL is sent by Qcdiagrouter8930.sys to [qcchipinfo8930.sys](./qcchipinfo8930.md#ioctl-0x8c1f2014)
 
 | Property | Value |
 |----------|-------|
@@ -434,21 +434,21 @@ This IOCTL is sent by Qcdiagrouter8930.sys to qcchipinfo8930.sys
 
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|-------------------|
-| Get chip family ? | `\??\QCOM_ChipInfo` | 0 | 4 |
+| Get chip family | `\??\QCOM_ChipInfo` | 0 | 4 |
 
 Outputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | ? | Chip family ? Converted to the MSM "tools ID" returned in the answer to command `0x7C` (`result_Ioctl_0x8C1F2014_chipinfo`) |
+| 00-03 | 1E 00 00 00 | Chip family (e.g. 30 = MSM8627 family, which includes the MSM8227 of the Lumia 520 ?), see [qcchipinfo8930.sys](./qcchipinfo8930.md#chip-ids). Converted to the MSM "tools ID" returned in the answer to command `0x7C` (`result_Ioctl_0x8C1F2014_chipinfo`) |
 
-| Output value | Tools ID |
-|--------------|----------|
-| 0x16 | 0xFE0 (4064) |
-| 0x1A | 0xFEC (4076) |
-| 0x1E | 0xFF0 (4080) |
-| 0x20 | 0xFF3 (4083) |
-| 0x22 | 0xFE8 (4072, MSM8930 in the Linux DIAG driver ?) |
-| other | 0 |
+| Output value | Family | Tools ID |
+|--------------|--------|----------|
+| 0x16 | MSM8960, MSM8660A, MSM8260A, APQ8060A | 0xFE0 (4064) |
+| 0x1A | MSM8930, MSM8630, MSM8230, APQ8030 (and AA variants) | 0xFEC (4076) |
+| 0x1E | MSM8627, MSM8227 (Lumia 520 ?) | 0xFF0 (4080) |
+| 0x20 | MSM8974 | 0xFF3 (4083) |
+| 0x22 | APQ8064, MPQ8064, MPQ8062, APQ8064V2P | 0xFE8 (4072) |
+| other | (e.g. 0x25 MSM8930AB, 0 unknown chip) | 0 |
 
 Sent once, from the `query_ChipInfo` thread, when the ChipInfo interface arrives. The target is opened with GENERIC_READ|GENERIC_WRITE.
 

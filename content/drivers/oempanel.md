@@ -69,7 +69,7 @@ Power setting callback (`PoRegisterPowerSettingCallback`, `my_PowerSettingCallba
 ### Start-up
 
 1. `DriverEntry` (0x426000) → `WdfDriverCreate` with `EvtDriverDeviceAdd` (0x423560) and `NopEvtDriverUnload` (0x423800, empty).
-2. `PanelDeviceCreate` (0x423570, device add): PnP/power callbacks (`EvtDeviceD0Entry` 0x40650C, `EvtDeviceD0Exit` 0x406574, `EvtDevicePrepareHardware` 0x4237E0, `EvtDeviceReleaseHardware` 0x405FA0), an in-caller-context callback (`receive_ioctl_from_wdf_DispathToInCallerContextCallback` 0x406724), `WdfDeviceCreate`, a 0x3938-byte device context, `ReadPanelSettingsFromRegistry`, the 3 device interfaces, the worker thread, timers and work items (`InitWorkerResources` 0x416854), the query interface (`AddPanelQueryInterface` 0x4234C0), the power setting callback, power capabilities / S0 idle settings, and the default queue (`CreateDefaultIoQueue` 0x423834, `EvtIoDeviceControl` 0x406974).
+2. `PanelDeviceCreate` (0x423570, device add): PnP/power callbacks (`EvtDeviceD0Entry` 0x40650C, `EvtDeviceD0Exit` 0x406574, `EvtDevicePrepareHardware` 0x4237E0, `EvtDeviceReleaseHardware` 0x405FA0), an in-caller-context callback (`receive_ioctl_from_wdf_DispathToInCallerContextCallback` 0x406724), `WdfDeviceCreate`, a 0x3938-byte device context, `ReadPanelSettingsFromRegistry`, the 3 device interfaces, the worker thread, timers and work items (`InitWorkerResources` 0x416854), the [thermal cooling interface](#thermal-cooling-interface) (`AddPanelQueryInterface` 0x4234C0), the power setting callback, power capabilities / S0 idle settings, and the default queue (`CreateDefaultIoQueue` 0x423834, `EvtIoDeviceControl` 0x406974).
 3. `EvtDevicePrepareHardware` → `ParseGpioConnectionResources` (0x423954): walks the translated resources and keeps the connection resources (type 0x84) of class 1 / type 2 (GPIO I/O, up to 16) at device context `+0x08 + 8*n`. GPIO connection #1 is opened as I/O target `+0x88` and connection #2 as `+0x8C` (`OpenResourceHubIoTarget` 0x4084F8 builds `\Device\RESOURCE_HUB\` + 16-digit hex connection id). Connection #0 is kept but not opened here.
 
 ### GPIO lines
@@ -241,9 +241,11 @@ Nothing is sent when `+0x1055` is 0. The command buffers are static: `0xDF` at `
 
 `TestProxyPulse` (0x4175E0), run from a work item (`EvtWdfWorkitem_calledBy_WorkItem1`), opens the first interface `{30EBFBF8-DF5F-4D4D-9FC5-A26C7FD1DF4A}` (`TestGetDeviceName`; DbgPrint prefix `TEST_PROXY`) and writes the 2-byte records `00 01` then, 100 ms later, `00 00` (a pulse). It then waits up to 5 s on a semaphore, retries once, and pulses again. Purpose ?
 
-### Query interface
+### Thermal cooling interface
 
-`AddPanelQueryInterface` (0x4234C0) registers a query interface `{ECBE47A8-C498-4BB9-BD70-E867E0940D22}` (`WdfDeviceAddQueryInterface`, Size 0x1C, Version 1). Its only callback (`QueryInterfaceCb_PostMsg1B` 0x4065E0; reference/dereference = `QueryInterfaceNop` 0x406500) posts message 0x1B with one value to the worker thread (display transition ?). Consumer ?
+`AddPanelQueryInterface` (0x4234C0) registers the query interface `GUID_THERMAL_COOLING_INTERFACE` `{ECBE47A8-C498-4BB9-BD70-E867E0940D22}` (`WdfDeviceAddQueryInterface`), i.e. a `THERMAL_COOLING_INTERFACE`: Size 0x1C, Version 1, Context = device, reference/dereference = `QueryInterfaceNop` (0x406500), Flags 0, `ActiveCooling` NULL, `PassiveCooling` = `QueryInterfaceCb_PostMsg1B` (0x4065E0). It is the same layout as the interface exposed by [monitor.sys](./monitor.md#thermal-throttling) and [acpipagr.sys](./acpipagr.md); the consumer is the thermal manager (thermal-zone passive cooling).
+
+`PassiveCooling(Context, Percentage)` posts message 0x1B with the percentage to the worker thread. Message 0x1B (`process_type`, case 27 at 0x4170EA) increments a counter at `ctx+0x12E0`, stores the percentage clamped to 1–100 at `ctx+0xD00` (thermal brightness limit, 100 at init in `initDeviceContext`) and calls `call_startTransitionDisplay` to recompute the backlight. `ComputeBacklightLevel` (0x403098) reduces the level when `ctx+0xD00` < 100, and at ≤ 95 % also selects another mode value (3 or 0x12 instead of 2 or 0x11, purpose ?).
 
 ---
 
@@ -483,7 +485,7 @@ Third device interface, created after the power settings (purpose ?)
 
 ### Other GUID
 
-Query interface (`WdfDeviceAddQueryInterface`)  
+Thermal cooling interface exposed (`GUID_THERMAL_COOLING_INTERFACE`, `WdfDeviceAddQueryInterface`)  
 `{ECBE47A8-C498-4BB9-BD70-E867E0940D22}`
 
 qcpmic8930 interface (target of the `IOCTL_PM_WLED_*` controls)  
