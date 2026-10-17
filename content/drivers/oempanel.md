@@ -1,7 +1,7 @@
 ## Oempanel.sys
 
 Nokia Panel Driver (service `NOKIA_PANEL`, ACPI device `ACPI\NOKIA_PANEL\0`, KMDF, build `E:\build_e\subtask\BE09332C_98\output\display\fre\oempanel.pdb`, "Jan 28 2015").  
-It is the display "brain" of the Nokia phones: it knows the panel models, builds the MIPI DCS command sequences (power on/off, brightness, CABC, gamma/colour) that the Qualcomm display driver `qcdxkm8930.sys` sends to the panel, and it computes the backlight level from the ambient light sensor (auto-brightness, Lux→Nit tables), the user settings and the battery/power-save state.  
+It is the display "brain" of the Nokia phones: it knows the panel models, builds the MIPI DCS command sequences (power on/off, brightness, CABC, gamma/colour) that the Qualcomm display driver [qcdxkm8930.sys](./qcdxkm8930.md) sends to the panel, and it computes the backlight level from the ambient light sensor (auto-brightness, Lux→Nit tables), the user settings and the battery/power-save state.  
 It also drives a few GPIOs (through the resource hub), the capacitive key LEDs (through `hwnled`) and, on some panels only, the PMIC WLED backlight block of [qcpmic8930.sys](./qcpmic8930.md). The colour calibration is read from `C:\Windows\System32\DRIVERS\ColorData.bin`.  
 Most of the work is done by a dedicated system thread: IOCTLs, timers, registry notifications and power events are posted to it as internal "messages" (`process_ioctl` → `PanelWorkerThread` 0x417434 → `process_type` 0x416C14) and the caller waits for the result.
 
@@ -57,7 +57,7 @@ There's no ETW provider: the driver only prints with `DbgPrint` (assertions are 
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| — | qcdxkm8930.sys | Display miniport. Registers itself with [IOCTL 0x83214000](#ioctl-0x83214000--display-driver-registration) and exchanges function-pointer tables: oempanel sends its DCS command sequences through them (`call_qcdxkm8930` 0x405FAC) |
+| — | [qcdxkm8930.sys](./qcdxkm8930.md) | Display miniport. Registers itself with [IOCTL 0x83214000](#ioctl-0x83214000--display-driver-registration) (sent as `0x4000`) and exchanges function-pointer tables: oempanel sends its DCS command sequences through them (`call_qcdxkm8930` 0x405FAC) |
 | Interface `{5B9DF049-70D3-4698-8E48-85B26C1AA59F}` | [qcpmic8930.sys](./qcpmic8930.md) | PMIC. `IOCTL_PM_WLED_CONFIG`, `IOCTL_PM_WLED_ENABLE`, `IOCTL_PM_WLED_CONFIG_ADDITIONAL_PARAM` (see below). Opened on interface arrival (`plugPlayCallbackDeviceInterfaceChange_qcpmic8930` 0x417828) |
 | Interface `{6B2A25E2-AAF5-482C-99A5-6205CDCC176A}` (`ACPI\QCOM0D50\0`) | hwnled | Hardware-notification LED driver, used for the key LEDs (IOCTL 0x228000) |
 | `\Device\RESOURCE_HUB\<connection id>` | GPIO controller | Two GPIO lines from the ACPI resources (IOCTL 0x480004 `IOCTL_GPIO_WRITE_PINS`) |
@@ -328,7 +328,7 @@ Key index of `IOCTL_SET_REGISTRY_VALUE` (`set_registry_values` 0x418860):
 
 ### IOCTL 0x83214000 — display driver registration
 
-This IOCTL is processed by Oempanel.sys (presumably sent by qcdxkm8930.sys)
+This IOCTL is processed by Oempanel.sys. It is sent by [qcdxkm8930.sys](./qcdxkm8930.md#ioctl-0x4000--panel-driver-registration) with the short code `0x4000` (`sub_4417F0`, at display init), to the first interface `{0D4A3F63-0D08-49A1-B91C-C60576894174}`
 
 | Property | Value |
 |----------|-------|
@@ -342,6 +342,18 @@ This IOCTL is processed by Oempanel.sys (presumably sent by qcdxkm8930.sys)
 | ? | 32 | 0 |
 
 `call_HandleNokiaIoCtlRequest` accepts it with code `0x83214000` or `0x4000`, before the device is ready. The input buffer is a table of 8 function pointers of the display driver, copied to device context `+0x94` (`RegisterDisplayDriverCallbacks` 0x405760; any other length → `0xC000000D`). Entry `+0x04` (`ctx+0x98`) sends a command sequence to the panel, entry `+0x0C` (`ctx+0xA0`) returns its status. oempanel then calls entry 0 with its own callback table (version `0x02010005`, 6 callbacks: `sub_408A44`, `sub_408D68`, `sub_408A64`, `sub_408AC8`, `sub_408D80`, `query_process_thread_interruptTime`) and fills a second table at `ctx+0xC8` (`call_qcdxkm8930`, `call_qcdxkm8930_2`, `sub_406184`, `sub_4061CC`, …).  
+The 8 entries on the qcdxkm8930 side (`sub_44A794` case 0, see [qcdxkm8930.sys](./qcdxkm8930.md#panel-driver-interface)):  
+| Offset | qcdxkm8930 | Comment |
+|--------|------------|---------|
+| 00 | sub_44AD38 | `Register(display, context, table)`: stores oempanel's context and the 6 callbacks that follow the version `0x02010005` |
+| 04 | sub_44ADB4 | Sends a command sequence to the panel (`call_qcdxkm8930`) |
+| 08 | sub_44AE40 | Same with output buffers: panel read ? |
+| 0C | sub_44AEE8 | Panel status ? |
+| 10 | sub_44AF38 | Copies 80 bytes of display information |
+| 14 | sub_44AF7C | ? |
+| 18 | sub_44B2C0 | Colour tables (272, 776 and 3080 bytes) ? |
+| 1C | sub_44B3D4 | ? |
+
 `DisplayCb_StoreInfo20` (0x405F60) copies a 20-byte structure from the display driver to `ctx+0xB4`, just after the 8-pointer table. It returns 0, or 3 on a NULL argument. It has no static reference, so it is presumably an entry of one of these callback tables. The content of the structure is unknown.
 
 > [!NOTE]

@@ -113,7 +113,7 @@ PowerControlCode `{3404DAAC-8E2C-41E4-8458-3158E5AD442B}`
 Inputbuffer (8 bytes):  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | 00 00 00 00 | ? |
+| 00-03 | 00 00 00 00 | Component index ? (the WCN has only component 0) |
 | 04-07 | 00 00 00 00 | P-state: 0 = P0 (WCNSS powered, before the image is loaded), 1 = P1 (after the children are created) |
 
 Outputbuffer (12 bytes):  
@@ -121,6 +121,8 @@ Outputbuffer (12 bytes):
 |-------|-------|---------|
 | 00-03 | 03 00 00 00 | 3 = `PEP_STATE_SYNC_PATH` (done), 1 = `PEP_STATE_ASYNC_PATH_IN_PROGRESS` (the PEP calls `PEPPowerControlCallback` with code 2 when the transition is done, which sends event 4) |
 | 04-0B | ? | ? |
+
+The same PowerControlCode is used by [qcdxkm8930.sys](./qcdxkm8930.md#other-guid) to change the P-state of its engines (`sub_4A2E68`), through `DxgkCbPowerRuntimeControlRequest` with a 16-byte input: `00-03` component index, `04-07` P-state (clamped to the component's limits), `08-0B` signature `4D 50 50 52` ("MPPR"), `0C-0F` pointer to an event (or 0). Same 12-byte output: when `00-03` is not 3, qcdxkm8930 waits up to 1 s for the event. This supports reading `00-03` above as the component index.
 
 ### State machine
 

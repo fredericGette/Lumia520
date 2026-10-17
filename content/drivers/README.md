@@ -23,3 +23,5 @@
 [monitor.sys](./monitor.md)  
 [nokiaenergydriver.sys](./nokiaenergydriver.md)  
 [qcbamdmux8930.sys](./qcbamdmux8930.md)  
+[qcdiagcsi8930.sys](./qcdiagcsi8930.md)  
+[qcdxkm8930.sys](./qcdxkm8930.md)  

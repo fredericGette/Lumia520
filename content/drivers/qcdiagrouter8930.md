@@ -32,10 +32,10 @@ It communicates with the following devices:
 | `\??\QCOM_ChipInfo` | [qcchipinfo8930.sys](./qcchipinfo8930.md) | `{fb4f07cd-8d4c-4413-92c2-e2c9caed9f43}` | Chip identification, used for the Build-ID answer (cmd `0x7C`) |
 | `\Device\USB_DIAG` | ? | `{39ab5403-6551-4dfe-a22c-6cc6f4ed2fd0}` | USB DIAG function. Host link when `TransportType`=1 |
 | `\Device\RESOURCE_HUB\%08X%08X` or `\DosDevices\COM5` | ? | `{86e0d1e0-8089-11d0-9ce4-08003e301f73}` (GUID_DEVINTERFACE_COMPORT) | UART. Host link when `TransportType`=2 |
-| `\Device\DiagCSI` | qcdiagcsi8930.sys ? | `{23ccade6-34e8-42e4-8845-99411146dc22}` | DCI (Diag Consumer Interface ?). Receives the packets starting with `0x93` |
+| `\Device\DiagCSI` | [qcdiagcsi8930.sys](./qcdiagcsi8930.md) | `{23ccade6-34e8-42e4-8845-99411146dc22}` | DCI (Diag Consumer Interface). Receives the answers of the local clients to DCI commands (packets starting with `0x93`) |
 | TCP socket | NETIO.SYS (WSK) | | Host link when `TransportType`=0 |
 
-`\Device\DiagCSI` is opened only after a client sent [internal IOCTL 0x80082458](#internal-ioctl-0x80082458). The SMD channel `DIAG_2` belongs to qcdiagcsi8930.sys (see [qcsmd8930.sys](./qcsmd8930.md)), which is why `DiagCSI` is attributed to it.
+`\Device\DiagCSI` is opened only after [qcdiagcsi8930.sys](./qcdiagcsi8930.md) sent [internal IOCTL 0x80082458](#internal-ioctl-0x80082458). The DCI driver is a kernel client of the router: it opens `\Device\DiagRouter` and uses the internal IOCTLs 0x80082450 to 0x80082461 to route DCI commands and to set the DCI log/event masks (stream id 2). Its own modem link is the SMD channel `DIAG_2`.
 
 ### Startup
 
@@ -95,7 +95,7 @@ An application or driver can act as a DIAG service on the application processor:
 2. [IOCTL 0x80082400](#ioctl-0x80082400): give an event.
 3. [IOCTL 0x80082404](#ioctl-0x80082404): register the command codes to receive.
 4. Wait for the event, then `ReadFile`: returns one request from the host (one packet per read, at most 4096 bytes). 3 receive buffers of 4096 bytes are allocated per handle. A `ReadFile` with no pending packet fails with `STATUS_UNSUCCESSFUL` (it doesn't block).
-5. `WriteFile`: sends the answer to the host (at most 4096 bytes, HDLC-encoded by the router). A buffer starting with `0x93` is sent to `\Device\DiagCSI` instead (internal IOCTL `0x80092491`).
+5. `WriteFile`: sends the answer to the host (at most 4096 bytes, HDLC-encoded by the router). A buffer starting with `0x93` is sent to `\Device\DiagCSI` instead (internal IOCTL `0x80092491`): it's the answer to a DCI request received with byte 0 = `0x93`, and the client must keep the first 8 bytes of the request (bytes 04-07 = DCI transaction id).
 
 Closing the handle removes the registrations of this handle.
 
@@ -253,7 +253,8 @@ Outputbuffer:
 |-------|-------|---------|
 | 00-03 | 00…03 00 00 00 | Bit 0: a local client registered this command ([IOCTL 0x80082404](#ioctl-0x80082404)). Bit 1: the modem registered it (registration table of the `DIAG_CNTL` channel of port 0, `sub_40676C`) |
 
-Both lengths must be exactly 4, otherwise `STATUS_INVALID_PARAMETER`.
+Both lengths must be exactly 4, otherwise `STATUS_INVALID_PARAMETER`.  
+Sent by [qcdiagcsi8930.sys](./qcdiagcsi8930.md) for each DCI command, to decide where to send it (see [Commands](./qcdiagcsi8930.md#commands)).
 
 ---
 
@@ -283,6 +284,7 @@ Inputbuffer: a DIAG request.
 | 0A-0B | ? | `0x93` only (size ≥ 12): subsystem command code |
 
 The request is copied into a free receive buffer of the local client that registered the command, and the client's event is set. This is how a DCI request reaches a local client.  
+Sent by [qcdiagcsi8930.sys](./qcdiagcsi8930.md) when bit 0 of [0x80082450](#internal-ioctl-0x80082450) is set. The request is `93 ?? ?? ?? <DCI transaction id:4> <DIAG request>`.  
 NTSTATUS: `STATUS_INVALID_PARAMETER` if InputBufferLength < 8, `STATUS_UNSUCCESSFUL` if no client registered the command or its 3 buffers are full.
 
 ---
@@ -302,7 +304,8 @@ This IOCTL is processed by Qcdiagrouter8930.sys
 |------|------------------|-------------------|
 | Connect to DiagCSI | 0 | 0 |
 
-The request is pended. A work item (`sub_40B388`, context `DIAGCMD_DIAGCSI_WRK_CONTEXT`) registers a PnP notification on `{23ccade6-34e8-42e4-8845-99411146dc22}`. When the interface arrives, `diagCSI_arrived` (0x40B454) opens `\Device\DiagCSI` as I/O target (`DIAGROUTER_DEVICE_CONTEXT+0x16C`) and completes the request with the status of the open. Only the first arrival is handled.
+The request is pended. A work item (`sub_40B388`, context `DIAGCMD_DIAGCSI_WRK_CONTEXT`) registers a PnP notification on `{23ccade6-34e8-42e4-8845-99411146dc22}`. When the interface arrives, `diagCSI_arrived` (0x40B454) opens `\Device\DiagCSI` as I/O target (`DIAGROUTER_DEVICE_CONTEXT+0x16C`) and completes the request with the status of the open. Only the first arrival is handled.  
+Sent once by [qcdiagcsi8930.sys](./qcdiagcsi8930.md) right after it enabled the `{23ccade6-…}` interface. Its success unlocks the DCI commands of qcdiagcsi8930.sys.
 
 ---
 
@@ -341,7 +344,8 @@ Processed in a work item (`sub_4068DC`, context `DIAGCMD_DIAGCSI_MSKCFG_WRK_CONT
 | 0F-12 | 00 02 00 00 | Mask size = 512 |
 | 13-212 | ? | Mask |
 
-The request is completed when the write completes (`sub_40373C`). `STATUS_INVALID_PARAMETER` if InputBufferLength < 8208.
+The request is completed when the write completes (`sub_40373C`). `STATUS_INVALID_PARAMETER` if InputBufferLength < 8208.  
+Sent by [qcdiagcsi8930.sys](./qcdiagcsi8930.md): the masks are the OR of the log masks of its (at most 2) mask clients, see [Masks](./qcdiagcsi8930.md#masks).
 
 ---
 
@@ -372,13 +376,14 @@ Same work item as [0x8008245D](#internal-ioctl-0x8008245d) with `field_0` = 1. `
 | 0B-0E | 00 02 00 00 | Mask size = 512 |
 | 0F-20E | ? | Mask |
 
-InputBufferLength must be exactly 512, otherwise `STATUS_INVALID_PARAMETER`.
+InputBufferLength must be exactly 512, otherwise `STATUS_INVALID_PARAMETER`.  
+Sent by [qcdiagcsi8930.sys](./qcdiagcsi8930.md): OR of the event masks of its mask clients.
 
 ---
 
 ### internal IOCTL 0x80092491
 
-This IOCTL is sent by Qcdiagrouter8930.sys to `\Device\DiagCSI` (qcdiagcsi8930.sys ?)
+This IOCTL is sent by Qcdiagrouter8930.sys to `\Device\DiagCSI` ([qcdiagcsi8930.sys](./qcdiagcsi8930.md#internal-ioctl-0x80092491))
 
 | Property | Value |
 |----------|-------|
@@ -391,7 +396,7 @@ This IOCTL is sent by Qcdiagrouter8930.sys to `\Device\DiagCSI` (qcdiagcsi8930.s
 |------|-------------|------------------|-------------------|
 | Send DCI response | `\Device\DiagCSI` | max 4096 | 0 |
 
-Inputbuffer: the buffer written by a local client, unchanged (byte 0 = `0x93`).  
+Inputbuffer: the buffer written by a local client, unchanged (byte 0 = `0x93`, bytes 04-07 = DCI transaction id, DIAG answer from byte 08).  
 The client's request is completed with the status and information of this IOCTL (`completion_routine_6`).
 
 ---

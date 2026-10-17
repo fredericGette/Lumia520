@@ -28,7 +28,7 @@ It communicates with the following devices:
 | Device | Driver | Comment |
 |--------|--------|---------|
 | Monitor PDO (lower device) | dxgkrnl.sys ? | Internal IOCTLs `0x232407`…`0x23242B` (adapter info, EDID and WMI data), see [IOCTLs sent](#internal-ioctl-0x232407--get-monitor-adapter-info) |
-| Lower device, query-interface `GUID_DEVINTERFACE_BRIGHTNESS` | qcdxkm8930.sys ? (display miniport through dxgkrnl) | Brightness interface: GetPossibleBrightness / SetBrightness / GetBrightness |
+| Lower device, query-interface `GUID_DEVINTERFACE_BRIGHTNESS` | [qcdxkm8930.sys](./qcdxkm8930.md#query-interfaces) (display miniport, `DxgkDdiQueryInterface` through dxgkrnl) | Brightness interface version 1 (`sub_49E4C4` in qcdxkm8930): GetPossibleBrightness `sub_49DE00` / SetBrightness `sub_49E07C` / GetBrightness `sub_49DFFC`. Only exposed when the panel has a backlight |
 | ACPI node of the device | [acpi.sys](./acpi.md) | Fallback brightness through `IOCTL_ACPI_EVAL_METHOD` (`_BCL`, `_BCM`, `_BQC`); notifications through `GUID_ACPI_INTERFACE_STANDARD2` |
 | `\PowerMonitorPort` (ALPC) | user-mode power manager (UMPO ?) | Brightness messages, see [ALPC messages](#alpc-messages-to-powermonitorport) |
 | — | thermal manager ? | Consumer of `GUID_THERMAL_COOLING_INTERFACE` |
@@ -56,7 +56,8 @@ It communicates with the following devices:
 
 ### Brightness
 
-Levels (from `GetPossibleBrightness` or from the ACPI `_BCL` package, max 103 entries) are kept raw at `+0x28` (count) / `+0x29`, and a sorted, de-duplicated copy at `+0x90` / `+0x91` (`BrightnessSortStates` 0x164E0). At least 2 levels are needed. As in the ACPI spec, the first two raw entries are taken as the AC/DC default levels (`+0x1C`/`+0x1D`, never read afterwards).
+Levels (from `GetPossibleBrightness` or from the ACPI `_BCL` package, max 103 entries) are kept raw at `+0x28` (count) / `+0x29`, and a sorted, de-duplicated copy at `+0x90` / `+0x91` (`BrightnessSortStates` 0x164E0). At least 2 levels are needed. As in the ACPI spec, the first two raw entries are taken as the AC/DC default levels (`+0x1C`/`+0x1D`, never read afterwards).  
+qcdxkm8930's `GetPossibleBrightness` (`sub_49DE00`) builds its list in this `_BCL` layout from the panel's level table: `100` first, then the level closest to 60, then the other levels. It fails with `0xC00000BB` STATUS_NOT_SUPPORTED when the last level of the panel table is not 100.
 
 Conversions (maxLevel = highest sorted level):  
 * level → percentage: `100 × level / maxLevel` (`BrightnessTargetToPercentage` 0x16744)
@@ -383,7 +384,7 @@ Monitor driver interface class GUID (`GUID_DEVINTERFACE_MONITOR_DRIVER`)
 
 ### Other GUID
 
-Brightness interface queried from the lower driver (`GUID_DEVINTERFACE_BRIGHTNESS`)  
+Brightness interface queried from the lower driver (`GUID_DEVINTERFACE_BRIGHTNESS`), provided by [qcdxkm8930.sys](./qcdxkm8930.md#query-interfaces)  
 `{FDE5BBA4-B3F9-46FB-BDAA-0728CE3100B4}`
 
 ACPI interface (`GUID_ACPI_INTERFACE_STANDARD2`)  
