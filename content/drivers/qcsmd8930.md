@@ -86,6 +86,20 @@ Format of the `INTR` package (ACPI_EVAL_OUTPUT_BUFFER, signature `BoeA`, all arg
 
 The WDF interrupt objects themselves come from the interrupt resources of the ACPI device (one per entry, in the same order ?).
 
+### Lumia 520 ACPI node
+
+From the DSDT. The node is `\_SB.SMD0` (`_HID` `QCOM0F10`, `_UID` 0), with `_DEP` on `\_SB.SMEM` ([qcsmem8930.sys](./qcsmem8930.md)). It has a child device `\_SB.SMD0.GPS` (`_HID` `QCOM_GPS`, `_CID` `ACPIQCOM_GPS`, `_UID` 0), so the GPS driver is enumerated as a child of this driver's node.
+
+`_CRS`: 4 interrupts `Interrupt (ResourceConsumer, Edge, ActiveHigh, Exclusive)`, in the order of the `INTR` entries:  
+| `INTR` entry | Remote processor (`smem_host_type`) | Outgoing register | Value | Incoming interrupt (GIC) |
+|--------------|-------------------------------------|-------------------|-------|--------------------------|
+| 0 | 1 MODEM | 0x02011008 | 0x00000008 (bit 3) | 69 |
+| 1 | 2 QDSP6 (LPASS) | 0x02011008 | 0x00008000 (bit 15) | 122 |
+| 2 | 3 DSPS | 0x12104080 | 0x00000001 | 170 |
+| 3 | 4 WCNSS (RIVA) | 0x02011008 | 0x02000000 (bit 25) | 230 |
+
+`INTR` returns `Package (0x14) { 1, 4, 0, 0, <the 4 entries above, each followed by 0> }`. Every outgoing register is one of the memory resources of [qcsmem8930.sys](./qcsmem8930.md#memory-resources). The order of the `_CRS` interrupts matches the order of the `INTR` entries, which supports the "same order" assumption above.
+
 ### SMD channels
 
 A channel is identified by its name (at most 20 characters including the terminating zero) and its edge (`smd_channel_type`: 0 = APPS↔MODEM, 1 = APPS↔QDSP, 6 = APPS↔RIVA, …; must be < 15).  

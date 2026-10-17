@@ -52,7 +52,7 @@ It communicates with the following devices:
 
 `ACPIRegReadAMLRegistryEntry` (called by `ACPILoadProcessRSDT`, `ACPILoadProcessDSDT`, `ACPIMapNamedTable`) can replace a firmware table with a copy stored in the registry, **only when the phone is booted with `TESTSIGNING`** (`AcpiOverrideAttributes` bit 0x10000):
 
-1. Key `HKLM\SYSTEM\CurrentControlSet\Services\ACPI\Parameters\<Signature>\<OEMID>\<OEMTableID>` (e.g. `DSDT\QCOM  \MSM8930 `, the fields are copied with their padding: 4, 6 and 8 characters).
+1. Key `HKLM\SYSTEM\CurrentControlSet\Services\ACPI\Parameters\<Signature>\<OEMID>\<OEMTableID>` (e.g. `DSDT\QCOMM \MSM8930 ` for the Lumia 520 DSDT, or `SSDT\NOKIA \MSM8930 ` for its Nokia SSDT, the fields are copied with their padding: 4, 6 and 8 characters).
 2. `OSOpenLargestSubkey` opens the subkey with the largest number not above the table's OEM revision (subkey name = revision, hex ?).
 3. The value `Action` (REG_DWORD) must be 0.
 4. `ACPIRegReadEntireAcpiTable` reads the table from the values `00000000`, `00000001`, … (`%08lx`) and concatenates them.

@@ -39,9 +39,11 @@ Drivers using `\Device\SMEM`:
 |-------|------------------|--------|---------|---------|
 | 0 | 0x80000000 | 0x200000 | MmWriteCombined | Shared memory (SMEM) region. Its base is the base of all SMEM offsets |
 | 1 | 0x01200604 | 0x80 | MmNonCached | Hardware spinlocks (mutex registers), one DWORD per lock. Must be at least 32 bytes (8 locks), else `STATUS_DEVICE_CONFIGURATION_ERROR` |
-| 2 | 0x02011008 | 4 | MmNonCached | Additional resource #0. Outgoing interrupt register used by qcsmd8930.sys ? |
-| 3 | 0x12104080 | 4 | MmNonCached | Additional resource #1. Outgoing interrupt register used by qcsmd8930.sys ? |
-| 4 | 0x12104094 | 4 | MmNonCached | Additional resource #2. Outgoing interrupt register used by qcsmd8930.sys ? |
+| 2 | 0x02011008 | 4 | MmNonCached | Additional resource #0. Outgoing IPC interrupt register of the APPS processor (APCS). In the `INTR` methods, [qcsmd8930.sys](./qcsmd8930.md#lumia-520-acpi-node) and [qcsmsm8930.sys](./qcsmsm8930.md#lumia-520-acpi-node) use it to interrupt the MODEM, the QDSP6 and the WCNSS (one bit each) |
+| 3 | 0x12104080 | 4 | MmNonCached | Additional resource #1. Outgoing SMD interrupt to the DSPS (host 3 of qcsmd8930.sys `INTR`, value 1) |
+| 4 | 0x12104094 | 4 | MmNonCached | Additional resource #2. Outgoing SMSM interrupt to the DSPS (host 4 of qcsmsm8930.sys `INTR`, value 1) |
+
+On the Lumia 520 the ACPI node is `\_SB.SMEM` (`_HID` `QCOM0F00`, `_UID` 0). `\_SB.SMD0` and `\_SB.SMSM` declare `_DEP` on it.
 
 The additional resources (index ≥ 2) must have a length of exactly 4 bytes. Their physical and virtual addresses are stored in `arrayAdditionalMemoryResources` (pool tag `qse1`, 8 bytes per entry: physical address, then virtual address), which is searched by [internal IOCTL 0x42004](#internal-ioctl-0x42004).  
 Then `PrepareHardware` calls `smem_init` and allocates the main SMEM log (see [SMEM logs](#smem-logs)). `EvtWdfDeviceReleaseHardware` unmaps everything.

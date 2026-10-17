@@ -28,6 +28,23 @@ It communicates with the following devices:
 | Kernel power manager | ntoskrnl | `PoSetFixedWakeSource` |
 | — | Kernel time service (HAL / `ExpTimeRefreshWork` ?) | Caller of `IOCTL_ACPI_GET_REAL_TIME` / `IOCTL_ACPI_SET_REAL_TIME` through the device interface ? |
 
+### Lumia 520 ACPI node
+
+From the DSDT. The node is `\_SB.PRTC` (`_HID` `ACPI000E`, no `_UID`), with `_DEP` on `\_SB.PMAP` ([qcpmicapps8930.sys](./qcpmicapps8930.md)). It defines only `_GCP`, `_GRT` and `_SRT`. There's no `_STV`/`_TIV`/`_GWS`…, so the wake-alarm IOCTLs fail in acpi.sys (method not found).
+
+```
+Method (_GCP) { Return (0x04) }
+Field (\_SB.ABD.ROP1, BufferAcc, NoLock, Preserve) {
+    Connection (I2cSerialBusV2 (0x0002, ControllerInitiated, 0, AddressingMode7Bit, "\_SB.ABD", ...)),
+    AccessAs (BufferAcc, AttribRawBytes (0x10)),
+    FLD0, 128
+}
+Method (_GRT) { BUFF (18 bytes) = FLD0; Return (bytes 2..17 of BUFF) }
+Method (_SRT, 1) { bytes 2..17 of BUFF = Arg0; BUFF = (FLD0 = BUFF); Return (STAT != 0 ? 1 : 0) }
+```
+
+The real-time clock is therefore an I²C-like operation region on the software SPB controller `\_SB.ABD` ([qcabd8930.sys](./qcabd8930.md)), slave address 2. Slave address 2 is the one that [qcpmicapps8930.sys](./qcpmicapps8930.md) registers (its `GEPT` returns 2). The full path of `_GRT`/`_SRT` is: acpitime.sys → acpi.sys (AML) → [acpiex.sys](./acpiex.md) (`GenericSerialBus` region) → qcabd8930.sys (`IOCTL_SPB_EXECUTE_SEQUENCE`) → qcpmicapps8930.sys (`IOCTL_PM_ABD_GET/SET_PMIC_RTC_DATA`) → [qcpmic8930.sys](./qcpmic8930.md) (PMIC RTC). The 2 bytes in front of the 16-byte time are the status/length header of the `BufferAcc` access; byte 0 (`STAT`) is the status returned by `_SRT`.
+
 ### Start-up
 
 1. `WaDeviceAdd` (0x15000): PnP callbacks, a `WA_EXTENSION` context (52 bytes), a default queue with `EvtIoDeviceControl` = `WaIoDeviceControl`, and the `GUID_DEVICE_ACPI_TIME` interface.

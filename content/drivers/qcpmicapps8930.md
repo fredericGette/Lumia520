@@ -2,7 +2,7 @@
 
 PMIC "apps" driver: real-time clock (wall-clock time) on top of the PMIC RTC (Qualcomm KMDF driver, PDB `pmicapps\fre\qcpmicapps8930.pdb`, 76 functions).  
 The PMIC RTC of [qcpmic8930.sys](./qcpmic8930.md) is only a free-running seconds counter (it's not a Unix time). This driver turns it into a date: it keeps the offset between the counter and the real time in the UEFI variable `RTCInfo`, and converts `counter + offset` (seconds since 1980-01-06, the GPS epoch) into the 16-byte ACPI `_GRT`/`_SRT` time structure.  
-It exposes two IOCTLs, `IOCTL_PM_ABD_GET_PMIC_RTC_DATA` and `IOCTL_PM_ABD_SET_PMIC_RTC_DATA`, and registers them with [qcabd8930.sys](./qcabd8930.md) (`{2B0FDE10-…}` interface). That driver is a software I²C target: an ACPI `GenericSerialBus` operation region access on the I²C slave address given by `GEPT` reaches these two IOCTLs. ACPI `_GRT` / `_SRT` ([acpitime.sys](./acpitime.md)) probably get to the PMIC RTC this way: AML → [acpiex.sys](./acpiex.md) → qcabd8930.sys → this driver → qcpmic8930.sys ?  
+It exposes two IOCTLs, `IOCTL_PM_ABD_GET_PMIC_RTC_DATA` and `IOCTL_PM_ABD_SET_PMIC_RTC_DATA`, and registers them with [qcabd8930.sys](./qcabd8930.md) (`{2B0FDE10-…}` interface). That driver is a software I²C target: an ACPI `GenericSerialBus` operation region access on the I²C slave address given by `GEPT` reaches these two IOCTLs. ACPI `_GRT` / `_SRT` ([acpitime.sys](./acpitime.md)) get to the PMIC RTC this way: AML → [acpiex.sys](./acpiex.md) → qcabd8930.sys → this driver → qcpmic8930.sys (confirmed by the DSDT, see [Lumia 520 ACPI node](#lumia-520-acpi-node)).  
 It also writes `0` to up to two GPIO lines listed in its ACPI resources each time the device enters D0.
 
 There's no named device and no `\DosDevices` link. The driver registers a device interface (`WdfDeviceCreateDeviceInterface`):  
@@ -66,6 +66,22 @@ The three interfaces are found with `IoRegisterPlugPlayNotification(EventCategor
 ### ACPI `GEPT`
 
 `GEPT` is evaluated without argument (`ACPI_EVAL_INPUT_BUFFER` signature `'AeiB'`, 20-byte output buffer). If the output signature is `'AeoB'` and the count is non-zero, the **low byte** of the first argument's data is stored as a WORD at context `+0x28` (offset `0x10` of the registration block). The argument type isn't checked. This value is the I²C slave address that [qcabd8930.sys](./qcabd8930.md) matches against the `I2cSerialBus` connection of the operation region, so `GEPT` probably returns the slave address of the "RTC" behind that operation region ? (only the low byte is kept, so a 10-bit address can't be used).
+
+### Lumia 520 ACPI node
+
+From the DSDT:
+```
+Device (PMAP) {
+    Name (_DEP, Package () { \_SB.ABD, \_SB.PMIC, \_SB.SCM0 })
+    Name (_HID, "QCOM0B20")
+    Method (GEPT) { ... DATA (WordField at offset 2) = 0x02; Return (DATA) }
+    Method (_CRS) { Return (ResourceTemplate () {}) }   // empty
+}
+```
+- `GEPT` returns the integer 2. This is the I²C slave address used by the `_GRT`/`_SRT` operation-region field of `\_SB.PRTC` (`I2cSerialBusV2 (0x0002, …, "\_SB.ABD")`, 16-byte raw accesses, see [acpitime.sys](./acpitime.md#lumia-520-acpi-node)).
+- `_CRS` is empty, so on the Lumia 520 there's no GPIO connection and [IOCTL_GPIO_WRITE_PINS](#ioctl-0x480004--ioctl_gpio_write_pins) is never sent.
+- `\_SB.PRTC` (`ACPI000E`) declares `_DEP` on `\_SB.PMAP`, so acpitime.sys starts after this driver.
+- The DSDT has a second `GEPT` method, in `\_SB.PRXY` (`QCOM0812`), which returns 1: the other client of [qcabd8930.sys](./qcabd8930.md#lumia-520-acpi-node) uses the same registration mechanism.
 
 ### Time format
 

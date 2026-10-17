@@ -1,6 +1,6 @@
 ## Oempanel.sys
 
-Nokia Panel Driver (service `NOKIA_PANEL`, ACPI device `ACPI\NOKIA_PANEL\0`, KMDF, build `E:\build_e\subtask\BE09332C_98\output\display\fre\oempanel.pdb`, "Jan 28 2015").  
+Nokia Panel Driver (service `NOKIA_PANEL`, ACPI device `ACPI\NOKIA_PANEL\0` = `\_SB.DISP` (`_CID` `ACPINOKIA_PANEL`, `_DEP` on `\_SB.PEP0`, `\_SB.PRXY`, `\_SB.HWN0`, `\_SB.PMIC`, `\_SB.GPU0`), KMDF, build `E:\build_e\subtask\BE09332C_98\output\display\fre\oempanel.pdb`, "Jan 28 2015").  
 It is the display "brain" of the Nokia phones: it knows the panel models, builds the MIPI DCS command sequences (power on/off, brightness, CABC, gamma/colour) that the Qualcomm display driver [qcdxkm8930.sys](./qcdxkm8930.md) sends to the panel, and it computes the backlight level from the ambient light sensor (auto-brightness, Lux→Nit tables), the user settings and the battery/power-save state.  
 It also drives a few GPIOs (through the resource hub), the capacitive key LEDs (through `hwnled`) and, on some panels only, the PMIC WLED backlight block of [qcpmic8930.sys](./qcpmic8930.md). The colour calibration is read from `C:\Windows\System32\DRIVERS\ColorData.bin`.  
 Most of the work is done by a dedicated system thread: IOCTLs, timers, registry notifications and power events are posted to it as internal "messages" (`process_ioctl` → `PanelWorkerThread` 0x417434 → `process_type` 0x416C14) and the caller waits for the result.
@@ -59,7 +59,7 @@ It communicates with the following devices:
 |--------|--------|---------|
 | — | [qcdxkm8930.sys](./qcdxkm8930.md) | Display miniport. Registers itself with [IOCTL 0x83214000](#ioctl-0x83214000--display-driver-registration) (sent as `0x4000`) and exchanges function-pointer tables: oempanel sends its DCS command sequences through them (`call_qcdxkm8930` 0x405FAC) |
 | Interface `{5B9DF049-70D3-4698-8E48-85B26C1AA59F}` | [qcpmic8930.sys](./qcpmic8930.md) | PMIC. `IOCTL_PM_WLED_CONFIG`, `IOCTL_PM_WLED_ENABLE`, `IOCTL_PM_WLED_CONFIG_ADDITIONAL_PARAM` (see below). Opened on interface arrival (`plugPlayCallbackDeviceInterfaceChange_qcpmic8930` 0x417828) |
-| Interface `{6B2A25E2-AAF5-482C-99A5-6205CDCC176A}` (`ACPI\QCOM0D50\0`) | hwnled | Hardware-notification LED driver, used for the key LEDs (IOCTL 0x228000) |
+| Interface `{6B2A25E2-AAF5-482C-99A5-6205CDCC176A}` (`ACPI\QCOM0D50\0`) | hwnled | Hardware-notification LED driver, used for the key LEDs (IOCTL 0x228000). ACPI node `\_SB.HWN0`: its method `HWNL` returns `Package (10) { 0, 3, 0x0F, 0x14, 0, 3, 1, 4, 2, 5 }` (LED configuration, meaning ?) |
 | `\Device\RESOURCE_HUB\<connection id>` | GPIO controller | Two GPIO lines from the ACPI resources (IOCTL 0x480004 `IOCTL_GPIO_WRITE_PINS`) |
 | Interface `{30EBFBF8-DF5F-4D4D-9FC5-A26C7FD1DF4A}` | ? ("TEST_PROXY") | Opened with `ZwOpenFile`; 2-byte records are written to it with `ZwWriteFile` (see [Test proxy](#test-proxy)) |
 | `\BaseNamedObjects\AlsListenerOnOffEvent` | — | Notification event set when the ALS listening starts/stops (`IoCreateNotificationEvent`) |
@@ -80,6 +80,13 @@ Both are written with `GpioWritePin` (0x4238E8), which sends `IOCTL_GPIO_WRITE_P
 | `+0x88` | #1 | Panel power/reset sequence (`lcdPanelSwitch_OFF`, `type_0x01`), and `IOCTL_UNKNOWN_7` (`write_pins_IoTarget_GPIO2` 0x409180, the value is **inverted**) |
 | `+0x8C` | #2 | Written by `ComputeBacklightLevel` (0x403098) with 1 when the brightness mode has bits `0xC0` set (High Brightness Mode ? `ConfHbmGpio`), cleared on panel off. Only used when `Flags` bit 2 is clear |
 
+GPIO connections of `\_SB.DISP` on the Lumia 520 (`_CRS` from the DSDT, all on the TLMM `\_SB.GIO0`):  
+| Connection | Descriptor | Pins | Use by the driver |
+|------------|------------|------|-------------------|
+| #0 | `GpioIo (Exclusive, PullNone, IoRestrictionNone)` | 0, 100, 101, 102 | Kept, not opened |
+| #1 | `GpioIo (Shared, PullUp, IoRestrictionNone)` | 58 | `+0x88`, panel power/reset. GPIO 58 is the `DSI_PANEL_RESET` resource of `\_SB.GPU0` ([qcdxkm8930.sys](./qcdxkm8930.md#lumia-520-acpi-node)), hence `Shared` |
+| #2 | `GpioIo (Shared, PullDown, IoRestrictionNone)` | 1 | `+0x8C`, HBM ? |
+
 ### Backlight
 
 `ComputeBacklightLevel` (0x403098) computes a 0–255 level (ALS lux → nit curves, user settings, minimum `ctx+0xDFD`, dimming, LPM). Between two points of a curve the value is interpolated linearly by `LinearInterpolate` (0x423494): `y = y0 + (x - x0) × (y1 - y0) / (x1 - x0)` (a zero `x1 - x0` is replaced by 1). The same helper is used when reading the curves (`read_registry`), in `UpdateWledCurrent` and in `process_type`. Then:
@@ -97,6 +104,8 @@ The panel identity comes from the ACPI method `DPID` of the panel device. At ini
 | 2 | `+0xD74` | Panel vendor (`0xC1`, `0xE3` or `0xFE` = Samsung) |
 
 If the method fails or does not return an integer, the driver uses `0xE380B0`: model 0xB0 (Jessica), revision 0x80, vendor 0xE3.
+
+On the Lumia 520 `\_SB.DISP.DPID` returns `Package (1) { 0x00E380C0 }`: model 0xC0 (Race), revision 0x80, vendor 0xE3 (CMI). That's a package, not a plain integer, and its revision (0x80) differs from the 0x85 reported by `IOCTL_DISPLAY_ID_QUERY` (see below). So the revision seen at run time doesn't come from `DPID` alone. It's not known whether the driver accepts the package, or falls back to its default and later reads the real ID from the panel ?
 
 When `init_values` reports a new panel, its callers (`type_0x80000007` 0x409714, i.e. `IOCTL_DISPLAY_ID_QUERY`, and `_sub_40B32C`) call `_sub_408DD0`, then `init_motionclarity_lpm_registry` (0x423EC8, see [MotionClarity](#motionclarity)) and `load_colordata_bin`. For Herwood (182) with revision ≤ 0x85 and Jasmine (188) with revision < 0x88, both from vendor `0xFE` (Samsung), they also clear the dword at device context `+0x10E0` (meaning ?). `type_0x80000007` then returns the id as `model | revision << 8 | vendor << 16`.
 

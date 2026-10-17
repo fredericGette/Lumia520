@@ -4,7 +4,7 @@ Microsoft ACPI Processor Aggregator Device driver (KMDF, PDB symbols available, 
 It is the function driver of the ACPI **Processor Aggregator Device** (`ACPI000C`, ACPI spec §8.5). The firmware uses it to ask the OS to **idle (park) a number of processors**: when the `ACPI000C` node gets a `Notify(…, 0x80)`, the driver evaluates `_PUR` (Processor Utilization Request), passes the requested number of idle processors to the kernel power manager, then reports the result with `_OST`.  
 It also exposes a thermal cooling interface, so a thermal zone can use it for passive cooling by idling processors.
 
-The binary contains no Lumia-specific code. The Lumia 520 firmware does define an `ACPI000C` device, **`\_SB.AGR0`**, and acpipagr.sys is loaded on it (see [Lumia 520 device node](#lumia-520-device-node)). What its `_PUR` returns, and whether the firmware ever sends `Notify(AGR0, 0x80)`, is still ?
+The binary contains no Lumia-specific code. The Lumia 520 firmware does define an `ACPI000C` device, **`\_SB.AGR0`**, and acpipagr.sys is loaded on it (see [Lumia 520 device node](#lumia-520-device-node)). Its `_PUR` and `_OST` are described in [Lumia 520 ACPI definition](#lumia-520-acpi-definition): the request comes from the PEP device `\_SB.PEP0` (`QCOM0811`).
 
 There's no named device and no symbolic link (`AdEvtDeviceAdd` creates an unnamed FDO).
 
@@ -95,6 +95,42 @@ After a `_PUR`-triggered request (not after a thermal-only change), the driver r
 | 24-27 | | Number of processors idled (output of `ZwPowerInformation`) |
 
 The 20-byte output and the result of `_OST` are ignored.
+
+### Lumia 520 ACPI definition
+
+From the DSDT:
+```
+Device (AGR0) {
+    Name (_HID, "ACPI000C")
+    Name (_PUR, Package (0x02) { One, Zero })        // revision 1, 0 processors to idle
+    Method (_OST, 3) { \_SB.PEP0.ROST = Arg2 }      // status buffer → PEP0.ROST
+}
+Device (PEP0) {                                      // QCOM0811, _CID PNP0D80
+    Name (ROST, Zero)
+    Method (NPUR, 1) {
+        \_SB.AGR0._PUR [One] = Arg0                  // number of processors to idle
+        Notify (\_SB.AGR0, 0x80)
+    }
+    ...
+}
+```
+- `_PUR` is a named package, not a method. At boot it asks for 0 idle processors.
+- The only writer is `\_SB.PEP0.NPUR (n)`. It stores `n` in `_PUR[1]` and sends `Notify (AGR0, 0x80)`, which makes this driver evaluate `_PUR` again. `NPUR` is presumably evaluated by the PEP driver of `\_SB.PEP0` (qcpep8930.sys ?, not documented yet) to park a CPU, e.g. for thermal or power reasons ?
+- `_OST` copies its third argument (the status buffer) to `\_SB.PEP0.ROST`, so the PEP can read back how many processors were really idled.
+- `\_SB.AGR0` is not in the `_TZD` of any thermal zone, so the thermal cooling interface of this driver isn't used by the ACPI thermal zones. Those list `\_SB.CPU0` / `\_SB.CPU1` (`ACPI0007`):
+
+| Thermal zone | `_HID` | `_TZD` | `_PSV` (°C) | `_CRT` (°C) | `_TSP` (s) |
+|--------------|--------|--------|-------------|-------------|------------|
+| `\_SB.TZ0` | QCOM2400 | CPU0 | 94.8 | 109.8 | 5.0 |
+| `\_SB.TZ2` | QCOM2402 | CPU0, CPU1 | 94.8 | 109.8 | 5.0 |
+| `\_SB.TZ3` | QCOM2403 | CPU0, CPU1 | 92.8 | 104.8 | 1.0 |
+| `\_SB.TZ6` | QCOM2406 | CPU1 | 94.8 | 109.8 | 5.0 |
+| `\_SB.TZ8` | QCOM2408 | CPU0, CPU1 | 94.8 | 109.8 | 5.0 |
+| `\_SB.TZ9` | QCOM2409 | CPU0 | 94.8 | 109.8 | 5.0 |
+| `\_SB.TZ10` | NOKIA_THERMAL | CPU0, CPU1 | 104.8 | 109.8 | 5.0 |
+| `\_SB.TZ11` | QCOM2154 | CPU0, CPU1 | 69.8 | 75.8 | 5.0 |
+
+All zones have `_TC1` = 4, `_TC2` = 3 and `_TZP` = 0 (no polling: the temperature changes are notified).
 
 ### Lumia 520 device node
 

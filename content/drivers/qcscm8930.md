@@ -68,11 +68,15 @@ The vendor GUID of `PPI` is the same as the one of `BmsDataVariables` ([qcbms893
 ### ACPI memory resources
 
 Mapped with `MmMapIoSpace` (non cached) by `SCMEvtDevicePrepareHardware`. Only the resources of type `CmResourceTypeMemory` are used; their order matters. If the first one is missing: "Incorrect ACPI configuration", 0xC014000F (ignored).
-| Index | Name | Device context | Use |
-|-------|------|----------------|-----|
-| 0 | MOR/PPI | +0x04 (VA) | Byte 0 = MOR, byte 1 = PCMD, byte 2 = CCMD, byte 3 = RCMD (logged at start). Written to the `PPI` variable at D0 exit |
-| 1 | TrustZone variables buffer | +0x08 (PA), +0x0C (VA), +0x10 (size) | Parameter buffer of the TZ requests (`AllocateParameterMemory`), and buffer of the UEFI variable requests. If its size is 0, a 256 KB (0x40000) contiguous buffer is allocated instead |
-| 2 | TrustZone TPM control area | +0x14 (VA) | TPM control area ? (only mapped) |
+| Index | Name | Device context | Use | Lumia 520 `_CRS` |
+|-------|------|----------------|-----|------------------|
+| 0 | MOR/PPI | +0x04 (VA) | Byte 0 = MOR, byte 1 = PCMD, byte 2 = CCMD, byte 3 = RCMD (logged at start). Written to the `PPI` variable at D0 exit | 0x2A03FA94, 4 bytes (in IMEM) |
+| 1 | TrustZone variables buffer | +0x08 (PA), +0x0C (VA), +0x10 (size) | Parameter buffer of the TZ requests (`AllocateParameterMemory`), and buffer of the UEFI variable requests. If its size is 0, a 256 KB (0x40000) contiguous buffer is allocated instead | 0x81400000, 0x3D000 (244 KB) |
+| 2 | TrustZone TPM control area | +0x14 (VA) | TPM control area ? (only mapped) | 0x8143D000, 0x3000 (12 KB), right after resource 1 |
+
+The Lumia 520 values come from the DSDT. The node is `\_SB.SCM0` (`_HID` `QCOM0E90`, `_UID` 0, no `_DEP`). Its `GCFG` method returns an **empty package** (`Package (0x00) {}`), so the `GCFG` evaluation always ends in 0xC014000F (count = 0). That error is ignored.  
+The same 4 bytes at 0x2A03FA94 are the operation region `TPMR` of `\_SB.TPM0` (`_HID` `MSFT0101`, TPM 2.0), with the fields `MORR`, `PCMD`, `CCMD`, `RCMD` (one byte each). Its `_DSM` implements the Physical Presence Interface `{3DDDFAA6-361B-4EB4-A424-8D10089D1653}` (version "1.2"; function 3 returns `PCMD`, function 5 returns `CCMD`/`RCMD`, function 7 writes `PCMD`) and the TPM Memory Clear `{376054ED-CC13-4675-901C-4756D7F2D45D}` (writes `MORR`). So the bytes that this driver logs and copies to the `PPI` UEFI variable are exactly the ones that the OS writes through the TPM `_DSM`.  
+`\_SB.PBMS`, `\_SB.PMAP` and `\_SB.PILC` declare `_DEP` on `\_SB.SCM0`.
 
 Both buffers must have a page-aligned physical address and a size multiple of the cache line size (`sub_405CB8`, cache line size read from `CCSIDR`).
 

@@ -9,6 +9,8 @@ The PDB path embedded in the binary is `P:\Bluetooth\rel\8.2.1.1\arm\Release\qcb
 
 There's no named device object and no symbolic link. The FDO has the device type `FILE_DEVICE_BUS_EXTENDER` (0x2A), and its default queue is parallel.
 
+ACPI node on the Lumia 520: `\_SB.RIVA.BTH0` (`Name (_ADR, One)`, nothing else), child 1 of `\_SB.RIVA` ([qcwcn8930.sys](./qcwcn8930.md#lumia-520-acpi-node)).
+
 Registries of the bus driver:  
 `HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\services\qcbluetooth`  
 `HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Enum\ACPI\QCOM01E0\3&ddcf83e&0&1`  

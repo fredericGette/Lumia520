@@ -33,6 +33,27 @@ It is called by:
 | [qcpmicapps8930.sys](./qcpmicapps8930.md) | 0xC3502FA4 / 0xC3502FA8 | Registers / unregisters itself as the handler of an I²C slave address |
 | [acpiex.sys](./acpiex.md) | 0x41808 | `GenericSerialBus` operation region accesses (`RhpSendSpbIoctl`) |
 
+### Lumia 520 ACPI node
+
+From the DSDT:
+```
+Device (ABD) {
+    Name (_HID, "QCOM1200")
+    Name (_UID, Zero)
+    OperationRegion (ROP1, GenericSerialBus, Zero, 0x0100)
+    Name (AVBL, Zero)
+    Method (_REG, 2) { If (Arg0 == 0x09) { AVBL = Arg1 } }
+}
+```
+`ROP1` is the `GenericSerialBus` operation region of the controller itself. Two fields are defined on it, each with its own I²C connection to `\_SB.ABD` (`I2cSerialBusV2 (addr, ControllerInitiated, 0, AddressingMode7Bit, "\_SB.ABD")`, speed 0, which this driver doesn't check):  
+| Slave address | Field | Access | Used by | Registered by |
+|---------------|-------|--------|---------|---------------|
+| 1 | `\_SB.PRXY.FLD0` (`QCOM0812`) | `AttribRawBytes (0x0B)` (11 bytes) | `_PS0`…`_PS3` of `\_SB.TCH1` (`NOKIA_TOUCH`) and `\_SB.NRSD` (`NRSD0001`) in the DSDT, and of `\_SB.ACC1` (`KXTNK` accelerometer), `\_SB.ALS1`/`\_SB.PRX1` (`QPDS_T900_ALS`/`_PRX`) and `\_SB.ALS2`/`\_SB.PRX2` (`LTR_554ALS_02_ALS`/`_PRX`) in the Nokia SSDT | The driver of `\_SB.PRXY` (not documented yet). Its `GEPT` returns 1 |
+| 2 | `\_SB.PRTC.FLD0` (`ACPI000E`) | `AttribRawBytes (0x10)` (16 bytes) | `_GRT` / `_SRT` (see [acpitime.sys](./acpitime.md#lumia-520-acpi-node)) | [qcpmicapps8930.sys](./qcpmicapps8930.md) (`GEPT` returns 2) |
+
+The `PRXY` record is a 13-byte AML buffer: status (byte 0), length (byte 1), then the 11 bytes written to the client, i.e. the ACPI path of the device (10 bytes, e.g. `\_SB.NRSD`) followed by the new D-state (0–3). So `\_SB.PRXY` is a "power proxy": devices whose `_PSx` methods have no hardware to touch report their D-state changes to a kernel driver through this software I²C target. The `_PSx` methods only write when `\_SB.ABD.AVBL` is set (the `_REG` of this node).  
+`\_SB.PMAP` (qcpmicapps8930.sys) and `\_SB.PRXY` declare `_DEP` on `\_SB.ABD`.
+
 ### Start-up
 
 1. `DriverEntry` (0x407008): `WdfDriverCreate`. Pool tag `'ABD'` (0x444241).

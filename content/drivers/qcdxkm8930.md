@@ -114,7 +114,7 @@ The video core firmware is **embedded in the driver**: `sub_41CC98` copies 60542
 
 ### Resources
 
-`sub_4A4434` copies the translated resources of the device (memory resources are mapped with `DxgkCbMapMemory`, connection resources of type 0x84 are kept). The configuration parser (`sub_49C4F0`, tags `RESOURCE`, `SMI_MEMORY`, `UEFI_FRAME_BUFFER`, `DISPLAY`, `ENGINE`…) gives a name to each of them. Names found in the driver: `MDP_REGS`, `MIPI_DSI_REGS`, `HDMI_REGS`, `TV_ENC_REGS`, `SE_CTRL_REGS`, `UEFI_FRAME_BUFFER`, `ROTATOR_REGS`, `SMI_MEMORY`. The source of this configuration text (ACPI ?) is not identified.
+`sub_4A4434` copies the translated resources of the device (memory resources are mapped with `DxgkCbMapMemory`, connection resources of type 0x84 are kept). The configuration parser (`sub_49C4F0`, tags `RESOURCE`, `SMI_MEMORY`, `UEFI_FRAME_BUFFER`, `DISPLAY`, `ENGINE`…) gives a name to each of them. Names found in the driver: `MDP_REGS`, `MIPI_DSI_REGS`, `HDMI_REGS`, `TV_ENC_REGS`, `SE_CTRL_REGS`, `UEFI_FRAME_BUFFER`, `ROTATOR_REGS`, `SMI_MEMORY`. On the Lumia 520 this configuration comes from the ACPI methods `RESI` (resource names), `ENGS` (engines) and `PMCL` (power components) of `\_SB.GPU0`, see [Lumia 520 ACPI node](#lumia-520-acpi-node).
 
 Hardcoded physical addresses (`sub_4A71F8`, `MmMapIoSpace`, non-cached), mapped for the components of type 19 and 25 of the list at adapter `+0x268`:  
 | Type | Physical address | Size | Comment |
@@ -136,13 +136,60 @@ Evaluated on the adapter by `sub_4413F4` (input `ACPI_EVAL_INPUT_BUFFER_COMPLEX`
 | `PPCC` | 1 integer | Panel colour correction (PCC) table ? |
 | `PGCT` | 1 integer | Gamma correction table ? |
 | `PIGC` | 1 integer | Inverse gamma correction table ? |
-| `PGRT` | — | ? |
-| `PBRT` | — | Brightness table ? Read with a 512-byte buffer by the oempanel service (`sub_44A794` case 7) |
+| `PGRT` | 2 in the DSDT | ? |
+| `PBRT` | 2 in the DSDT | Brightness table ? Read with a 512-byte buffer by the oempanel service (`sub_44A794` case 7) |
 | `PCSC` | — | Colour space conversion ? |
 
 Width / height of the panel can be forced with the `PanelOverride` registry values.
 
 UEFI variable `UEFIDisplayInfo` (vendor `{9042A9DE-23DC-4A38-96FB-7ADED080516A}` = `EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID`, 36 bytes) is read by `sub_441508` (`ExGetFirmwareEnvironmentVariable`): display state left by the UEFI (mode, frame buffer ?), used to take over the boot screen.
+
+### Lumia 520 ACPI node
+
+From the DSDT. The adapter is `\_SB.GPU0` (`_HID` `QCOM0300`, `_CID` `ACPIQCOM0300`, `_UID` 0, `_CLS` 0x0003000000000000 = display controller). It declares `_DEP` on `\_SB.SMMU` (`QCOM0200`, qcvcm8930.sys ?), `\_SB.PEP0`, `\_SB.PMIC` and `\_SB.CIN0` ([qcchipinfo8930.sys](./qcchipinfo8930.md)). A second node `\_SB.SGPU` (`_HID` `QCOM_GPU`, `_CID` `ACPIQCOM_GPU`, nothing else) also exists.
+
+`_CRS`, with the name that `RESI` gives to each resource (same order: `RESI` = `Package { 2, 0, {"RESOURCE", name, owner}… }`):  
+| # | `RESI` name (owner) | Resource |
+|---|---------------------|----------|
+| 0 | `MDP_REGS` (DISPLAY) | `Memory32Fixed` 0x05100000, 0x100000 |
+| 1 | `MIPI_DSI_REGS` (DISPLAY) | 0x04700000, 0x1000 |
+| 2 | `HDMI_REGS` (DISPLAY) | 0x04A00000, 0x1000 |
+| 3 | `TV_ENC_REGS` (DISPLAY) | 0x04F00000, 0x2000 |
+| 4 | `SE_CTRL_REGS` (DISPLAY) | 0x00700000, 0x8000 |
+| 5 | `MMSS_SFPB_GPREG` (DISPLAY) | 0x05700058, 4 |
+| 6 | `VSYNC_INTERRUPT` (DISPLAY) | Interrupt 107 (level, high) |
+| 7 | `GFX_REGS` (GRAPHICS) | 0x04300000, 0x20000 |
+| 8 | `GFX_INTERRUPT` (GRAPHICS) | Interrupt 112 (level, high) |
+| 9 | `ROTATOR_REGS` (ROTATOR) | 0x04E00000, 0x10000 |
+| 10 | `ROTATOR_INTERRUPT` (ROTATOR) | Interrupt 105 (level, high) |
+| 11 | `VIDEO_REGS` (VIDEO) | 0x04400000, 0x100000 |
+| 12 | `VIDC_INTERRUPT` (VIDEO) | Interrupt 81 (level, high) |
+| 13 | `UEFI_FRAME_BUFFER` (UEFI) | 0x80400000, 0x400000 (4 MB) |
+| 14 | `DSI_PANEL_RESET` (DISPLAY) | `GpioIo (Shared, PullUp)` `\_SB.GIO0` pin 58, also connection #1 of [oempanel.sys](./oempanel.md#gpio-lines) |
+
+`ENGS` (`Package { 2, 0, 0x002E0005, {"ENGINES", 4, …} }`) declares 4 engines:  
+| Engine | Hardware | Index | SMMU contexts (`MMUIDS`) |
+|--------|----------|-------|--------------------------|
+| GRAPHICS | `Adreno3XX` | 0 | `VCM_GFX_3D_USER`, `VCM_GFX_3D_PRIV` |
+| MDPBLT | `MDP4.x` | 1 | — |
+| ROTATOR | `Rotator1.0` | 2 | `VCM_ROT_SRC`, `VCM_ROT_DST` |
+| VIDEO | `MFC1080p` | 3 | — |
+
+A separate `DISPLAY` block (`MDP4.x`) lists the MDP pipe contexts `VCM_MDP_VG1`, `VCM_MDP_RGB1`, `VCM_MDP_VG2`, `VCM_MDP_RGB2`.
+
+Each engine also has `PERF_CONTROLS` (e.g. `ReleaseVoteOnPowerCollapse`, `LimitForPassiveCooling`, `PreventPowerCollapse`, `ForceMaxPerf`, `ForceActive`) and `PROPERTIES` (e.g. `MultiplaneSupport`, `SMMUCount`).  
+`PMCL` returns 26 power-framework `COMPONENT`s (UUID, name such as `GRAPHICS_F_STATES`, `MDPBLT_F_STATES`, `ROTATOR_F_STATES`, `VIDEO_F_STATES`, `PRIMDISPLAY_F_STATES`, `MDP_CORE_CLOCK_CONTROL`, `MDP_AXI_PORT0_BANDWIDTH_CONTROL`, `*_FOOTSWITCH_CONTROL`, `*_RESET`…), each with an `FSTATE_SET` (`ALL_ON`, `CLK_OFF`, `PWR_OFF` with their latencies) or a `PSTATE_SET` (clock frequencies / bandwidths).
+
+`_ROM` (2 arguments: offset, length) returns a slice of a 4916-byte (0x1334) **UTF-8 XML** panel configuration (`PCFG`):
+- `PanelName` **Teisko**, "Teisko DSI Panel (480x800 24bpp)". The Lumia 520 panel is Race (see [oempanel.sys](./oempanel.md#panels)), so the ACPI description is generic for the 480×800 panels.
+- EDID: `ManufactureID` 0xBADBAD, `ProductCode` 0x6100, week 9 of 2013 (0x13), EDID 1.3, screen 5 × 9 cm.
+- Timing: pixel clock 52,598,700 Hz, 480 × 800, H front/back porch/sync 23/16/8, V 7/2/2.
+- Interface type 9 (DSI), colour format 3; DSI channel 2, virtual channel 0, colour format 36, traffic mode 1, **2 lanes**, refresh rate 0x3C0000 (60.0 in 16.16 fixed point), lane mapping 1, low-power mode in BLLP/BLLP-EOF.
+- `DSIInitSequence` (`11` sleep out, wait 0x78 ms, `36`, `53 24`, `51 FF`, `55 00`, `29` display on), `DSITermSequence` and the reset GPIO group are **commented out** (`<!-- … -->`). So the panel is initialised through [oempanel.sys](./oempanel.md), which sends its own DCS sequences.
+- Backlight type 3, 100 steps, default 80 %, low power 40 %.
+
+The panel-tuning methods are stubs: `PIGC`, `PPCC`, `PGCT` (1 argument) and `PGRT`, `PBRT` (2 arguments) return a 1-byte buffer `00`, and `BLCP` (1 argument) returns 256 zero bytes. `PCSC` isn't defined.  
+`_DOD` = `{ 0x00024321 }`. The children are `\_SB.GPU0.MON0` (`_ADR` 0, the monitor of [monitor.sys](./monitor.md#lumia-520-acpi-node)) and `\_SB.GPU0.AVS0` (`_ADR` 0x00024321, empty `_CRS`, `_DEP` on `\_SB.VPE` and `\_SB.VFE0`: the AVStream/camera child ?).
 
 ### Child devices
 

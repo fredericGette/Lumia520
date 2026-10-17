@@ -10,7 +10,7 @@ Device name : `\Device\RPEN`
 Symbolic link : `\DosDevices\RPEN`  
 
 Registry of the driver:  
-`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Enum\ACPI\QCOM0E30\2&daba3ff&0` (ACPI id seen in the [qccdi8930.sys](./qccdi8930.md) traces)
+`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Enum\ACPI\QCOM0E30\2&daba3ff&0` (ACPI node `\_SB.RPEN`, `_HID` `QCOM0E30`, no resources and no method in the DSDT)
 
 Registry key `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\<service>\Parameters` (`WdfDriverOpenParametersRegistryKey`, read by `RPEReadRegistry`):  
 | Registry value | value | comment |
@@ -61,7 +61,7 @@ Each client registered through `Notifier_HelperInit` is stored as an `RPE_NOTIFI
 | 0xD4 | 4 | Callback table [1]: "apps state" callback `void cb(Context, ULONG ApState, ULONG *State)`. Called by qcrpen8930.sys with 2. Also given to the WPCD client: [qccdi8930.sys](./qccdi8930.md) calls it with 7 (AP error) to halt the subsystem before the crash dump. In qcwcn8930.sys (`sub_401938`), 7 sets `SMSM_RESET` in `SMSM_APPS_STATE` and waits until the WCNSS sets its own `SMSM_RESET` bit (subsystem halted, caches flushed); any other value is ignored |
 | 0xD8 | 4 | Callback table [2]. Not called by qcrpen8930.sys, only given to the WPCD client (crash dump callback ?). No-op in qcwcn8930.sys (`sub_4019C8`) |
 | 0xDC | 4 | Callback table [3]: command callback `cb(Context, RPE_COMMAND *Command, ULONG *State)`. No-op in qcwcn8930.sys (`sub_401A48`) |
-| 0xE0 | 4 | Pointer to a pool copy of the memory segment array (16 bytes per segment: 64-bit base address, 64-bit size; qcwcn8930.sys builds it from the ACPI method `CONF`) |
+| 0xE0 | 4 | Pointer to a pool copy of the memory segment array (16 bytes per segment: 64-bit base address, 64-bit size; qcwcn8930.sys builds it from the ACPI method `CONF`. On the Lumia 520 the `CONF` sizes are in 4 KB pages, see [qcwcn8930.sys](./qcwcn8930.md#lumia-520-acpi-node)) |
 | 0xE4 | 1 | Number of memory segments |
 | 0xE8 | 4 | Client context, passed as the first argument of every callback |
 | 0xEC | 4 | 1 = registered with the WPCD (crash dump) client |

@@ -154,6 +154,10 @@ Offsets in the WDF device context, for reopening the analysis:
 | 0x158 | `WDF_DEVICE_POWER_POLICY_IDLE_SETTINGS` (`+0x16C` = Enabled) |
 | 0x17C | ALPC port handle |
 
+### Lumia 520 ACPI node
+
+In the Lumia 520 DSDT the monitor is `\_SB.GPU0.MON0`. It only has `_ADR` (returns 0): there's no `_BCL`, `_BCM` or `_BQC`. The ACPI brightness fallback (`AcpiInit`) therefore gets `STATUS_NOT_FOUND`, and brightness can only go through the brightness interface of [qcdxkm8930.sys](./qcdxkm8930.md#lumia-520-acpi-node).
+
 ---
 
 All non-IOCTL requests (create, close, read, write) are completed with `STATUS_SUCCESS` by `EvtIoDefault` (0x17918).

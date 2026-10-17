@@ -5,6 +5,8 @@ It is the battery **miniclass driver** of the Windows battery stack: it register
 The state of charge comes from [qcbms8930.sys](./qcbms8930.md) (`IOCTL_BMS_*`). In return, this driver feeds qcbms8930 with the battery temperature, the PMIC temperature, the battery-ID reading and the XOADC calibration points, read from an ADC driver (device type `0x8ADC`, channel names `BATT_ID`, `BATT_THERM`, `VBATT`…).  
 It reads 3 GPIO lines and up to 6 interrupts from its ACPI resources, and reads its battery and charging parameters from the ACPI methods `CONF`, `CUTF`, `CHGR` and `CGHV`. It exposes the passive-cooling interface `GUID_THERMAL_COOLING_INTERFACE`, used to cut the charging current.
 
+On the Lumia 520 the device is `\_SB.NEDD` (`_HID` `NOKI0B00`, no `_UID`, no `_DEP`). It's defined in the Nokia SSDT (`NOKIA `/`MSM8930 `, OEM revision 4), not in the DSDT; see [Lumia 520 ACPI node](#lumia-520-acpi-node). The ADC channels that it reads (`VBATT`, `BATT_THERM`, `BATT_ID`, `BATT_RID`…) are defined in the `CHAN` method of `\_SB.ADC1` (`QCOM0C00`, PMIC ADC driver) in the DSDT.
+
 There's no named `\Device\` object and no symbolic link (the WDF device is unnamed). The driver creates the device interface `{00DC4DBB-BDFF-4051-8A95-754CE94CB57C}`; BATTC also registers the standard battery interface (`GUID_DEVICE_BATTERY`) for it.
 
 Registries of the driver:  
@@ -101,6 +103,48 @@ A table is a package of n ≥ 2 packages of 6 integers, parsed by `sub_401354` i
 | 5 | Battery voltage below which charging restarts after the termination (0 = use field 2) ? |
 
 The current entry follows the battery temperature (`BATT_THERM` + 273), with the bounds of the neighbouring entries as hysteresis.
+
+### Lumia 520 ACPI node
+
+From the Nokia SSDT, `Device (NEDD)` (`_HID` `NOKI0B00`).
+
+`_CRS` has **6 `GpioInt` and no `GpioIo`**. So on the Lumia 520 the driver gets 6 interrupts and **no GPIO connection**: connections 0–2 (charger-present input, charger control output) don't exist, and the GPIO reads/writes described on this page have no target. How the driver behaves without them (e.g. how it detects the charger) hasn't been checked ?  
+The interrupts, assuming they're numbered in `_CRS` order:  
+| Interrupt # | Controller, pin | Descriptor | Work item (from the table above) |
+|-------------|-----------------|------------|-----------------------------------|
+| 0 | `\_SB.PM01` 15 | Edge, ActiveBoth, Shared, Wake, PullUp | Wake the charging worker |
+| 1 | `\_SB.PM01` 42 | Edge, ActiveBoth, Shared, Wake, PullUp | Re-read the charger state |
+| 2 | `\_SB.PM01` 13 | Edge, ActiveLow, Shared, Wake, PullUp, debounce 2 ms | Wake the charging worker |
+| 3 | `\_SB.PM01` 46 | Edge, ActiveHigh, Shared, Wake, PullUp | Low-voltage monitor (battery alarm ?) |
+| 4 | `\_SB.GIO0` 91 (TLMM) | Edge, ActiveHigh, Shared, Wake, PullNone, debounce 200 ms | Charger event ? |
+| 5 | `\_SB.PM01` 192 | Edge, ActiveBoth, Shared, Wake, PullUp | Wake the charging worker |
+
+The `\_SB.PM01` pins are PMIC interrupt/GPIO numbers of the PM8038 GPIO controller (see [qcpmic8930.sys](./qcpmic8930.md#acpi-pmcf)). Which PMIC interrupt each one is hasn't been identified.
+
+`CONF` = `Package { 100, 0, 2, 8, 1350, 1430 }`:  
+| Index | Value | Meaning (see [ACPI methods](#acpi-methods)) |
+|-------|-------|---------------------------------------------|
+| 0 | 100 | Version (must be 100…199) |
+| 1 | 0 | Flag: no `0x10000000` in the battery capabilities |
+| 2 | 2 | Alert 1 (%) |
+| 3 | 8 | Alert 2 (%) |
+| 4 | 1350 | Full-charged capacity (mAh) |
+| 5 | 1430 | Designed capacity (mAh): the 1430 mAh BL-5J battery of the Lumia 520 |
+
+`CUTF` = `Package { 0, 3300, 3400 }`. `CUTF[0]` = 0 replaces the default 5000 mV, so level 2 of the [low-voltage monitor](#low-voltage-monitor) is never reached. Level 0 (capacity ramped to 0, `BATTERY_CRITICAL`) is below **3300 mV**, and level 1 (capacity limited to 9 %) below **3400 mV** when not charging. The battery alarm is armed with 4500 mV and 3450 mV.
+
+`CHGR` = `Package { 90, <normal table>, <alternate table> }`: termination current **90 mA**. `CGHV` isn't defined. When the `{9E03B1E8-…}` device reports 0, the driver asks for `CGHV`, the evaluation fails, and the fallback (hard-coded table ?) hasn't been checked.  
+Normal table (temperatures in K, °C in brackets):  
+| Entry | Lower T | Upper T | Voltage (mV) | Current (mA) | Field 4 (mV) | Field 5 (mV) |
+|-------|---------|---------|--------------|--------------|--------------|--------------|
+| 0 | 270 (−3) | 272 (−1) | 3900 | 325 | 0 | 0 |
+| 1 | 280 (7) | 282 (9) | 4100 | 875 | 4050 | 4000 |
+| 2 | 290 (17) | 292 (19) | 4200 | 875 | 4150 | 4100 |
+| 3 | 302 (29) | 304 (31) | 4200 | 875 | 4150 | 4100 |
+| 4 | 314 (41) | 316 (43) | 4100 | 875 | 4050 | 4000 |
+| 5 | 333 (60) | 335 (62) | 0 | 0 | 0 | 0 |
+
+The alternate table is identical except the last entry: 329–331 K (56–58 °C). Charging therefore stops 4 °C earlier when the alternate table is selected.
 
 ### Charging control
 

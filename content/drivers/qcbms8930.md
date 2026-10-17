@@ -69,15 +69,17 @@ Content of `BmsDataVariables` as written by `PmicBmsUpdateAndPersistAccumulator`
 | 18-1B | ? | `dword_42C8E0` (flags/status ?) |
 
 ACPI: at `EvtDevicePrepareHardware` the driver evaluates the method `PMCF` on its ACPI node (`IOCTL_ACPI_EVAL_METHOD` 0x32C004, no arguments). It expects a package of 7 integers, stored in the device context at `+0x04`…`+0x1C` (not the same content as the `PMCF` method of [qcpmic8930.sys](./qcpmic8930.md#acpi-pmcf), which returns 9 integers describing the SSBI buses):  
-| Index | Comment |
-|-------|---------|
-| 0 | Sense resistor in µΩ (overridable by the registry) |
-| 1 | ? |
-| 2 | ? |
-| 3 | PMIC/BMS instance id — first dword of every `IOCTL_PM_CCADC_*` input and of the configure calls of `PmicBmsReconfigure` |
-| 4 | ? (copied to the BMS config header, used as the id in `IOCTL_PM_GAUGE_BMS_CONFIGURE` at chip init) |
-| 5 | ? |
-| 6 | ? |
+| Index | Comment | Lumia 520 value |
+|-------|---------|-----------------|
+| 0 | Sense resistor in µΩ (overridable by the registry) | 10000 (0x2710) = 10 mΩ |
+| 1 | ? | 300 (0x12C) |
+| 2 | ? | 3100 (0xC1C), a voltage in mV ? |
+| 3 | PMIC/BMS instance id — first dword of every `IOCTL_PM_CCADC_*` input and of the configure calls of `PmicBmsReconfigure` | 0 |
+| 4 | ? (copied to the BMS config header, used as the id in `IOCTL_PM_GAUGE_BMS_CONFIGURE` at chip init) | 100 (0x64) |
+| 5 | ? | 1500 (0x5DC) |
+| 6 | ? | 0 |
+
+On the Lumia 520 the device node is `\_SB.PBMS` (`_HID` `QCOM0A02`, no `_UID`, no `_CRS`), with `_DEP` on `\_SB.PMIC` ([qcpmic8930.sys](./qcpmic8930.md)) and `\_SB.SCM0` ([qcscm8930.sys](./qcscm8930.md)). `PMCF` returns a constant package. The values are from the DSDT.
 
 GUID of the ETW provider:  
 None. `EtwWrite` is called with a `RegHandle` of 0 (the driver never calls `EtwRegister`) and the trace-flag word `g_TraceFlags` is never set, so the `EventWrite_0x` tracing is dead code.

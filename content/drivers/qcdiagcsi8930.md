@@ -4,6 +4,8 @@ Qualcomm DIAG Consumer Interface (DCI) driver.
 It lets clients on the application processor (drivers or applications) use the DIAG services of the modem without the host tool (QPST/QXDM): send DIAG commands, and receive log packets and events filtered by their own masks. The modem side is the SMD channel `DIAG_2`, which is separate from the `DIAG` channel used by [qcdiagrouter8930.sys](./qcdiagrouter8930.md) for the host. Masks are not sent on `DIAG_2`: they are pushed to the modem through the router (DIAG_CNTL stream id 2). Commands registered by a local DIAG client of the router are delivered to that client through the router.  
 The PDB path is `P:\Diag\rel\8.3\arm\Release\qcdiagcsi8930.pdb`. The device context type is named `DIAGCI_DEVICE_CONTEXT` (sic); the other context types are `DIAGCSI_*`.
 
+ACPI node on the Lumia 520 (DSDT): `\_SB.QDCI` (`_HID` `QCOM0F81`, nothing else) ? The DCI name suggests it; the router is then `\_SB.QDIG` (`QCOM0F80`).
+
 Device name : `\Device\DiagCSI`  
 Symbolic link : `\DosDevices\DiagCSI`  
 I/O type : direct (`WdfDeviceIoDirect`)  

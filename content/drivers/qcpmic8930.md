@@ -50,17 +50,26 @@ It communicates with the following devices:
 ### ACPI `PMCF`
 
 `PMCF` is evaluated without argument (`ACPI_EVAL_INPUT_BUFFER` signature `'AeiB'`, 1 KB output buffer). `ParseAndUpdatePmicAcpiData` (0x401480) requires output signature `'AeoB'` and **exactly 9 integer** arguments (otherwise `0xC014000F STATUS_ACPI_INVALID_DATA`), stored in the device context by `AssignPmicAcpiValue` (0x40124C):  
-| Index | Context offset | Name (from the trace strings) |
-|-------|----------------|-------------------------------|
-| 0 | +0x00 | Number of PMICS |
-| 1 | +0x04 | PMIC_1_INDEX ssbi2_cfg_base_phys |
-| 2 | +0x08 | PMIC_1_INDEX ssbi2_cfg_base_size |
-| 3 | +0x0C | PMIC_1_INDEX ssbi2_cmd_base_phys |
-| 4 | +0x10 | PMIC_1_INDEX ssbi2_cmd_base_size |
-| 5 | +0x18 | PMIC_2_INDEX ssbi2_cfg_base_phys |
-| 6 | +0x1C | PMIC_2_INDEX ssbi2_cfg_base_size |
-| 7 | +0x20 | PMIC_2_INDEX ssbi2_cmd_base_phys |
-| 8 | +0x24 | PMIC_2_INDEX ssbi2_cmd_base_size |
+| Index | Context offset | Name (from the trace strings) | Lumia 520 value |
+|-------|----------------|-------------------------------|-----------------|
+| 0 | +0x00 | Number of PMICS | 1 |
+| 1 | +0x04 | PMIC_1_INDEX ssbi2_cfg_base_phys | 0x00300000 |
+| 2 | +0x08 | PMIC_1_INDEX ssbi2_cfg_base_size | 0x200 |
+| 3 | +0x0C | PMIC_1_INDEX ssbi2_cmd_base_phys | 0x00500000 |
+| 4 | +0x10 | PMIC_1_INDEX ssbi2_cmd_base_size | 0x40 |
+| 5 | +0x18 | PMIC_2_INDEX ssbi2_cfg_base_phys | 0 |
+| 6 | +0x1C | PMIC_2_INDEX ssbi2_cfg_base_size | 0 |
+| 7 | +0x20 | PMIC_2_INDEX ssbi2_cmd_base_phys | 0 |
+| 8 | +0x24 | PMIC_2_INDEX ssbi2_cmd_base_size | 0 |
+
+The Lumia 520 values come from the DSDT. On the phone the device node is `\_SB.PMIC` (`_HID` `QCOM0A00`). It has no `_UID` and no `_CRS`, so the driver gets no translated resource, and `PMCF` is a constant package. Only one PMIC is declared (the PM8038).
+
+These nodes of the DSDT declare a `_DEP` on `\_SB.PMIC`:  
+| ACPI node | `_HID` | Driver | Comment |
+|-----------|--------|--------|---------|
+| `\_SB.PM01` | QCOM05C0 | ? | PMIC GPIO controller: `_DSM` with the GPIO controller UUID `{4F248F40-D5E2-499F-834C-27758EA1CD3F}` (function 1 returns 0x33), `_CRS` = 5 identical `GpioInt(Level, ActiveLow, Shared, PullUp)` on `\_SB.GIO0` pin 104 (the PMIC interrupt line on the MSM TLMM), method `PMIO` (package of 17 integers: 0, 0x1F66, 0x0C, 0xC0, 0, 0, 0x110, 0x40, 0, 0x100, 0, 0, 0, 6, 0x80, 0, 0) |
+| `\_SB.PBMS` | QCOM0A02 | [qcbms8930.sys](./qcbms8930.md) | Also depends on `\_SB.SCM0` |
+| `\_SB.PMAP` | QCOM0B20 | [qcpmicapps8930.sys](./qcpmicapps8930.md) | Also depends on `\_SB.ABD` and `\_SB.SCM0` |
 
 Note: [qcbms8930.sys](./qcbms8930.md) evaluates a method with the same name `PMCF` on its own ACPI node, but expects 7 integers there.
 

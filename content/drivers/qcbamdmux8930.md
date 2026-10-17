@@ -47,6 +47,18 @@ Pool tags: `qbd0` (driver), `qbd1` (SMSM wait buffer), `qbd3` (BAM callback poin
 
 There's no `EvtDeviceSurpriseRemoval` and no `KeBugCheckEx` call outside the `/GS` failure handler.
 
+### Lumia 520 ACPI nodes
+
+From the DSDT. This driver's node is `\_SB.DMUX` (`_HID` `QCOM0F50`, `_UID` 0). It has no `_CRS`, no `_DEP` and no method, and the driver evaluates none.  
+The BAM driver behind the `{3E77CCA9-…}` interface is presumably the function driver of the 3 `QCOM0910` nodes ?  
+| Node | `_UID` | `INFO` | `_CRS` | Other methods |
+|------|--------|--------|--------|---------------|
+| `\_SB.BAM0` | 0 | `"BAMDMA"`, 0 | `Memory32Fixed` 0x12244000, 0x2000; interrupt 137 (edge) | `PIPE`: 2 packages `{0, 0, 1, 0x21, 0x100, 0, 0}`, `{1, 1, 1, 0x21, 0x100, 0, 0}` |
+| `\_SB.BAM1` | 1 | `"DataBAM"`, 0 | `Memory32Fixed` 0x124C2000, 0x2000; interrupt 241 (edge) | — |
+| `\_SB.BAM2` | 2 | `"LPASS_BAM"`, 1 | `Memory32Fixed` 0x28084000, 0x2000; interrupt 66 (edge) | `PIPE`: `{0x18, 0, 1, 0x21, 0x100, 0, 0}`, `{0x19, 1, 1, 0x21, 0x100, 0, 0}`; `SECC`: `{0x00FFFF98, 0}`, `{0xFF000007, 1}`, `{0x60, 2}`, `{0, 0}` |
+
+`DataBAM` at 0x124C2000 is the A2 BAM of the MSM8960 family (`A2_BAM_PHYS_BASE` in Linux `bam_dmux.c`), i.e. the BAM that this driver multiplexes ?
+
 ### Streams, channels and pipes
 
 The device context contains 5 streams of 404 (0x194) bytes at `+0x54`. Stream `s` uses BAM pipe `2s` for transmit and BAM pipe `2s+1` for receive, and carries 32 channels (12-byte records at stream `+0x14`).  

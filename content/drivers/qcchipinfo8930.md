@@ -48,7 +48,7 @@ Drivers using qcchipinfo8930.sys:
 4. Chip id â†’ chip family with the table `off_403690` (182 entries of 12 bytes: name, family, ? ; only 158 are filled). A chip id â‰¥ 182 or not found â†’ family 0.
 5. Family + version bits â†’ chip version (`sub_401084`, see [Chip version](#chip-version)).
 
-The physical address of the register isn't in the binary: it comes from the ACPI `_CRS` of the device (?).
+The physical address of the register isn't in the binary: it comes from the ACPI `_CRS` of the device. On the Lumia 520 the node is `\_SB.CIN0` (`_HID` `QCOM1201`, `_UID` 0). Its `_CRS` is a single `Memory32Fixed (ReadWrite, 0x00802054, 0x00000004)`, i.e. the JTAG id / hardware revision register of the TLMM block (TLMM base 0x00800000, see `\_SB.GIO0`).
 
 > [!NOTE]
 > If the resource descriptor 0 isn't a memory resource, the mapping is skipped but the register is still read through a NULL pointer: the system crashes.

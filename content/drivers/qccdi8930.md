@@ -38,6 +38,24 @@ It communicates with the following devices:
 
 The 4 targets are found with `IoRegisterPlugPlayNotification(EventCategoryDeviceInterfaceChange)` on their interface class GUID; on arrival a work item opens the target with `WdfIoTargetOpen` (with query-remove / remove-cancel / remove-complete callbacks) and gets the interface with `WdfIoTargetQueryForInterface`.
 
+### Lumia 520 ACPI nodes
+
+From the DSDT. This driver's node is `\_SB.CDI` (`_HID` `QCOM0E31`, no `_UID`, no resources, no method). The peer nodes are `\_SB.PILC` (`QCOM0E00`), `\_SB.RPEN` (`QCOM0E30`) and `\_SB.SCM0` (`QCOM0E90`).
+
+The subsystem nodes have a `CONF` method that returns their memory regions as `{physical address, number of 4 KB pages}` pairs (the RPE segment format). Comparison with the hard-coded table of [Memory layout of a subsystem](#memory-layout-of-a-subsystem):  
+| Node | `_HID` | `CONF` regions | Hard-coded entry |
+|------|--------|----------------|------------------|
+| `\_SB.AMSS` | QCOM0E80 | 0x89000000–0x8D400000 (0x4400 pages), 0x8D400000–0x8DA00000 (0x600) | AMSS 0x89000000–0x8DA00000 (same) |
+| | | 0x00020000–0x00044000 (0x24), 0x00108000–0x0010E000 (6) | RPM (same) |
+| | | 0x2A000000–0x2A010000 (0x10), 0x2A03F000–0x2A040000 (1) | SYS_IMEM 0x2A000000–0x2A03F000, 0x2A03F000–0x2A04F000 (larger) |
+| | | 0x09000000 (8), 0x09200000 (8), 0x09400000–0x09410000 (0x10) | MDSP_RAM (the last one is 0x0940F800 in the table) |
+| | | 0x01A01000 (1) | QDSS_ETB_REG (same) |
+| | | 0x2E000000–0x2E030000 (0x30), 0x8FF00000–0x90000000 (0x100) | — (not in the table) |
+| `\_SB.ADSP` | QCOM0E10 | 0x8DA00000–0x8F200000 (0x1800), 0x28400000–0x28420000 (0x20) | ADSP 0x8DA00000–0x8EC00000 (smaller), 0x28400000–0x28420000 (same) |
+| `\_SB.RIVA` | QCOM0E20 | 0x8F200000–0x8F700000 (0x500) | WCN 0x8F000000–0x8F700000 (larger) |
+
+The AMSS/ADSP `CONF` methods are evaluated by the modem/ADSP drivers (not documented yet), and the RIVA one by [qcwcn8930.sys](./qcwcn8930.md#rpe). The AMSS `CONF` also lists RPM, IMEM, MDSP and QDSS regions, not just the modem memory: probably everything that's dumped with the modem ?
+
 ### Initialisation
 
 `DriverEntry` (0x410008) creates the WDF driver (pool tag `qcd0`), allocates the `TRACE_LOG` buffer (128 KB, non cached MDL pages) and initialises the subsystem list.  

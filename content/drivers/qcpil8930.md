@@ -19,7 +19,7 @@ A second, manual, queue holds the load requests waiting for the end of another l
 
 Registries of the driver:  
 `HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\services\qcPILC`  
-`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Enum\ACPI\QCOM0E00\2&daba3ff&0`  
+`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Enum\ACPI\QCOM0E00\2&daba3ff&0` (ACPI node `\_SB.PILC`: no resources and no method; `_DEP` on `\_SB.SCM0` ([qcscm8930.sys](./qcscm8930.md)) and `\_SB.TPM0` (`MSFT0101`, TPM 2.0))  
 `HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\Class\{4d36e97d-e325-11ce-bfc1-08002be10318}\0053`
 
 Registry key `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\qcPILC\Parameters`:  

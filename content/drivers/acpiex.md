@@ -67,6 +67,19 @@ GenericSerialBus access protocols (`AccessAs` attribute, byte `+0x0A` of the req
 
 Other values → `STATUS_NOT_SUPPORTED`. The "command" is the field offset (+ region offset) in bytes, sent as the first write transfer.
 
+On the Lumia 520 (DSDT), the AML code uses these regions:
+- `GenericSerialBus` on a real I²C controller (Nokia SSDT): `\_SB.IC12.ALS1` and `\_SB.IC12.PRX1`, used by the `_STA` of `\_SB.ALS1` / `\_SB.PRX1`. Each one reads 1 byte (`AttribByte`, command = register 0x92) at address 0x39 (400 kHz) on `\_SB.IC12`, and the device is reported present only if the value is 0x29 (chip ID check). They are evaluated only when `\_SB.IC12.AVBL` = 1, i.e. after the I²C driver of GSBI12 has registered the region.
+- `GenericSerialBus` on the software target: `\_SB.ABD.ROP1`, the software SPB target of [qcabd8930.sys](./qcabd8930.md#lumia-520-acpi-node). Its fields use `AttribRawBytes` (0x0E): 16 bytes at I²C address 2 (`\_SB.PRTC` `_GRT`/`_SRT`), and 11 bytes at address 1 (`\_SB.PRXY`, written by the `_PSx` methods of `\_SB.TCH1` and `\_SB.NRSD`). The AML buffers are 18 and 13 bytes: the 2-byte status/length header + data. In the DSDT, `\_SB.IC12` (I²C controller of GSBI12) only has a `_REG` for space 9; its regions and fields come from the SSDT (above).
+- `GeneralPurposeIO`: none. The GPIO connections in the DSDT are only `_CRS` resources (`GpioIo`/`GpioInt`), used by the drivers through `\Device\RESOURCE_HUB\<id>`.
+
+GPIO controllers of the Lumia 520 that these connections point to:  
+| Node | `_HID` | Comment |
+|------|--------|---------|
+| `\_SB.GIO0` | QCOM0500 | MSM TLMM: `Memory32Fixed` 0x00800000, 0x2000, interrupt 48 (×3, level, shared). `OFNI` returns `Buffer { 0x98, 0x00 }` (0x98 = 152 pins ?) |
+| `\_SB.PM01` | QCOM05C0 | PM8038 GPIO/MPP, interrupt through TLMM pin 104 (see [qcpmic8930.sys](./qcpmic8930.md#acpi-pmcf)) |
+| `\_SB.PWIO` | QCOM0D20 | Power-key/PMIC IO controller ?: `GpioInt` on `\_SB.PM01` pin 51, methods `PMIC`, `HRST`, `PKEY`, `_DSM` |
+| `\_SB.EGP0` | ENOGPIO | ? |
+
 ### Device firmware lock
 
 `RhpRegisterDeviceFirmwareLockHandler` registers `RhpDeviceFirmwareLockHandler` with acpi.sys (IOCTL 0x32C030, signature `'ADfR'`, version 1, `+08` = 0x84, handler at `+10`, context at `+14`). Operation 0 accepts only descriptors of type 0x84 (`CmResourceTypeConnection`) of class 2 (serial bus) and is processed asynchronously; 1 = delete, 2 = acquire, 3 = release. Purpose: let the firmware (AML) and the OS driver share an SPB controller ?

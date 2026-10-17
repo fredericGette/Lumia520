@@ -111,6 +111,20 @@ Outgoing interrupt: when an entry changes from `old` to `new` (`sub_4034F8`), ev
 
 State callbacks (`sub_403474`): a list per entry of 16-byte records `{mask, callback, context, next}`. A callback is called as `callback(entry, old, new, context)` when `(old ^ new) & mask` ≠ 0. The only callback in the driver is `sub_4017A0`, which completes the pending [IOCTL 0x3200C](#ioctl-0x3200c).
 
+### Lumia 520 ACPI node
+
+From the DSDT. The node is `\_SB.SMSM` (`_HID` `QCOM0F30`, `_UID` 0), with `_DEP` on `\_SB.SMEM` ([qcsmem8930.sys](./qcsmem8930.md)).
+
+`_CRS`: 4 interrupts `Interrupt (ResourceConsumer, Edge, ActiveHigh, Exclusive)`, in the order of the `INTR` entries:  
+| `INTR` entry | Remote host (SMSM index) | Outgoing register | Value | Incoming interrupt (GIC) |
+|--------------|--------------------------|-------------------|-------|--------------------------|
+| 0 | 1 MODEM | 0x02011008 | 0x00000010 (bit 4) | 70 |
+| 1 | 2 Q6 | 0x02011008 | 0x00004000 (bit 14) | 121 |
+| 2 | 3 WCNSS/RIVA | 0x02011008 | 0x00800000 (bit 23) | 236 |
+| 3 | 4 DSPS | 0x12104094 | 0x00000001 | 169 |
+
+`INTR` returns `Package (0x14) { 1, 4, 0, 0, <the 4 entries above, each followed by 0> }`.
+
 ### RIVA interrupt workaround
 
 When the qcchipinfo8930.sys interface arrives (`sub_4018C8`), the driver opens it, sends [IOCTL 0x8C1F2008](#ioctl-0x8c1f2008) and [IOCTL 0x8C1F2004](#ioctl-0x8c1f2004), then closes it.  

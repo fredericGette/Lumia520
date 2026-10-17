@@ -5,6 +5,8 @@ It connects a host DIAG tool (QPST, QXDM) to the DIAG services of the subsystems
 The host link (the "transport") is selected in the registry: TCP socket (WSK), USB DIAG function (`\Device\USB_DIAG`) or UART. Packets on the host link are HDLC framed (CRC-16, `0x7D` escaping, `0x7E` terminator).  
 The PDB path is `P:\Diag\rel\8.3\arm\Release\qcdiagrouter8930.pdb`; source file names found in asserts: `DiagRouterDriver.c`, `DiagRouterSMD.c`, `DiagRouterSerial.c`, `DiagRouterUART.c`, `DiagRouterComposite.c`.
 
+ACPI node on the Lumia 520 (DSDT): `\_SB.QDIG` (`_HID` `QCOM0F80`, nothing else) ? The DCI driver [qcdiagcsi8930.sys](./qcdiagcsi8930.md) would then be `\_SB.QDCI` (`QCOM0F81`).
+
 Device name : `\Device\DiagRouter`  
 Symbolic link : `\DosDevices\DiagRouter`  
 I/O type : buffered (`WdfDeviceIoBuffered`)  

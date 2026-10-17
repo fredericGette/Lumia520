@@ -73,6 +73,24 @@ Each PDO exposes the query-interface `GUID_BUS_INTERFACE_STANDARD` `{496B8280-6F
 A counter of children (+ an event, `sub_40E31C` = `EvtCleanupCallback` of the PDO) tracks when all the PDOs are deleted.  
 The children are removed (rescan of an empty child list) when the WCNSS crashes.
 
+### Lumia 520 ACPI node
+
+From the DSDT. The node is `\_SB.RIVA` (`_HID` `QCOM0E20`, no `_UID`). It declares `_DEP` on `\_SB.PEP0`, `\_SB.PMIC` ([qcpmic8930.sys](./qcpmic8930.md)), `\_SB.SMSM` ([qcsmsm8930.sys](./qcsmsm8930.md)), `\_SB.PILC` ([qcpil8930.sys](./qcpil8930.md)) and `\_SB.SMD0` ([qcsmd8930.sys](./qcsmd8930.md)).
+
+- `_CRS`: one interrupt, `Interrupt (Edge, ActiveHigh, Exclusive)` 231. It's the WCNSS watchdog bite handled by `SetupInterrupt` (see [Crash handling](#crash-handling)).
+- `CONF` returns `Package (1) { Package (2) { 0x8F200000, 0x0500 } }`. The second integer is a number of 4 KB pages, not bytes: 0x500 pages = 5 MB (0x8F200000–0x8F6FFFFF). With this unit the `CONF` regions of the subsystems are contiguous: AMSS 0x89000000 + 0x4400 pages = 0x8D400000, … ADSP 0x8DA00000 + 0x1800 pages = 0x8F200000 = WCNSS. This matches the RPE segment format (physical address, number of pages, see [qccdi8930.sys](./qccdi8930.md#memory-layout-of-a-subsystem)).
+- Child nodes, matching the 3 children created by the driver (`_ADR` = child number):  
+
+| Node | `_ADR` / `_HID` | Child | Content |
+|------|-----------------|-------|---------|
+| `\_SB.RIVA.BTH0` | `_ADR` 1 | Bluetooth (`ACPI\QCOM01E0`, [qcbluetooth8930.sys](./qcbluetooth8930.md)) | Nothing else |
+| `\_SB.RIVA.QWLN` | `_ADR` 2 | WLAN (`ACPI\QCOM0E50`) | `_CRS`: `Memory32Fixed` 0x03000000, 0x1000000 (WCNSS register space), `Interrupt (Level, ActiveHigh, Shared, Wake)` 234, `Interrupt (Level, ActiveHigh, Exclusive)` 235. `_PRW` {0, 0}, `_S0W` = `_S4W` = 2 (D2). Empty `_DIS`, `_PS0`…`_PS3` |
+| `\_SB.RIVA.FMT0` | `_ADR` 3 | FM transport (`QWCN\QCOM2150`) | Nothing else |
+| `\_SB.RIVA.WPXY` | `_HID` `NOKIA_WLAN_PROXY` | — | Enumerated by acpi.sys, not by this driver |
+
+acpi.sys presumably attaches these `_ADR` nodes to the PDOs created by the driver (matched by `Address`), which gives the WLAN child its memory and interrupt resources ?  
+A separate top-level node `\_SB.FTM0` (`_HID` `QCOM01E1`, no resources) also exists (factory test mode ?).
+
 ### Interface GUID
 
 WCN device interface, published (`WdfDeviceCreateDeviceInterface` + `WdfDeviceSetDeviceInterfaceState`, `PublishDeviceInterfaceClass` = `sub_40B47C`) when the WCNSS is ready and revoked when it crashes or the device is removed:  
@@ -81,7 +99,7 @@ WCN device interface, published (`WdfDeviceCreateDeviceInterface` + `WdfDeviceSe
 ### RPE
 
 `SetupRpe` (`sub_40A0C0`):
-1. Evaluates the ACPI method `CONF` of the device ([IOCTL 0x32C004](#ioctl-0x32c004--ioctl_acpi_eval_method), output buffer of 512 bytes). The result is a package of integer pairs (base address, size ?) = memory regions of the WCNSS added to the crash dump. If the method doesn't exist (`STATUS_OBJECT_NAME_NOT_FOUND`), the log says "No memory region data in the ACPI, the modem RAM will not be included in the crash dump files" and the client is registered without memory segment.
+1. Evaluates the ACPI method `CONF` of the device ([IOCTL 0x32C004](#ioctl-0x32c004--ioctl_acpi_eval_method), output buffer of 512 bytes). The result is a package of integer pairs (base address, size in 4 KB pages, see [Lumia 520 ACPI node](#lumia-520-acpi-node)) = memory regions of the WCNSS added to the crash dump. If the method doesn't exist (`STATUS_OBJECT_NAME_NOT_FOUND`), the log says "No memory region data in the ACPI, the modem RAM will not be included in the crash dump files" and the client is registered without memory segment.
 2. `RpeInit` (waits for the Helper interface `{59752ed7-b9d5-4121-818d-c69f1e667015}` of [qcrpen8930.sys](./qcrpen8930.md)), then `RpeClientInitMultiSegment` with the client GUID `{93367D0F-35CE-4EC4-8E38-BB33030C58B2}`, the name `WCN`, the memory segments and the callback table `{16 (size of the table), sub_401938, sub_4019C8, sub_401A48}` (see the [RPE client record](./qcrpen8930.md#rpe-client-record)).
 3. `RegisterRPEStateNotification` on the RPE clients SMD (RIVA) `{D30F94E9-9C90-4ED5-AE04-9266277C4721}` of [qcsmd8930.sys](./qcsmd8930.md) and SMSM (RIVA) `{3AABE343-4EA2-43F8-8404-8A4A01088DCF}` of [qcsmsm8930.sys](./qcsmsm8930.md), callback `WcnStateNotificationCallback` (`sub_40A830`). When one of them reaches state 4, a work item (`sub_40EE8C`) sends event 2 (SMD) or event 3 (SMSM) to the [state machine](#state-machine).
 
