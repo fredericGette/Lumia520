@@ -117,21 +117,21 @@ Channels opened by the other drivers (from their binaries):
 | RPCRPY_CNTL | qcipcrouter8930.sys |
 | IPCRTR | qcipcrouter8930.sys |
 | sys_mon | qcipcrouter8930.sys |
-| DATA6_CNTL | qcqmux8930.sys |
-| DATA7_CNTL | qcqmux8930.sys |
-| DATA8_CNTL | qcqmux8930.sys |
-| DATA9_CNTL | qcqmux8930.sys |
-| DATA12_CNTL | qcqmux8930.sys |
+| DATA6_CNTL | [qcqmux8930.sys](./qcqmux8930.md#smd-channels) |
+| DATA7_CNTL | [qcqmux8930.sys](./qcqmux8930.md#smd-channels) |
+| DATA8_CNTL | [qcqmux8930.sys](./qcqmux8930.md#smd-channels) |
+| DATA9_CNTL | [qcqmux8930.sys](./qcqmux8930.md#smd-channels) |
+| DATA12_CNTL | [qcqmux8930.sys](./qcqmux8930.md#smd-channels) |
 | SSM_RTR | qcssm8930.sys |
 | DIAG | qcipcrouter8930.sys |
 | DIAG_2 | qcdiagcsi8930.sys |
 | DIAG_CNTL | qcipcrouter8930.sys |
 | sys_mon | qcadsp8930.sys |
-| DATA5_CNTL | qcqmux8930.sys |
-| DATA13_CNTL | qcqmux8930.sys |
+| DATA5_CNTL | [qcqmux8930.sys](./qcqmux8930.md#smd-channels) |
+| DATA13_CNTL | [qcqmux8930.sys](./qcqmux8930.md#smd-channels) |
 | DIAG | [qcdiagrouter8930.sys](./qcdiagrouter8930.md) |
 | DIAG_CNTL | [qcdiagrouter8930.sys](./qcdiagrouter8930.md) |
-| DATA14_CNTL | qcqmux8930.sys |
+| DATA14_CNTL | [qcqmux8930.sys](./qcqmux8930.md#smd-channels) |
 | APPS_RIVA_DATA | [qcdiagrouter8930.sys](./qcdiagrouter8930.md) |
 | APPS_RIVA_CTRL | [qcdiagrouter8930.sys](./qcdiagrouter8930.md) |
 | apr_audio_svc | qcq6ad8930.sys |
@@ -184,7 +184,7 @@ Query-interface `{07631ee5-21bd-455b-bd1f-f41b43f3a9bc}` (`WdfDeviceAddQueryInte
 ### internal IOCTL 0x22003
 
 This IOCTL is processed by Qcsmd8930.sys (`EvtWdfIoQueueIoInternalDeviceControl`, 0x402AF0)  
-Sent by [qcbluetooth8930.sys](./qcbluetooth8930.md#internal-ioctl-0x22003), [qcdiagrouter8930.sys](./qcdiagrouter8930.md) and the other SMD clients.
+Sent by [qcbluetooth8930.sys](./qcbluetooth8930.md#internal-ioctl-0x22003), [qcdiagrouter8930.sys](./qcdiagrouter8930.md), [qcqmux8930.sys](./qcqmux8930.md#internal-ioctl-0x22003) and the other SMD clients.
 
 | Property | Value |
 |----------|-------|

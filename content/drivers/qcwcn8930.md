@@ -138,9 +138,11 @@ Outputbuffer (12 bytes):
 | Bytes | Value | Comment |
 |-------|-------|---------|
 | 00-03 | 03 00 00 00 | 3 = `PEP_STATE_SYNC_PATH` (done), 1 = `PEP_STATE_ASYNC_PATH_IN_PROGRESS` (the PEP calls `PEPPowerControlCallback` with code 2 when the transition is done, which sends event 4) |
-| 04-0B | ? | ? |
+| 04-07 | 00 00 00 00 ? | Checked = 0 by qcuart8930.sys |
+| 08-0B | ? | Echo of the requested P-state ? (qcuart8930.sys checks that it equals input `04-07`) |
 
-The same PowerControlCode is used by [qcdxkm8930.sys](./qcdxkm8930.md#other-guid) to change the P-state of its engines (`sub_4A2E68`), through `DxgkCbPowerRuntimeControlRequest` with a 16-byte input: `00-03` component index, `04-07` P-state (clamped to the component's limits), `08-0B` signature `4D 50 50 52` ("MPPR"), `0C-0F` pointer to an event (or 0). Same 12-byte output: when `00-03` is not 3, qcdxkm8930 waits up to 1 s for the event. This supports reading `00-03` above as the component index.
+The same PowerControlCode is used by [qcdxkm8930.sys](./qcdxkm8930.md#other-guid) to change the P-state of its engines (`sub_4A2E68`), through `DxgkCbPowerRuntimeControlRequest` with a 16-byte input: `00-03` component index, `04-07` P-state (clamped to the component's limits), `08-0B` signature `4D 50 50 52` ("MPPR"), `0C-0F` pointer to an event (or 0). Same 12-byte output: when `00-03` is not 3, qcdxkm8930 waits up to 1 s for the event. This supports reading `00-03` above as the component index.  
+It's also used by [qcuart8930.sys](./qcuart8930.md#power-management), always on component 0, where the "P-states" are actually commands to the PEP: 0/1 = UART GPIOs on/off, 2–5 = GSBI bus clock and UART core clock on/off, 6–16 = UART core clock frequency (7.3728 to 64 MHz). It treats the request as successful only if the output is `03 00 00 00`, `00 00 00 00`, then the requested value.
 
 ### State machine
 

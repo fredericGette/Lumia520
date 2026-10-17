@@ -73,7 +73,7 @@ Driver: the Windows driver that loads on the node, when it's documented in [driv
 | `\_SB.ADC1` | QCOM0C00 | | PMIC ADC (channel list `CHAN`) |
 | `\_SB.BAM0`, `BAM1`, `BAM2` | QCOM0910 | | BAM DMA engines, see [qcbamdmux8930.sys](../drivers/qcbamdmux8930.md#lumia-520-acpi-nodes) |
 | `\_SB.HAL1`, `HAL2`, `HAL3`, `HAL5` | QCOM1001, 1002, 1003, 1005 | | |
-| `\_SB.QMUX` | QCOM0FA0 | | |
+| `\_SB.QMUX` | QCOM0FA0 | [qcqmux8930.sys](../drivers/qcqmux8930.md) | QMI multiplexer |
 | `\_SB.PILC` | QCOM0E00 | [qcpil8930.sys](../drivers/qcpil8930.md) | Peripheral image loader |
 | `\_SB.CDI` | QCOM0E31 | [qccdi8930.sys](../drivers/qccdi8930.md#lumia-520-acpi-nodes) | Crash dump injector |
 | `\_SB.RPEN` | QCOM0E30 | [qcrpen8930.sys](../drivers/qcrpen8930.md) | RPE notifier |
@@ -84,7 +84,8 @@ Driver: the Windows driver that loads on the node, when it's documented in [driv
 | `\_SB.MBB0` … `MBB3` | QCOM0EA0 | | Mobile broadband |
 | `\_SB.HWN0` | QCOM0D50 | hwnled ? | Hardware notification LEDs (`HWNL`), see [oempanel.sys](../drivers/oempanel.md) |
 | `\_SB.VIB1` | NOKIA_VIBRA_DIME | | Vibrator |
-| `\_SB.SSM`, `MBRG`, `RMNT`, `RMAT` | QCOM2123, 2145, 2148, 2155 | | |
+| `\_SB.SSM`, `MBRG`, `RMNT` | QCOM2123, 2145, 2148 | | |
+| `\_SB.RMAT` | QCOM2155 | [qcremoteat8930.sys](../drivers/qcremoteat8930.md) ? | Remote AT (QMI AT service bridge) |
 | `\_SB.TCH1` | NOKIA_TOUCH | | Touch screen, I²C 0x4B on `\_SB.I2C3` |
 | `\_SB.ATTS` | NOKIA_ATTS | | |
 | `\_SB.EGP0` | ENOGPIO | | |

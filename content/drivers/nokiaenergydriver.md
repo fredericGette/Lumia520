@@ -1,13 +1,13 @@
 ## NokiaEnergyDriver.sys
 
 Nokia battery miniclass and charging-control driver (KMDF, `NokiaEnergyDriver.pdb`, source `src\ned_adc.c`; the device context type is `NED_DEVICE_CONTEXT`).  
-It is the battery **miniclass driver** of the Windows battery stack: it registers with `BATTC.SYS` (`BatteryClassInitializeDevice`) and answers the `IOCTL_BATTERY_*` requests (tag, information, status, set-information, status notification). It also **runs the charger**: a worker thread selects the charging voltage/current from temperature tables in ACPI, programs the PMIC charger through [qcpmic8930.sys](./qcpmic8930.md) (`IOCTL_PM_CHG_*`, device type `0x8008`), detects the end of charge, and protects against low battery voltage with the PMIC battery alarm.  
+It is the battery **miniclass driver** of the Windows battery stack: it registers with [battc.sys](./battc.md) (`BatteryClassInitializeDevice`) and answers the `IOCTL_BATTERY_*` requests (tag, information, status, set-information, status notification). It also **runs the charger**: a worker thread selects the charging voltage/current from temperature tables in ACPI, programs the PMIC charger through [qcpmic8930.sys](./qcpmic8930.md) (`IOCTL_PM_CHG_*`, device type `0x8008`), detects the end of charge, and protects against low battery voltage with the PMIC battery alarm.  
 The state of charge comes from [qcbms8930.sys](./qcbms8930.md) (`IOCTL_BMS_*`). In return, this driver feeds qcbms8930 with the battery temperature, the PMIC temperature, the battery-ID reading and the XOADC calibration points, read from an ADC driver (device type `0x8ADC`, channel names `BATT_ID`, `BATT_THERM`, `VBATT`…).  
 It reads 3 GPIO lines and up to 6 interrupts from its ACPI resources, and reads its battery and charging parameters from the ACPI methods `CONF`, `CUTF`, `CHGR` and `CGHV`. It exposes the passive-cooling interface `GUID_THERMAL_COOLING_INTERFACE`, used to cut the charging current.
 
 On the Lumia 520 the device is `\_SB.NEDD` (`_HID` `NOKI0B00`, no `_UID`, no `_DEP`). It's defined in the Nokia SSDT (`NOKIA `/`MSM8930 `, OEM revision 4), not in the DSDT; see [Lumia 520 ACPI node](#lumia-520-acpi-node). The ADC channels that it reads (`VBATT`, `BATT_THERM`, `BATT_ID`, `BATT_RID`…) are defined in the `CHAN` method of `\_SB.ADC1` (`QCOM0C00`, PMIC ADC driver) in the DSDT.
 
-There's no named `\Device\` object and no symbolic link (the WDF device is unnamed). The driver creates the device interface `{00DC4DBB-BDFF-4051-8A95-754CE94CB57C}`; BATTC also registers the standard battery interface (`GUID_DEVICE_BATTERY`) for it.
+There's no named `\Device\` object and no symbolic link (the WDF device is unnamed). The driver creates the device interface `{00DC4DBB-BDFF-4051-8A95-754CE94CB57C}`; [battc.sys](./battc.md) also registers the standard battery interface `GUID_DEVICE_BATTERY` `{72631E54-78A4-11D0-BCF7-00AA00B7B32A}` and the power meter interface `GUID_DEVICE_POWER_METER` `{E849804E-C719-43D8-AC88-96B894C191E2}` on its PDO.
 
 Registries of the driver:  
 `HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\services\<service>`
@@ -16,7 +16,7 @@ Registry values, read with `WdfRegistryQueryULong` from the driver's **service k
 | Registry value | value | comment |
 |----------------|-------|---------|
 | DisableChargingSource | 0 | Bit 0 set: a charger reported by `IOCTL_BATTERY_SET_INFORMATION`/`BatteryChargingSource` is not used to start charging ? |
-| UsbOverride | 0 | When not 0, replaces the USB input current limit (mA) given by BATTC / the PMIC |
+| UsbOverride | 0 | When not 0, replaces the USB input current limit (mA) given by BATTC (from the [charging power source](./battc.md#charging-power-source) interface) / the PMIC |
 | DefaultVdd | 3600 | Charger voltage (mV) programmed when no charging is wanted (charge complete, no table entry) |
 | ImprovedWlcDetection | 0 | Read but never used in this binary |
 | IbatMaxOverride | 0 | When not 0, replaces the battery charging current (mA) of the tables (only while charging) |
@@ -31,14 +31,14 @@ It communicates with the following devices. The six interfaces are found with `I
 | Interface class GUID | Driver | Comment |
 |----------------------|--------|---------|
 | `{1CF4643A-F9BF-42D3-88E8-F37EE6C0677C}` | [qcpmic8930.sys](./qcpmic8930.md) (interface 15) | Target of the charger `IOCTL_PM_CHG_*` (`0x8008xxxx`) and interrupt `IOCTL_PM_IRQ_GET_INTERRUPTS_STATUS` (`0x80070FA8`) requests |
-| `{10542F20-9718-452A-897A-45785468E57A}` | ADC driver ? (not documented yet) | ADC channels, device type `0x8ADC`, see [ADC channels](#adc-channels) |
+| `{10542F20-9718-452A-897A-45785468E57A}` | ADC driver ? (not documented yet) | ADC channels, device type `0x8ADC`, see [ADC channels](#adc-channels). [qcpep8930.sys](./qcpep8930.md#thermal-zones) uses the same interface and IOCTLs for `BATT_THERM` and `PA_THERM` |
 | `{23B7D0DD-101F-4EFE-A4D4-BED70E754419}` | [qcbms8930.sys](./qcbms8930.md) | `IOCTL_BMS_*` (`0x8018xxxx`) |
 | `{FF22FC8B-383D-40D3-AFC0-2C37A30D060A}` | [qcpmic8930.sys](./qcpmic8930.md) (interface 19) | Battery alarm `IOCTL_PM_BATALRM_*` (`0x801Axxxx`) |
-| `{9A8FF884-5882-4B62-9E0F-172ACE2A9EC0}` | [qcpmic8930.sys](./qcpmic8930.md) (interface 5) | Only awaited: no IOCTL is sent to it |
+| `{9A8FF884-5882-4B62-9E0F-172ACE2A9EC0}` | [qcpmic8930.sys](./qcpmic8930.md) (interface 5, PMIC interrupts `0x8007`) | Only awaited: no IOCTL is sent to it |
 | `{9E03B1E8-9445-4497-81D1-8DB0C0FF7D78}` | ? | `IOCTL 0x222404`, 4-byte output. Success with 0 selects the `CGHV` charging tables (wireless charging ?) |
 | ACPI node of the device | [acpi.sys](./acpi.md) | `IOCTL_ACPI_EVAL_METHOD` (0x32C004) `CONF`, `CUTF`, `CHGR`, `CGHV` |
 | `\Device\RESOURCE_HUB\<connection id>` | GPIO controller ([acpiex.sys](./acpiex.md)) | 3 GPIO lines, `IOCTL_GPIO_READ_PINS` (0x480000) / `IOCTL_GPIO_WRITE_PINS` (0x480004) |
-| BATTC.SYS | battc.sys | Battery class: `BatteryClassInitializeDevice`, `BatteryClassIoctl`, `BatteryClassStatusNotify` |
+| — (export library) | [battc.sys](./battc.md) | Battery class: `BatteryClassInitializeDevice`, `BatteryClassIoctl`, `BatteryClassStatusNotify` |
 | — | thermal manager ? | Consumer of `GUID_THERMAL_COOLING_INTERFACE` |
 
 > [!NOTE]
@@ -48,7 +48,7 @@ It communicates with the following devices. The six interfaces are found with `I
 
 `EvtDriverDeviceAdd` (0x4048C8):
 1. PnP/power callbacks: `EvtDevicePrepareHardware` = `sub_404CBC`; `EvtDeviceReleaseHardware`, `EvtDeviceD0Entry` and `EvtDeviceD0Exit` all point to the same function that only returns `STATUS_SUCCESS` (0x405068).
-2. `WdfDeviceInitAssignWdmIrpPreprocessCallback(IRP_MJ_DEVICE_CONTROL)` → `sub_40234C`: every IOCTL first goes to `BatteryClassIoctl`; only when BATTC doesn't own it (no battery class handle yet, or `STATUS_NOT_SUPPORTED`) is the IRP given to the WDF queue.
+2. `WdfDeviceInitAssignWdmIrpPreprocessCallback(IRP_MJ_DEVICE_CONTROL)` → `sub_40234C`: every IOCTL first goes to `BatteryClassIoctl`; only when BATTC doesn't own it (no battery class handle yet, or `STATUS_NOT_SUPPORTED`, which [battc.sys](./battc.md#exports) returns without completing the IRP for every code other than `IOCTL_BATTERY_*` and the PMI codes `0x45xxxx`) is the IRP given to the WDF queue.
 3. Creates the device interface `{00DC4DBB-…}`, a parallel default queue (`EvtIoDeviceControl` 0x401008), the GUID table of the six peers, the GPIO access modes (connection 0 = write, 1 and 2 = read), 3 notification events, and adds the query interface `GUID_THERMAL_COOLING_INTERFACE` (version 1, `PassiveCooling` = `sub_4046AC`, no `ActiveCooling`).
 
 `EvtDevicePrepareHardware` (`sub_404CBC`) walks the resources:
@@ -112,14 +112,14 @@ From the Nokia SSDT, `Device (NEDD)` (`_HID` `NOKI0B00`).
 The interrupts, assuming they're numbered in `_CRS` order:  
 | Interrupt # | Controller, pin | Descriptor | Work item (from the table above) |
 |-------------|-----------------|------------|-----------------------------------|
-| 0 | `\_SB.PM01` 15 | Edge, ActiveBoth, Shared, Wake, PullUp | Wake the charging worker |
-| 1 | `\_SB.PM01` 42 | Edge, ActiveBoth, Shared, Wake, PullUp | Re-read the charger state |
-| 2 | `\_SB.PM01` 13 | Edge, ActiveLow, Shared, Wake, PullUp, debounce 2 ms | Wake the charging worker |
-| 3 | `\_SB.PM01` 46 | Edge, ActiveHigh, Shared, Wake, PullUp | Low-voltage monitor (battery alarm ?) |
+| 0 | `\_SB.PM01` 15 (PMIC IRQ block 0, bit 15) | Edge, ActiveBoth, Shared, Wake, PullUp | Wake the charging worker |
+| 1 | `\_SB.PM01` 42 (block 0, bit 42) | Edge, ActiveBoth, Shared, Wake, PullUp | Re-read the charger state |
+| 2 | `\_SB.PM01` 13 (block 0, bit 13) | Edge, ActiveLow, Shared, Wake, PullUp, debounce 2 ms | Wake the charging worker |
+| 3 | `\_SB.PM01` 46 (block 0, bit 46) | Edge, ActiveHigh, Shared, Wake, PullUp | Low-voltage monitor (battery alarm ?) |
 | 4 | `\_SB.GIO0` 91 (TLMM) | Edge, ActiveHigh, Shared, Wake, PullNone, debounce 200 ms | Charger event ? |
-| 5 | `\_SB.PM01` 192 | Edge, ActiveBoth, Shared, Wake, PullUp | Wake the charging worker |
+| 5 | `\_SB.PM01` 192 (block 3, bit 0 = interrupt of PMIC GPIO index 0, GPIO1) | Edge, ActiveBoth, Shared, Wake, PullUp | Wake the charging worker |
 
-The `\_SB.PM01` pins are PMIC interrupt/GPIO numbers of the PM8038 GPIO controller (see [qcpmic8930.sys](./qcpmic8930.md#acpi-pmcf)). Which PMIC interrupt each one is hasn't been identified.
+The `\_SB.PM01` pins are PMIC interrupt numbers (block × 64 + bit), handled by [qcpmicgpio8930.sys](./qcpmicgpio8930.md#pin-numbering): it programs them with `IOCTL_PM_IRQ_CONFIG_INTERRUPT` on [qcpmic8930.sys](./qcpmic8930.md#ioctl-0x8007xxxx--interrupts), and pin 192 is first configured as a GPIO input. Which PM8038 interrupt source bits 13, 15, 42 and 46 of block 0 are hasn't been identified.
 
 `CONF` = `Package { 100, 0, 2, 8, 1350, 1430 }`:  
 | Index | Value | Meaning (see [ACPI methods](#acpi-methods)) |
@@ -212,14 +212,14 @@ The ADC channel id is looked up once by name (`IOCTL 0x8ADC2000`) and cached at 
 
 ### Battery class
 
-BATTC miniport callbacks (`BATTERY_MINIPORT_INFO` version 1.0):  
+[BATTC](./battc.md) miniport callbacks (`BATTERY_MINIPORT_INFO` version 1.0). BATTC calls them from its worker thread, pinned to processor 0, and caches the tag and the status for 2 s ([Status polling](./battc.md#status-polling)):  
 | Callback | Function | Comment |
 |----------|----------|---------|
 | QueryTag | `sub_401DFC` | Tag `0xBEEF`, or 0 (no battery) once the charging worker has failed |
 | QueryInformation | `sub_401E5C` | See below. Wrong tag → `STATUS_NO_SUCH_DEVICE` (0xC000000E) |
-| SetInformation | `sub_40200C` | `BatteryCharge` (allow charging), `BatteryDischarge` (block charging), `BatteryChargingSource` (type and max current; type 2 USB sets the USB current). `BatteryCriticalBias` and others → `STATUS_NOT_SUPPORTED`. A NULL buffer for `BatteryChargingSource` → `STATUS_INVALID_PARAMETER_4` |
+| SetInformation | `sub_40200C` | `BatteryCharge` (allow charging), `BatteryDischarge` (block charging), `BatteryChargingSource` (type and max current; type 2 USB sets the USB current). BATTC sends it from `ChargeNotificationCallback` when the [charging power source](./battc.md#charging-power-source) provider reports a charger, and sends types 1, 2 and 3 with 0 mA when that provider goes away. `BatteryCriticalBias` and others → `STATUS_NOT_SUPPORTED`. A NULL buffer for `BatteryChargingSource` → `STATUS_INVALID_PARAMETER_4` |
 | QueryStatus | `sub_40212C` | PowerState, Capacity, Voltage = `VBATT` (−1 on error), Rate = −(qcbms8930 current) or `BATTERY_UNKNOWN_RATE` |
-| SetStatusNotify | `sub_4021D8` | Stores PowerState / LowCapacity / HighCapacity, `BatteryClassStatusNotify` when they're crossed |
+| SetStatusNotify | `sub_4021D8` | Stores PowerState / LowCapacity / HighCapacity, `BatteryClassStatusNotify` when they're crossed. Because it succeeds, BATTC doesn't poll; it only re-queries the status every `BatteryMinBackupPollRate` (3600 s by default on AoAc platforms) while a status request is waiting |
 | DisableStatusNotify | `sub_40225C` | |
 
 `QueryInformation` levels:  
@@ -232,7 +232,8 @@ BATTC miniport callbacks (`BATTERY_MINIPORT_INFO` version 1.0):
 | 4 BatteryDeviceName | 26 | `Nokia BX-XXX` (UTF-16) |
 | others | — | `STATUS_INVALID_DEVICE_REQUEST` (0xC0000010) |
 
-A buffer too small gives `STATUS_INVALID_PARAMETER` (0xC000000D).
+A buffer too small gives `STATUS_INVALID_PARAMETER` (0xC000000D).  
+Because levels 5 to 8 aren't supported, the BATTC WMI static data block (`BATTERY_STATIC_DATA_WMI_GUID`) has an all-`*` ManufactureDate and empty ManufactureName / SerialNumber / UniqueID strings. Its `BATTERY_CYCLE_COUNT_WMI_GUID` is always 0. The BATTC power meter (`IOCTL_PMI_GET_MEASUREMENT` ?, 0x45400C) reports −Rate, i.e. the qcbms8930 current value, while `BATTERY_DISCHARGING` is set ([details](./battc.md#ioctl-0x45400c--ioctl_pmi_get_measurement-)).
 
 ---
 
@@ -333,7 +334,7 @@ qcpmic8930 interface 15 (charger and interrupts)
 qcpmic8930 interface 19 (battery alarm)  
 `{FF22FC8B-383D-40D3-AFC0-2C37A30D060A}`
 
-qcpmic8930 interface 5 (awaited only)  
+qcpmic8930 interface 5 (PMIC interrupts, awaited only)  
 `{9A8FF884-5882-4B62-9E0F-172ACE2A9EC0}`
 
 qcbms8930 interface  

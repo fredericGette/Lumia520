@@ -417,7 +417,7 @@ OPM query interface ?
 Registry value name in `DxKMD\Miniport` (power configuration ?)  
 `{9572E219-4CA5-421A-A1EB-967BCA3042D6}`
 
-PEP power control code "change P-state", sent by `sub_4A2E68` through `DxgkCbPowerRuntimeControlRequest` (adapter `+0x74`). 16-byte input: component index, P-state (clamped to the component's limits), signature `MPPR` (`0x5250504D`), event pointer or 0. 12-byte output: if the dword at `00` is not 3 (`PEP_STATE_SYNC_PATH` ?), the driver waits up to 1 s for the event. Same code as the `PoFxPowerControl` of [qcwcn8930.sys](./qcwcn8930.md#power-management)  
+PEP power control code "change P-state", sent by `sub_4A2E68` through `DxgkCbPowerRuntimeControlRequest` (adapter `+0x74`). 16-byte input: component index, P-state (clamped to the component's limits), signature `MPPR` (`0x5250504D`), event pointer or 0. 12-byte output: if the dword at `00` is not 3 (`PEP_STATE_SYNC_PATH` ?), the driver waits up to 1 s for the event. Same code as the `PoFxPowerControl` of [qcwcn8930.sys](./qcwcn8930.md#power-management) and [qcuart8930.sys](./qcuart8930.md#power-management) (where the values are clock/GPIO commands, not performance levels)  
 `{3404DAAC-8E2C-41E4-8458-3158E5AD442B}`
 
 `EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID` (vendor of the UEFI variable `UEFIDisplayInfo`)  

@@ -115,8 +115,8 @@ Device (PEP0) {                                      // QCOM0811, _CID PNP0D80
 }
 ```
 - `_PUR` is a named package, not a method. At boot it asks for 0 idle processors.
-- The only writer is `\_SB.PEP0.NPUR (n)`. It stores `n` in `_PUR[1]` and sends `Notify (AGR0, 0x80)`, which makes this driver evaluate `_PUR` again. `NPUR` is presumably evaluated by the PEP driver of `\_SB.PEP0` (qcpep8930.sys ?, not documented yet) to park a CPU, e.g. for thermal or power reasons ?
-- `_OST` copies its third argument (the status buffer) to `\_SB.PEP0.ROST`, so the PEP can read back how many processors were really idled.
+- The only writer is `\_SB.PEP0.NPUR (n)`. It stores `n` in `_PUR[1]` and sends `Notify (AGR0, 0x80)`, which makes this driver evaluate `_PUR` again. `NPUR` is evaluated by [qcpep8930.sys](./qcpep8930.md#thermal-cooling-interface), the PEP driver of `\_SB.PEP0`, from the passive cooling callback of the `GUID_THERMAL_COOLING_INTERFACE` it publishes on PEP0: `n` = 0 when the requested percentage is 100, otherwise 1. No `_TZD` lists `\_SB.PEP0`, so this path is probably never used.
+- `_OST` copies its third argument (the status buffer) to `\_SB.PEP0.ROST`. qcpep8930.sys never reads `ROST`.
 - `\_SB.AGR0` is not in the `_TZD` of any thermal zone, so the thermal cooling interface of this driver isn't used by the ACPI thermal zones. Those list `\_SB.CPU0` / `\_SB.CPU1` (`ACPI0007`):
 
 | Thermal zone | `_HID` | `_TZD` | `_PSV` (°C) | `_CRT` (°C) | `_TSP` (s) |

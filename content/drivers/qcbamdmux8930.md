@@ -2,7 +2,7 @@
 
 BAM Data Multiplexer driver (BAM DMUX).  
 It multiplexes up to 32 logical data channels per "stream" over pairs of BAM (Bus Access Manager) pipes of the A2 data mover, which carries the packet data between the application processor and the MODEM. It is the Windows Phone counterpart of the Linux `bam_dmux` driver (see [bam_dmux.c](https://github.com/android/kernel_msm/blob/android-msm-2.6.35/arch/arm/mach-msm/bam_dmux.c)): same 8-byte packet header (magic `0x33FC`), same OPEN/CLOSE/DATA commands, same `SMSM_A2_POWER_CONTROL` handshake with the MODEM through [qcsmsm8930.sys](./qcsmsm8930.md).  
-The BAM itself is driven by another driver (interface `{3E77CCA9-FC24-4F4B-8D97-D0F3937F5B22}`, not documented yet) which gives this driver a transfer function. Clients (kernel drivers only) open `\Device\DMUX`, bind their file object to a channel with [internal IOCTL 0x82003](#internal-ioctl-0x82003), then use plain write requests / [internal IOCTL 0x82007](#internal-ioctl-0x82007) or read requests, or the direct-call [query-interface](#bam-dmux-interface).  
+The BAM itself is driven by [qckmbam8930.sys](./qckmbam8930.md) (interface `{3E77CCA9-FC24-4F4B-8D97-D0F3937F5B22}`), which gives this driver a transfer function. Clients (kernel drivers only) open `\Device\DMUX`, bind their file object to a channel with [internal IOCTL 0x82003](#internal-ioctl-0x82003), then use plain write requests / [internal IOCTL 0x82007](#internal-ioctl-0x82007) or read requests, or the direct-call [query-interface](#bam-dmux-interface).  
 The driver is an RPE client of [qcrpen8930.sys](./qcrpen8930.md) ("BAMMUX"): the channels are torn down when the MODEM goes down and the pipes are reconnected when it comes back, see [Subsystem restart](#subsystem-restart).  
 Built from `P:\bam_dmux\rel\8.3\arm\Release\qcbamdmux8930.pdb`.
 
@@ -24,7 +24,7 @@ GUID of the ETW provider of the RPE helper library (`McGenEventRegister` in `Rpe
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| Interface `{3E77CCA9-FC24-4F4B-8D97-D0F3937F5B22}` | ? (BAM / SPS driver) | A2 BAM. [IOCTL 0x42003](#ioctl-0x42003) (version), [IOCTL 0x4202B](#ioctl-0x4202b) (transfer function), [IOCTL 0x4200B](#ioctl-0x4200b) (connect pipe), [IOCTL 0x4200F](#ioctl-0x4200f) (disconnect pipe), [IOCTL 0x42007](#ioctl-0x42007) |
+| Interface `{3E77CCA9-FC24-4F4B-8D97-D0F3937F5B22}` (`\Device\BAM<n>`) | [qckmbam8930.sys](./qckmbam8930.md) | A2 BAM. [IOCTL 0x42003](#ioctl-0x42003) (BAM physical address), [IOCTL 0x4202B](#ioctl-0x4202b) (transfer function), [IOCTL 0x4200B](#ioctl-0x4200b) (connect pipe), [IOCTL 0x4200F](#ioctl-0x4200f) (disconnect pipe), [IOCTL 0x42007](#ioctl-0x42007) |
 | Interface `{1C90923A-DF5C-4761-9FD0-835B80F5281D}` (\Device\SMSM) | [qcsmsm8930.sys](./qcsmsm8930.md) | [IOCTL 0x32000](#ioctl-0x32000) and [IOCTL 0x3200C](#ioctl-0x3200c), for the [A2 power handshake](#a2-power-handshake) |
 | Interface `{59752ED7-B9D5-4121-818D-C69F1E667015}` (\Device\RPEN) | [qcrpen8930.sys](./qcrpen8930.md) | RPE notifier, Helper query-interface. See [Subsystem restart](#subsystem-restart) |
 
@@ -50,14 +50,14 @@ There's no `EvtDeviceSurpriseRemoval` and no `KeBugCheckEx` call outside the `/G
 ### Lumia 520 ACPI nodes
 
 From the DSDT. This driver's node is `\_SB.DMUX` (`_HID` `QCOM0F50`, `_UID` 0). It has no `_CRS`, no `_DEP` and no method, and the driver evaluates none.  
-The BAM driver behind the `{3E77CCA9-…}` interface is presumably the function driver of the 3 `QCOM0910` nodes ?  
+The BAM driver behind the `{3E77CCA9-…}` interface, [qckmbam8930.sys](./qckmbam8930.md#acpi), is the function driver of the 3 `QCOM0910` nodes. It evaluates `INFO` (name, execution environment), `PIPE` (pipes it connects itself: pipe, direction, system mode, IRQ mask, descriptor FIFO size, ?, ?) and `SECC` (pipe mask, VMID per execution environment).  
 | Node | `_UID` | `INFO` | `_CRS` | Other methods |
 |------|--------|--------|--------|---------------|
 | `\_SB.BAM0` | 0 | `"BAMDMA"`, 0 | `Memory32Fixed` 0x12244000, 0x2000; interrupt 137 (edge) | `PIPE`: 2 packages `{0, 0, 1, 0x21, 0x100, 0, 0}`, `{1, 1, 1, 0x21, 0x100, 0, 0}` |
 | `\_SB.BAM1` | 1 | `"DataBAM"`, 0 | `Memory32Fixed` 0x124C2000, 0x2000; interrupt 241 (edge) | — |
 | `\_SB.BAM2` | 2 | `"LPASS_BAM"`, 1 | `Memory32Fixed` 0x28084000, 0x2000; interrupt 66 (edge) | `PIPE`: `{0x18, 0, 1, 0x21, 0x100, 0, 0}`, `{0x19, 1, 1, 0x21, 0x100, 0, 0}`; `SECC`: `{0x00FFFF98, 0}`, `{0xFF000007, 1}`, `{0x60, 2}`, `{0, 0}` |
 
-`DataBAM` at 0x124C2000 is the A2 BAM of the MSM8960 family (`A2_BAM_PHYS_BASE` in Linux `bam_dmux.c`), i.e. the BAM that this driver multiplexes ?
+`DataBAM` at 0x124C2000 is the A2 BAM of the MSM8960 family (`A2_BAM_PHYS_BASE` in Linux `bam_dmux.c`), i.e. the BAM that this driver multiplexes: it's the only instance kept, see [IOCTL 0x42003](#ioctl-0x42003).
 
 ### Streams, channels and pipes
 
@@ -75,8 +75,8 @@ The device context contains 5 streams of 404 (0x194) bytes at `+0x54`. Stream `s
 A stream is connected on the first open of one of its channels (`sub_404DDC`: [IOCTL 0x4200B](#ioctl-0x4200b) for the TX pipe, then for the RX pipe, then the RX work item is queued). The RX work item keeps up to 16 receive transfers of 2048 bytes queued on the RX pipe.
 
 Each transfer is submitted with the function obtained by [IOCTL 0x4202B](#ioctl-0x4202b):  
-`NTSTATUS Transfer(BamContext, WDFREQUEST SubRequest, ULONG Pipe, ULONG PhysicalAddress, ULONG Length, ULONG Flags)`, with Flags = 0x4000 (`SPS_IOVEC_FLAG_EOT` in Linux ?).  
-The BAM driver calls back `sub_40215C(Pipe, WDFREQUEST SubRequest, …)` when the transfer is done: odd pipe → `BamMuxRxComplete` (0x405918), even pipe → `BamMuxTxComplete` (0x4065D0).
+`NTSTATUS Transfer(WDFDEVICE Bam, PVOID ClientContext, ULONG Pipe, ULONG PhysicalAddress, USHORT Length, USHORT Flags)` (`sub_402AE8` of [qckmbam8930.sys](./qckmbam8930.md#ioctl-0x4202b)), with ClientContext = the WDFREQUEST SubRequest and Flags = 0x4000 (`SPS_IOVEC_FLAG_EOT` in Linux ?). Only bits 13-15 of Flags go into the BAM descriptor.  
+The BAM driver calls back `sub_40215C(Pipe, WDFREQUEST SubRequest, ?, Event, DescAddress, DescSizeFlags, ?)` from its interrupt DPC when the descriptor is processed (Event = 2 because the EOT flag is set; the 3rd and 7th parameters are uninitialized, see [Descriptors and completion](./qckmbam8930.md#descriptors-and-completion)): odd pipe → `BamMuxRxComplete` (0x405918), even pipe → `BamMuxTxComplete` (0x4065D0).
 
 ### Packet format
 
@@ -210,14 +210,14 @@ This IOCTL is sent by Qcbamdmux8930.sys to the BAM driver (interface `{3E77CCA9-
 
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|-------------------|
-| Get version ? | Interface `{3E77CCA9-FC24-4F4B-8D97-D0F3937F5B22}` | 0 | 4 |
+| Get BAM physical address | Interface `{3E77CCA9-FC24-4F4B-8D97-D0F3937F5B22}` | 0 | 4 |
 
 Outputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | 00 20 4C 12 | Must be 0x124C2000, otherwise the target is closed and the BAM is never used |
+| 00-03 | 00 20 4C 12 | Physical base address of the BAM. Must be 0x124C2000 (A2 BAM, `\_SB.BAM1`), otherwise the target is closed and that BAM is not used |
 
-When the value matches, the driver keeps the target and sends [IOCTL 0x4202B](#ioctl-0x4202b).
+When the value matches, the driver keeps the target and sends [IOCTL 0x4202B](#ioctl-0x4202b). See [qckmbam8930.sys](./qckmbam8930.md#ioctl-0x42003).
 
 ---
 
@@ -239,14 +239,14 @@ This IOCTL is sent by Qcbamdmux8930.sys to the BAM driver, synchronously, in `Ba
 Inputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | ? | Address of the transfer-completion callback `sub_40215C` |
+| 00-03 | ? | Address of the transfer-completion callback `sub_40215C`. Switches the BAM to callback mode, see [qckmbam8930.sys](./qckmbam8930.md#ioctl-0x4202b) |
 
 Outputbuffer (written into the device context at `+0x04`):  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | ? | BAM context, first parameter of the transfer function |
+| 00-03 | ? | `WDFDEVICE` of the BAM, first parameter of the transfer function |
 | 04-07 | ? | Address of the transfer function, see [Streams, channels and pipes](#streams-channels-and-pipes) |
-| 08-0B | ? | Not used |
+| 08-0B | ? | Address of the poll function `NTSTATUS Poll(WDFDEVICE Bam, ULONG Pipe)`. Not used |
 
 ---
 
@@ -269,16 +269,16 @@ Inputbuffer:
 | Bytes | Value | Comment |
 |-------|-------|---------|
 | 00-03 | e.g. 01 00 00 00 | Pipe (2 × stream for TX, 2 × stream + 1 for RX) |
-| 04-07 | e.g. 01 00 00 00 | Pipe (same value) |
-| 08-0B | 00 or 01 | Direction: 0 = transmit, 1 = receive |
-| 0C-0F | 01 00 00 00 | ? |
-| 10-13 | 21 00 00 00 | Options ? (`SPS_O_DESC_DONE` \| `SPS_O_EOT` in Linux ?) |
+| 04-07 | e.g. 01 00 00 00 | Pipe number programmed in the hardware (same value) |
+| 08-0B | 00 or 01 | Direction (`P_CTRL` bit 3): 0 = transmit, 1 = receive |
+| 0C-0F | 01 00 00 00 | System mode (`P_CTRL` bit 5) |
+| 10-13 | 21 00 00 00 | Pipe IRQ enable mask (`P_IRQ_EN`): `P_PRCSD_DESC_EN` \| `P_TRNSFR_END_EN` |
 | 14-17 | ? | Physical address of the descriptor FIFO |
 | 18-1B | ? | Virtual address of the descriptor FIFO |
 | 1C-1F | 00 01 00 00 | Size of the descriptor FIFO: 256 bytes (32 descriptors of 8 bytes ?) |
-| 20-33 | 0 | |
+| 20-33 | 0 | Not used by the BAM driver |
 
-The descriptor FIFO is allocated with `MmAllocateNonCachedMemory(256)` and kept in the device context (`+0x838 + 4 × pipe`). The BAM target must be open, otherwise `STATUS_INVALID_DEVICE_STATE`.
+See [qckmbam8930.sys](./qckmbam8930.md#ioctl-0x4200b). The descriptor FIFO is allocated with `MmAllocateNonCachedMemory(256)` and kept in the device context (`+0x838 + 4 × pipe`). The BAM target must be open, otherwise `STATUS_INVALID_DEVICE_STATE`.
 
 ---
 
@@ -319,8 +319,9 @@ This IOCTL is sent by Qcbamdmux8930.sys to the BAM driver, synchronously, in `Ba
 
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|-------------------|
-| ? (BAM device init / reset ?) | Interface `{3E77CCA9-FC24-4F4B-8D97-D0F3937F5B22}` | 0 | 0 |
+| Initialize / reset BAM | Interface `{3E77CCA9-FC24-4F4B-8D97-D0F3937F5B22}` | 0 | 0 |
 
+The first one initializes the BAM hardware, the next ones reset it and reconnect the connected pipes, see [qckmbam8930.sys](./qckmbam8930.md#ioctl-0x42007). The BAM driver always completes it with `STATUS_SUCCESS`.  
 On error, the driver stays "not ready": no device interface `{CCCB7664-…}` and no `SMSM_A2_POWER_CONTROL_ACK`.
 
 ---
@@ -393,5 +394,5 @@ BAM DMUX "ready" device interface, enabled by `BamMuxCheckA2` (same GUID as the 
 
 ### Other GUID
 
-Interface of the BAM driver (peer, not documented yet)  
+Interface of the BAM driver [qckmbam8930.sys](./qckmbam8930.md#interface-guid)  
 `{3E77CCA9-FC24-4F4B-8D97-D0F3937F5B22}`

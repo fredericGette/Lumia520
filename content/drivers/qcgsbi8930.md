@@ -2,7 +2,7 @@
 
 GSBI (General Serial Bus Interface) configuration driver.  
 On the MSM8930 each of the 12 GSBI blocks can be wired to an I2C, SPI, UART or UIM core. The protocol is chosen by the field `PROTOCOL_CODE` of the GSBI control register (`GSBI_CTRL_REG`, offset 0 of each GSBI block). This driver only sets that field: it reads the list of GSBI blocks to configure, with their physical address and protocol, from the ACPI method `CONF` of its device node. Then, at the first D0 entry after start, it writes the protocol code of each listed GSBI.  
-It has no other function. It has no IOCTL interface, no device interface and no peer driver other than ACPI. It is presumably needed before the drivers of the serial cores (I2C/SPI/UART) that use the GSBI blocks can work ?  
+It has no other function. It has no IOCTL interface, no device interface and no peer driver other than ACPI. It is needed before the drivers of the serial cores that use the GSBI blocks can work: on the Lumia 520, the I2C controller driver [qci2c8930.sys](./qci2c8930.md), whose 3 ACPI nodes depend on this one.  
 Build path found in the binary: `P:\gsbi\rel\8.2.1.1\arm\Release\qcgsbi8930.pdb`.
 
 ACPI node: `\_SB.GSBI`, `_HID` = `QCOM0145`, `_UID` = 1.  
@@ -19,7 +19,7 @@ It communicates with the following devices:
 | Device | Driver | Comment |
 |--------|--------|---------|
 | ACPI node of the device (default I/O target) | acpi.sys | `IOCTL_ACPI_EVAL_METHOD` `CONF`, see below |
-| `\_SB.I2C3`, `\_SB.I2C9`, `\_SB.IC12` (`QCOM0180`) | I2C controller driver ? | Not called by this driver. These 3 nodes declare `_DEP` on `\_SB.GSBI`, so Windows starts them only after this driver has started |
+| `\_SB.I2C3`, `\_SB.I2C9`, `\_SB.IC12` (`QCOM0180`) | [qci2c8930.sys](./qci2c8930.md) | I2C controller driver. Not called by this driver. These 3 nodes declare `_DEP` on `\_SB.GSBI`, so Windows starts them only after this driver has started |
 
 Pool tags: `qgs1` (driver, `WDF_DRIVER_CONFIG.DriverPoolTag`), `qgs2` (output buffer of the `CONF` evaluation).
 
@@ -121,7 +121,7 @@ From the DSDT (OEM ID `QCOMM `, table ID `MSM8930 `, OEM revision 4). `CONF` is 
 
 The 9 entries with protocol 0 fail the "value ≠ 0" check of `GsbiParseConfPackage`. So each start logs 9 parse errors (`STATUS_UNSUCCESSFUL`), which are harmless: these GSBIs are neither mapped nor touched, and keep the configuration left by the boot loader.
 
-The I2C controllers on these 3 GSBIs (the QUP core sits at GSBI base + 0x80000):  
+The I2C controllers on these 3 GSBIs, driven by [qci2c8930.sys](./qci2c8930.md) (the QUP core sits at GSBI base + 0x80000 for GSBI3 and GSBI9, and at GSBI base + 0x20000 for GSBI12):  
 | ACPI node | `_HID` | `_UID` | GSBI | Memory (`Memory32Fixed`) | Interrupt |
 |-----------|--------|--------|------|--------------------------|-----------|
 | `\_SB.I2C3` | QCOM0180 | 3 | 3 | 0x16280000, 0x800 | 183 (0xB7) |

@@ -33,7 +33,7 @@ It communicates with the following devices:
 | `\Device\SMD` | [qcsmd8930.sys](./qcsmd8930.md) | `{f9d15453-8335-434c-aa72-fcd925f135f3}` | Shared Memory Driver. 3 DIAG data channels + 3 DIAG control channels, see [SMD channels](#smd-channels) |
 | `\??\QCOM_ChipInfo` | [qcchipinfo8930.sys](./qcchipinfo8930.md) | `{fb4f07cd-8d4c-4413-92c2-e2c9caed9f43}` | Chip identification, used for the Build-ID answer (cmd `0x7C`) |
 | `\Device\USB_DIAG` | ? | `{39ab5403-6551-4dfe-a22c-6cc6f4ed2fd0}` | USB DIAG function. Host link when `TransportType`=1 |
-| `\Device\RESOURCE_HUB\%08X%08X` or `\DosDevices\COM5` | ? | `{86e0d1e0-8089-11d0-9ce4-08003e301f73}` (GUID_DEVINTERFACE_COMPORT) | UART. Host link when `TransportType`=2 |
+| `\Device\RESOURCE_HUB\%08X%08X` or `\DosDevices\COM5` | [qcuart8930.sys](./qcuart8930.md) | `{86e0d1e0-8089-11d0-9ce4-08003e301f73}` (GUID_DEVINTERFACE_COMPORT) | UART. Host link when `TransportType`=2 |
 | `\Device\DiagCSI` | [qcdiagcsi8930.sys](./qcdiagcsi8930.md) | `{23ccade6-34e8-42e4-8845-99411146dc22}` | DCI (Diag Consumer Interface). Receives the answers of the local clients to DCI commands (packets starting with `0x93`) |
 | TCP socket | NETIO.SYS (WSK) | | Host link when `TransportType`=0 |
 
@@ -50,7 +50,8 @@ It communicates with the following devices:
 6. Creates 3 queues: one for IOCTL and internal IOCTL, one for read, one for write.
 
 USB transport: it opens `\Device\USB_DIAG` and gives it two events with [IOCTL 0x808520C0](#ioctl-0x808520c0). On the "D0" event (USB function active), it opens the serial layer and starts reading. On the "D3" event, it purges all pending I/O on the SMD channels and on USB.  
-UART transport: `EvtWdfDevicePrepareHardware` looks for a `CmResourceTypeConnection` resource of class SERIAL (2) / type UART (3). When found, the UART is opened as `\Device\RESOURCE_HUB\<ConnectionId.HighPart><ConnectionId.LowPart>`. Otherwise `\DosDevices\COM5` is used. The port is then configured with 4 standard serial IOCTLs (see [IOCTLs sent to the UART](#ioctls-sent-to-the-uart)). `EvtWdfDeviceD0Exit` closes the UART on `WdfPowerDeviceD3Final`.
+UART transport: `EvtWdfDevicePrepareHardware` looks for a `CmResourceTypeConnection` resource of class SERIAL (2) / type UART (3). When found, the UART is opened as `\Device\RESOURCE_HUB\<ConnectionId.HighPart><ConnectionId.LowPart>`. Otherwise `\DosDevices\COM5` is used. The port is then configured with 4 standard serial IOCTLs (see [IOCTLs sent to the UART](#ioctls-sent-to-the-uart)). `EvtWdfDeviceD0Exit` closes the UART on `WdfPowerDeviceD3Final`.  
+The UART driver is [qcuart8930.sys](./qcuart8930.md): `COM5` is the UART of GSBI5 (instance id 5). Opened through the resource hub, qcuart8930.sys configures the port from the `UartSerialBus` descriptor of the connection (see [qcuart8930.sys](./qcuart8930.md#uartserialbus-descriptor)). There's no UART node in the Lumia 520 ACPI tables, so qcuart8930.sys isn't started and this transport can't work on the retail Lumia 520.
 
 ### SMD channels
 
@@ -511,7 +512,8 @@ Sent by `config_UART` (0x409368), in this order, to the UART I/O target (`Transp
 | 08-0B | 00 00 00 00 | XonLimit |
 | 0C-0F | 00 00 00 00 | XoffLimit |
 
-The handflow values look like a bug: `~SERIAL_CTS_HANDSHAKE` and `~SERIAL_RTS_HANDSHAKE` are assigned instead of being AND-ed with the current values.
+The handflow values look like a bug: `~SERIAL_CTS_HANDSHAKE` and `~SERIAL_RTS_HANDSHAKE` are assigned instead of being AND-ed with the current values.  
+[qcuart8930.sys](./qcuart8930.md#ioctls) only uses bit 0x08 of ControlHandShake and bit 0x80 of FlowReplace: these values disable the CTS flow control, and leave the RFR setting unchanged (clearing `SERIAL_RTS_HANDSHAKE` does nothing there). The other bits are ignored.
 
 `IOCTL_SERIAL_SET_LINE_CONTROL` (`SERIAL_LINE_CONTROL`):  
 | Bytes | Value | Comment |

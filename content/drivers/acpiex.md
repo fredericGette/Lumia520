@@ -76,8 +76,8 @@ GPIO controllers of the Lumia 520 that these connections point to:
 | Node | `_HID` | Comment |
 |------|--------|---------|
 | `\_SB.GIO0` | QCOM0500 | MSM TLMM: `Memory32Fixed` 0x00800000, 0x2000, interrupt 48 (×3, level, shared). `OFNI` returns `Buffer { 0x98, 0x00 }` (0x98 = 152 pins ?) |
-| `\_SB.PM01` | QCOM05C0 | PM8038 GPIO/MPP, interrupt through TLMM pin 104 (see [qcpmic8930.sys](./qcpmic8930.md#acpi-pmcf)) |
-| `\_SB.PWIO` | QCOM0D20 | Power-key/PMIC IO controller ?: `GpioInt` on `\_SB.PM01` pin 51, methods `PMIC`, `HRST`, `PKEY`, `_DSM` |
+| `\_SB.PM01` | QCOM05C0 | PM8038 GPIO/MPP/interrupts, driver [qcpmicgpio8930.sys](./qcpmicgpio8930.md). 272 pins in 5 banks: pin = PMIC interrupt number (0–255), MPPs at 128–133, GPIOs at 192–203, 256–271 virtual. Interrupt through TLMM pin 104 (see [qcpmic8930.sys](./qcpmic8930.md#acpi-pmcf)) |
+| `\_SB.PWIO` | QCOM0D20 | Power-key/PMIC IO controller ?: `GpioInt` on `\_SB.PM01` pin 51 (PMIC IRQ block 0, bit 51), methods `PMIC`, `HRST`, `PKEY`, `_DSM` |
 | `\_SB.EGP0` | ENOGPIO | ? |
 
 ### Device firmware lock

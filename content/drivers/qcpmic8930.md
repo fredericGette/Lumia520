@@ -27,7 +27,7 @@ Registry values, read from the driver's **service key** (`WdfDriverGetRegistryPa
 `ReadRegistryUSBSettings` (0x40782C) is only called when `UseUsb` is set.
 
 GUID of the ETW provider:  
-`{1A01E46E-E48A-4C7E-908C-E84F193B44CE}`  
+`{1A01E46E-E48A-4C7E-908C-E84F193B44CE}` (also registered, as `PMIC_KMDF`, by [qcpep8930.sys](./qcpep8930.md), which shares this PMIC code)  
 Keyword bits tested in `g_EtwEnableFlags`: 1 = errors (`"E1"`, `"E2"`… plus the NTSTATUS / PMIC error), 2 = information (IOCTL name and buffers, ACPI values), 4 = function entry/exit.
 
 It communicates with the following devices:  
@@ -67,7 +67,7 @@ The Lumia 520 values come from the DSDT. On the phone the device node is `\_SB.P
 These nodes of the DSDT declare a `_DEP` on `\_SB.PMIC`:  
 | ACPI node | `_HID` | Driver | Comment |
 |-----------|--------|--------|---------|
-| `\_SB.PM01` | QCOM05C0 | ? | PMIC GPIO controller: `_DSM` with the GPIO controller UUID `{4F248F40-D5E2-499F-834C-27758EA1CD3F}` (function 1 returns 0x33), `_CRS` = 5 identical `GpioInt(Level, ActiveLow, Shared, PullUp)` on `\_SB.GIO0` pin 104 (the PMIC interrupt line on the MSM TLMM), method `PMIO` (package of 17 integers: 0, 0x1F66, 0x0C, 0xC0, 0, 0, 0x110, 0x40, 0, 0x100, 0, 0, 0, 6, 0x80, 0, 0) |
+| `\_SB.PM01` | QCOM05C0 | [qcpmicgpio8930.sys](./qcpmicgpio8930.md) | PMIC GPIO controller (GpioClx client): `_DSM` with the GPIO controller UUID `{4F248F40-D5E2-499F-834C-27758EA1CD3F}` (function 1 returns 0x33), `_CRS` = 5 identical `GpioInt(Level, ActiveLow, Shared, PullUp)` on `\_SB.GIO0` pin 104 (the PMIC interrupt line on the MSM TLMM), method `PMIO` (package of 17 integers: 0, 0x1F66, 0x0C, 0xC0, 0, 0, 0x110, 0x40, 0, 0x100, 0, 0, 0, 6, 0x80, 0, 0: pin layout, see [qcpmicgpio8930.sys](./qcpmicgpio8930.md#acpi-pmio)) |
 | `\_SB.PBMS` | QCOM0A02 | [qcbms8930.sys](./qcbms8930.md) | Also depends on `\_SB.SCM0` |
 | `\_SB.PMAP` | QCOM0B20 | [qcpmicapps8930.sys](./qcpmicapps8930.md) | Also depends on `\_SB.ABD` and `\_SB.SCM0` |
 
@@ -820,27 +820,27 @@ Present only in the name table; sending them returns `STATUS_INVALID_DEVICE_REQU
 
 ### Interface GUID
 
-The driver creates 22 device interfaces on the same device, in this order (`RegisterDeviceInterfaces`, 0x407F44), presumably one per PMIC block. Only those used by [qcbms8930.sys](./qcbms8930.md), [oempanel.sys](./oempanel.md) and [NokiaEnergyDriver.sys](./nokiaenergydriver.md) are identified:  
+The driver creates 22 device interfaces on the same device, in this order (`RegisterDeviceInterfaces`, 0x407F44), presumably one per PMIC block. Only those used by [qcbms8930.sys](./qcbms8930.md), [oempanel.sys](./oempanel.md), [NokiaEnergyDriver.sys](./nokiaenergydriver.md) and [qcpep8930.sys](./qcpep8930.md#pmic-requests) are identified:  
 | # | GUID | Comment |
 |---|------|---------|
 | 1 | `{50EC8626-F080-48E2-9076-025BBB44A1A0}` | ? |
 | 2 | `{F1EFB001-D615-4EEF-8B1E-E8C13C8DB12A}` | ? |
 | 3 | `{D17B2593-7189-4E1E-91F1-00798E07B8AB}` | Used by qcbms8930 for the BMS (`0x8019`) and CCADC (`0x8002`) IOCTLs |
-| 4 | `{5186FCEA-68FC-420A-9400-601A6D0CA988}` | ? |
-| 5 | `{9A8FF884-5882-4B62-9E0F-172ACE2A9EC0}` | ? Awaited by [NokiaEnergyDriver.sys](./nokiaenergydriver.md), which sends nothing to it |
+| 4 | `{5186FCEA-68FC-420A-9400-601A6D0CA988}` | PMIC GPIO (`0x8003`). Used by [qcpep8930.sys](./qcpep8930.md#pmic-requests) for the `PMICGPIO` resources, and by [qcpmicgpio8930.sys](./qcpmicgpio8930.md) for the GPIO **and MPP** (`0x8005`) IOCTLs |
+| 5 | `{9A8FF884-5882-4B62-9E0F-172ACE2A9EC0}` | PMIC interrupts (`0x8007`). Used by [qcpmicgpio8930.sys](./qcpmicgpio8930.md) for the IRQ IOCTLs. Also awaited by [NokiaEnergyDriver.sys](./nokiaenergydriver.md), which sends nothing to it |
 | 6 | `{A0A0CA65-C6CA-4215-B78B-5201087131BC}` | ? |
-| 7 | `{D87538A4-32C4-46D8-985E-F7CA7731BA27}` | ? |
+| 7 | `{D87538A4-32C4-46D8-985E-F7CA7731BA27}` | PMIC LED (`0x800F`). Used by [qcpep8930.sys](./qcpep8930.md#pmic-requests) |
 | 8 | `{7C81CACE-8BB1-4C28-ABCF-58C09672CE71}` | ? |
 | 9 | `{2F706348-47C5-4873-A66C-6B6BC6B01698}` | ? |
-| 10 | `{EF512E80-3E93-45D7-AF9D-D375D53596B8}` | ? |
+| 10 | `{EF512E80-3E93-45D7-AF9D-D375D53596B8}` | PMIC MPP (`0x8005`). Used by [qcpep8930.sys](./qcpep8930.md#pmic-requests) for the `PMICMPP` resources |
 | 11 | `{61630799-922A-4980-99D9-90C39084A979}` | Used by qcbms8930 for `IOCTL_PM_RTC_GET_TIME` (RTC) |
 | 12 | `{248F196D-BB0A-4960-B11C-7EE9479B290F}` | ? |
-| 13 | `{A5B9E9A8-EE02-46DC-B9EF-562A78C3E5C9}` | ? |
+| 13 | `{A5B9E9A8-EE02-46DC-B9EF-562A78C3E5C9}` | VREG (`0x8006`). Used by [qcpep8930.sys](./qcpep8930.md#pmic-requests) for the `PMICVREGVOTE` resources of LDO16, LDO19, LDO26 and LDO27 (the other regulators are voted through the RPM) |
 | 14 | `{5B9DF049-70D3-4698-8E48-85B26C1AA59F}` | Used by [oempanel.sys](./oempanel.md) for the `IOCTL_PM_WLED_*` controls (WLED) |
 | 15 | `{1CF4643A-F9BF-42D3-88E8-F37EE6C0677C}` | Used by [NokiaEnergyDriver.sys](./nokiaenergydriver.md) for the charger (`0x8008`) and `IOCTL_PM_IRQ_GET_INTERRUPTS_STATUS` (`0x8007`) IOCTLs |
 | 16 | `{1408ACF4-24D1-43AB-8F80-2F7D8AEDD372}` | ? |
 | 17 | `{F9938F2D-3756-4760-A044-CB29AFBA5A69}` | ? |
-| 18 | `{CF19BFD2-31C2-47FC-A334-B78F00A8292D}` | ? |
+| 18 | `{CF19BFD2-31C2-47FC-A334-B78F00A8292D}` | PMIC hardware info (`0x8015`). Used by [qcpep8930.sys](./qcpep8930.md#pmic-requests) |
 | 19 | `{FF22FC8B-383D-40D3-AFC0-2C37A30D060A}` | Used by [NokiaEnergyDriver.sys](./nokiaenergydriver.md) for the battery alarm (`0x801A`) IOCTLs |
 | 20 | `{51840099-5AD1-48EE-9176-BEA2990D2758}` | ? |
 | 21 | `{219397E7-B8D9-4DA6-AF0D-1733612E8299}` | ? |
