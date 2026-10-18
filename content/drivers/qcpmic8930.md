@@ -767,6 +767,8 @@ Inputbuffer:
 
 On a Lumia 520 a level of 10 fails with `STATUS_UNSUCCESSFUL` (out of range).
 
+Sent by [hwnvibradime.sys](./hwnvibradime.md) (HwNClx vibrator client) through the interface `{219397E7-B8D9-4DA6-AF0D-1733612E8299}`: level = (`DriveVoltage` − 12) × intensity / 100 + 12, i.e. 24 (2.4 V) at 100% by default, 31 in the manufacturing OS; the blink mode is timed by hwnvibradime itself.
+
 ---
 
 ### IOCTL 0x801Exxxx — Clocks
@@ -843,7 +845,7 @@ The driver creates 22 device interfaces on the same device, in this order (`Regi
 | 18 | `{CF19BFD2-31C2-47FC-A334-B78F00A8292D}` | PMIC hardware info (`0x8015`). Used by [qcpep8930.sys](./qcpep8930.md#pmic-requests) |
 | 19 | `{FF22FC8B-383D-40D3-AFC0-2C37A30D060A}` | Used by [NokiaEnergyDriver.sys](./nokiaenergydriver.md) for the battery alarm (`0x801A`) IOCTLs |
 | 20 | `{51840099-5AD1-48EE-9176-BEA2990D2758}` | ? |
-| 21 | `{219397E7-B8D9-4DA6-AF0D-1733612E8299}` | ? |
+| 21 | `{219397E7-B8D9-4DA6-AF0D-1733612E8299}` | Vibrator (`0x801D`). Used by [hwnvibradime.sys](./hwnvibradime.md) for `IOCTL_PM_VIB_CONTROL_REGISTER` |
 | 22 | `{DB6DE05B-0144-4F22-A9E1-67C729658533}` | ? |
 
 `UnregisterDeviceInterfaces` (0x408538) disables 21 of them: `{2F706348-47C5-4873-A66C-6B6BC6B01698}` is never disabled.

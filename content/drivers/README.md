@@ -35,3 +35,7 @@
 [qcremoteat8930.sys](./qcremoteat8930.md)  
 [qcuart8930.sys](./qcuart8930.md)  
 [battc.sys](./battc.md)  
+[battfltr.sys](./battfltr.md)  
+[hwnvibradime.sys](./hwnvibradime.md)  
+[ltr554als02.sys](./ltr554als02.md)  
+[msgpiowinphone.sys](./msgpiowinphone.md)  

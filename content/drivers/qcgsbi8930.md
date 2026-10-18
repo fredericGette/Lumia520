@@ -134,7 +134,7 @@ Devices declared on these buses (`I2cSerialBus` in their `_CRS`, all 400 kHz, 7-
 | `\_SB.I2C3` | 0x4B | `\_SB.TCH1` (`NOKIA_TOUCH`, touch screen) | DSDT |
 | `\_SB.IC12` | 0x1E | `\_SB.ACC1` (`KXTNK`, Kionix accelerometer) | Nokia SSDT |
 | `\_SB.IC12` | 0x39 | `\_SB.PRX1` / `\_SB.ALS1` (`QPDS_T900_PRX` / `_ALS`, proximity / light sensor; present only if register 0x92 reads 0x29) | Nokia SSDT |
-| `\_SB.IC12` | 0x23 | `\_SB.PRX2` / `\_SB.ALS2` (`LTR_554ALS_02_PRX` / `_ALS`, LiteOn LTR-554 alternative) | Nokia SSDT |
+| `\_SB.IC12` | 0x23 | `\_SB.PRX2` / `\_SB.ALS2` (`LTR_554ALS_02_PRX` / `_ALS`, LiteOn LTR-554 alternative, driven by [ltr554als02.sys](./ltr554als02.md)) | Nokia SSDT |
 | `\_SB.I2C9` | — | none in the tables | |
 
 `\_SB.IC12` also has a `_REG` method that sets `AVBL` when the `GenericSerialBus` (space 9) operation region becomes available.

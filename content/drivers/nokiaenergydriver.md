@@ -9,6 +9,8 @@ On the Lumia 520 the device is `\_SB.NEDD` (`_HID` `NOKI0B00`, no `_UID`, no `_D
 
 There's no named `\Device\` object and no symbolic link (the WDF device is unnamed). The driver creates the device interface `{00DC4DBB-BDFF-4051-8A95-754CE94CB57C}`; [battc.sys](./battc.md) also registers the standard battery interface `GUID_DEVICE_BATTERY` `{72631E54-78A4-11D0-BCF7-00AA00B7B32A}` and the power meter interface `GUID_DEVICE_POWER_METER` `{E849804E-C719-43D8-AC88-96B894C191E2}` on its PDO.
 
+The Battery class has the upper filter [battfltr.sys](./battfltr.md) (`UpperFilters` = `battfltr` in the class key), so every `IOCTL_BATTERY_*` request goes through it before reaching this driver. When `C:\Dpp\Microsoft\BatteryFixedPercent.txt` exists, it replaces the reported capacity with a fixed 50 % and reports the chemistry as "Fltr".
+
 Registries of the driver:  
 `HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\services\<service>`
 

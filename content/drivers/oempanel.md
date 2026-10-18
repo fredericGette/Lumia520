@@ -49,7 +49,7 @@ Other registry keys read (and, for the first five and `MotionClarity`, watched w
 | `HKLM\Software\OEM\Nokia\lpm` | `Mode` | |
 | `HKLM\SOFTWARE\OEM\Nokia\Touch\Improved` | `Enabled` | |
 | `HKLM\Software\Microsoft\ManufacturingOS` | `ManufacturingMode` | Read by `RegReadAlcRegistries` (not watched). If the value can be read, Assertive Display is disabled and a flag records whether it is non-zero |
-| `HKLM\System\ControlSet001\services\Sensors\ALS\TestInterface`, `…\Sensors\PS\TestInterface` | `Enable`, `Value` | Written by `IOCTL_SET_REGISTRY_VALUE2` |
+| `HKLM\System\ControlSet001\services\Sensors\ALS\TestInterface`, `…\Sensors\PS\TestInterface` | `Enable`, `Value` | Written by `IOCTL_SET_REGISTRY_VALUE2`. Test override watched by the light/proximity sensor driver [ltr554als02.sys](./ltr554als02.md): `Enable` ≠ 0 replaces the ALS samples by `Value` (milli-lux) / the proximity samples by `Value` ≠ 0 = detected |
 | `HKLM\Software\OEM\Nokia\Display` ? | `AidRegistryExist`, `AidRegistry1_1` … `AidRegistry3_9` | ? |
 
 There's no ETW provider: the driver only prints with `DbgPrint` (assertions are printed as `e_DISP_CRASH 1;Assert…` by `Nokia_Panel_Drv_Assert` 0x418C3C).
@@ -61,7 +61,7 @@ It communicates with the following devices:
 | Interface `{5B9DF049-70D3-4698-8E48-85B26C1AA59F}` | [qcpmic8930.sys](./qcpmic8930.md) | PMIC. `IOCTL_PM_WLED_CONFIG`, `IOCTL_PM_WLED_ENABLE`, `IOCTL_PM_WLED_CONFIG_ADDITIONAL_PARAM` (see below). Opened on interface arrival (`plugPlayCallbackDeviceInterfaceChange_qcpmic8930` 0x417828) |
 | Interface `{6B2A25E2-AAF5-482C-99A5-6205CDCC176A}` (`ACPI\QCOM0D50\0`) | hwnled | Hardware-notification LED driver, used for the key LEDs (IOCTL 0x228000). ACPI node `\_SB.HWN0`: its method `HWNL` returns `Package (10) { 0, 3, 0x0F, 0x14, 0, 3, 1, 4, 2, 5 }` (LED configuration, meaning ?) |
 | `\Device\RESOURCE_HUB\<connection id>` | GPIO controller | Two GPIO lines from the ACPI resources (IOCTL 0x480004 `IOCTL_GPIO_WRITE_PINS`) |
-| Interface `{30EBFBF8-DF5F-4D4D-9FC5-A26C7FD1DF4A}` | ? ("TEST_PROXY") | Opened with `ZwOpenFile`; 2-byte records are written to it with `ZwWriteFile` (see [Test proxy](#test-proxy)) |
+| Interface `{30EBFBF8-DF5F-4D4D-9FC5-A26C7FD1DF4A}` | [msgpiowinphone.sys](./msgpiowinphone.md) | "GPIO Buttons" raw PDO ("TEST_PROXY"). Opened with `ZwOpenFile`; 2-byte button events are written to it with `ZwWriteFile` (see [Test proxy](#test-proxy)) |
 | `\BaseNamedObjects\AlsListenerOnOffEvent` | — | Notification event set when the ALS listening starts/stops (`IoCreateNotificationEvent`) |
 
 Power setting callback (`PoRegisterPowerSettingCallback`, `my_PowerSettingCallback` 0x41750C) on `GUID_CONSOLE_DISPLAY_STATE` `{6FE69556-704A-47A0-8F24-C28D936FDA47}`: the 4-byte value (0 = off, 1 = on, 2 = dimmed) is posted to the worker thread as message 0x2C.
@@ -248,7 +248,8 @@ Nothing is sent when `+0x1055` is 0. The command buffers are static: `0xDF` at `
 
 ### Test proxy
 
-`TestProxyPulse` (0x4175E0), run from a work item (`EvtWdfWorkitem_calledBy_WorkItem1`), opens the first interface `{30EBFBF8-DF5F-4D4D-9FC5-A26C7FD1DF4A}` (`TestGetDeviceName`; DbgPrint prefix `TEST_PROXY`) and writes the 2-byte records `00 01` then, 100 ms later, `00 00` (a pulse). It then waits up to 5 s on a semaphore, retries once, and pulses again. Purpose ?
+`TestProxyPulse` (0x4175E0), run from a work item (`EvtWdfWorkitem_calledBy_WorkItem1`), opens the first interface `{30EBFBF8-DF5F-4D4D-9FC5-A26C7FD1DF4A}` (`TestGetDeviceName`; DbgPrint prefix `TEST_PROXY`) and writes the 2-byte records `00 01` then, 100 ms later, `00 00` (a pulse). It then waits up to 5 s on a semaphore, retries once, and pulses again.  
+The interface is the "GPIO Buttons" raw PDO of [msgpiowinphone.sys](./msgpiowinphone.md#raw-pdo-gpio-buttons). A write is an injected button event (byte 0 = button, byte 1 = 1 pressed / 0 released), so the pulse is a press and release of button 0: a simulated **power key** press (to turn the screen on or off ?).
 
 ### Thermal cooling interface
 
@@ -297,7 +298,7 @@ NTSTATUS returned by `HandleNokiaIoCtlRequest`:
 | 0x83212058 | 0x816 | IOCTL_RESET_REFRESH_AVG | 0 | 0 | 0x30 | |
 | 0x8321205C | 0x817 | IOCTL_GET_FPS | 0 | 4 | — | Frames per 100 s, e.g. `71 17 00 00` = 6001 |
 | 0x83212060 | 0x818 | IOCTL_LIGHT_STATUS_QUERY | 0 | 72 | 0x1D | `LightAdaptationStatusQuery` (lux, auto, proximity, brightness 0–255, nits, SRE, HBM, key LEDs…) |
-| 0x83212064 | 0x819 | IOCTL_SET_REGISTRY_VALUE2 | 12 | 0 | — | Writes the ALS/PS `TestInterface` values |
+| 0x83212064 | 0x819 | IOCTL_SET_REGISTRY_VALUE2 | 12 | 0 | — | Writes the ALS/PS `TestInterface` values (test override of [ltr554als02.sys](./ltr554als02.md)) |
 | 0x83212068 | 0x81A | IOCTL_SET_REGISTRY_VALUE | 8 | 0 | — | `00-03` key index 0–0xB, `04-07` value (see below) |
 | 0x8321206C | 0x81B | IOCTL_UNKNOWN_4C | 2 | 0 | 0x81000004 | |
 | 0x83212070 | 0x81C | IOCTL_UNKNOWN_4B | 2 | 0 | 0x81000004 | |
@@ -515,7 +516,7 @@ qcpmic8930 interface (target of the `IOCTL_PM_WLED_*` controls)
 hwnled interface  
 `{6B2A25E2-AAF5-482C-99A5-6205CDCC176A}`
 
-"TEST_PROXY" interface  
+"TEST_PROXY" interface ("GPIO Buttons" raw PDO of [msgpiowinphone.sys](./msgpiowinphone.md))  
 `{30EBFBF8-DF5F-4D4D-9FC5-A26C7FD1DF4A}`
 
 `GUID_DEVICE_INTERFACE_ARRIVAL` (PnP notifications)  

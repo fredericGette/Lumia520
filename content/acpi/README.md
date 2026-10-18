@@ -41,8 +41,8 @@ Driver: the Windows driver that loads on the node, when it's documented in [driv
 | `\_SB.CAMP`, `CAMS`, `AVS0`, `CAMG`, `VFE0`, `VPE` | QCOM0775, 0710, 0720, 0730, 0700, 0770 | | Camera and video pre-processing blocks |
 | `\_SB.CESP` | CESP0001 | | |
 | `\_SB.GIO0` | QCOM0500 | | MSM TLMM GPIO controller, see [acpiex.sys](../drivers/acpiex.md#operation-regions) |
-| `\_SB.PWIO` | QCOM0D20 | | Power key / PMIC IO ? |
-| `\_SB.BTN0` | QCOM0D60 | | Buttons (`_CID` `PNP0C40`) |
+| `\_SB.PWIO` | QCOM0D20 | | Power key / PMIC IO ? Its pin 16 is the power button of `\_SB.BTN0` |
+| `\_SB.BTN0` | QCOM0D60 | [msgpiowinphone.sys](../drivers/msgpiowinphone.md#lumia-520-acpi-node) | Hardware buttons (`_CID` `PNP0C40`). `_CRS`: 5 `GpioInt`/`GpioIo` pairs (`PWIO` pin 16, `PM01` pins 194, 199, 202, 201). `BNWP` = button number of each interrupt (`00 02 03 07 08`). `BNAS` is unused |
 | `\_SB.GSBI` | QCOM0145 | [qcgsbi8930.sys](../drivers/qcgsbi8930.md#lumia-520-values) | GSBI configuration (`CONF`) |
 | `\_SB.I2C3`, `I2C9`, `IC12` | QCOM0180 | | I²C controllers of GSBI3, 9 and 12 |
 | `\_SB.SMEM` | QCOM0F00 | [qcsmem8930.sys](../drivers/qcsmem8930.md#memory-resources) | Shared memory |
