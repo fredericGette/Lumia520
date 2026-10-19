@@ -72,7 +72,7 @@ It communicates with the following devices:
 | Device | Driver | Comment |
 |--------|--------|---------|
 | ACPI node of `\_SB.PEP0` | acpi.sys | `IOCTL_ACPI_EVAL_METHOD` (0x32C004) on `DVMM`, `PGEC`, `PGDC`, `PGCC`, `PGDS`, `PGPC`, `PPLG`, `NPUR`, see [ACPI](#acpi) |
-| Interface `{10542F20-9718-452A-897A-45785468E57A}` | ADC driver ? (not documented yet) | ADC channels `BATT_THERM` and `PA_THERM`, IOCTLs `0x8ADC2000` / `0x8ADC2004` (same as [NokiaEnergyDriver.sys](./nokiaenergydriver.md#adc-channels)) |
+| Interface `{10542F20-9718-452A-897A-45785468E57A}` | ADC driver ? (not documented yet) | ADC channels `BATT_THERM` and `PA_THERM`, IOCTLs `IOCTL_ADC_GET_CHANNEL` (0x8ADC2000) / `IOCTL_ADC_READ` (0x8ADC2004) (same as [NokiaEnergyDriver.sys](./nokiaenergydriver.md#adc-channels)) |
 | Interface `{A5B9E9A8-EE02-46DC-B9EF-562A78C3E5C9}` | [qcpmic8930.sys](./qcpmic8930.md) | VREG (`0x8006xxxx`) |
 | Interface `{5186FCEA-68FC-420A-9400-601A6D0CA988}` | [qcpmic8930.sys](./qcpmic8930.md) | PMIC GPIO (`0x8003xxxx`) |
 | Interface `{EF512E80-3E93-45D7-AF9D-D375D53596B8}` | [qcpmic8930.sys](./qcpmic8930.md) | PMIC MPP (`0x8005xxxx`) |
@@ -218,7 +218,7 @@ All thermal-zone devices (and `QCOM0811`) have a device context with the zone in
 * zones 10–11 (`QCOM2152`, `QCOM2153`): ADC channel `PA_THERM` for both;
 * `QCOM2154`: ADC channel `BATT_THERM`, polled by a WDF timer (its own code path, sub_4079FC / sub_407850).
 
-The ADC readings use the interface `{10542F20-…}`: `0x8ADC2000` with the name returns `00-03` = 1 when found, `04-07` = channel id. `0x8ADC2004` with the channel id returns 20 bytes, `00-03` = 1 when valid, `04-07` = temperature in °C.
+The ADC readings use the interface `{10542F20-…}`: `IOCTL_ADC_GET_CHANNEL` (0x8ADC2000) with the name returns `00-03` = 1 when found, `04-07` = channel id. `IOCTL_ADC_READ` (0x8ADC2004) with the channel id returns 20 bytes, `00-03` = 1 when valid, `04-07` = temperature in °C.
 
 The last temperature of each zone is cached in `dword_4CCBD0[2 × index]` (°C).
 

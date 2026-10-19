@@ -39,3 +39,6 @@
 [hwnvibradime.sys](./hwnvibradime.md)  
 [ltr554als02.sys](./ltr554als02.md)  
 [msgpiowinphone.sys](./msgpiowinphone.md)  
+[nokiadataloggerdriver.sys](./nokiadataloggerdriver.md)  
+[nokiathermsensordriver.sys](./nokiathermsensordriver.md)  
+[qcbattminiclass8930.sys](./qcbattminiclass8930.md)  

@@ -99,7 +99,7 @@ Driver: the Windows driver that loads on the node, when it's documented in [driv
 | `\_SB.ACC1` | KXTNK | | Kionix accelerometer, I²C 0x1E on `\_SB.IC12` (`ROTM` rotation matrix) |
 | `\_SB.ALS1`, `\_SB.PRX1` | QPDS_T900_ALS, QPDS_T900_PRX | | Light / proximity sensor, I²C 0x39 on `\_SB.IC12`; present only if register 0x92 reads 0x29 |
 | `\_SB.ALS2`, `\_SB.PRX2` | LTR_554ALS_02_ALS, LTR_554ALS_02_PRX | | LiteOn LTR-554 light / proximity sensor, I²C 0x23 on `\_SB.IC12` |
-| `\_SB.NDLD` | DATA_LOGGER | | |
+| `\_SB.NDLD` | DATA_LOGGER | [NokiaDataLoggerDriver.sys](../drivers/nokiadataloggerdriver.md) | Battery data logger (voltage, current, temperature, charge %); no `_CRS` |
 | `\_SB.NREG` | ODDT_REG | | |
 | `\_SB.VIB2` | ODDT_VIB | | |
 | `\_SB.NCPU` | ODDT_CPU | | |

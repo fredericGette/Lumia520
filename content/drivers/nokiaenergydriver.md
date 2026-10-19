@@ -33,7 +33,7 @@ It communicates with the following devices. The six interfaces are found with `I
 | Interface class GUID | Driver | Comment |
 |----------------------|--------|---------|
 | `{1CF4643A-F9BF-42D3-88E8-F37EE6C0677C}` | [qcpmic8930.sys](./qcpmic8930.md) (interface 15) | Target of the charger `IOCTL_PM_CHG_*` (`0x8008xxxx`) and interrupt `IOCTL_PM_IRQ_GET_INTERRUPTS_STATUS` (`0x80070FA8`) requests |
-| `{10542F20-9718-452A-897A-45785468E57A}` | ADC driver ? (not documented yet) | ADC channels, device type `0x8ADC`, see [ADC channels](#adc-channels). [qcpep8930.sys](./qcpep8930.md#thermal-zones) uses the same interface and IOCTLs for `BATT_THERM` and `PA_THERM` |
+| `{10542F20-9718-452A-897A-45785468E57A}` | ADC driver ? (not documented yet) | ADC channels, device type `0x8ADC`, see [ADC channels](#adc-channels). [qcpep8930.sys](./qcpep8930.md#thermal-zones) uses the same interface and IOCTLs for `BATT_THERM` and `PA_THERM`, [NokiaThermSensorDriver.sys](./nokiathermsensordriver.md) for `BATT_THERM2` |
 | `{23B7D0DD-101F-4EFE-A4D4-BED70E754419}` | [qcbms8930.sys](./qcbms8930.md) | `IOCTL_BMS_*` (`0x8018xxxx`) |
 | `{FF22FC8B-383D-40D3-AFC0-2C37A30D060A}` | [qcpmic8930.sys](./qcpmic8930.md) (interface 19) | Battery alarm `IOCTL_PM_BATALRM_*` (`0x801Axxxx`) |
 | `{9A8FF884-5882-4B62-9E0F-172ACE2A9EC0}` | [qcpmic8930.sys](./qcpmic8930.md) (interface 5, PMIC interrupts `0x8007`) | Only awaited: no IOCTL is sent to it |
@@ -199,7 +199,7 @@ While VBATT ≤ `CUTF[2]` + 250 mV the check runs every 5 s (20 s above `CUTF[1]
 
 ### ADC channels
 
-The ADC channel id is looked up once by name (`IOCTL 0x8ADC2000`) and cached at context `+0xD8 + 4 × index`, then read with `IOCTL 0x8ADC2004`. Names are at `.data:0x408140`, 20 bytes each:  
+The ADC channel id is looked up once by name (`IOCTL_ADC_GET_CHANNEL`, 0x8ADC2000) and cached at context `+0xD8 + 4 × index`, then read with `IOCTL_ADC_READ` (0x8ADC2004). Names are at `.data:0x408140`, 20 bytes each:  
 | Index | Name | Use |
 |-------|------|-----|
 | 0 | `BATT_ID` | Battery-ID reading sent in `IOCTL_BMS_SET_SYSTEM_INFO` |
@@ -299,8 +299,8 @@ Sent to [qcpmic8930.sys](./qcpmic8930.md) `{FF22FC8B-…}`:
 Sent to the ADC driver `{10542F20-…}`:  
 | IOCTL | Name | InputBuffer size | OutputBuffer Size | Comment |
 |-------|------|------------------|-------------------|---------|
-| 0x8ADC2000 | ? (get channel) | strlen + 1 | 8 | Input: channel name (ASCII). Output: `00-03` 1 = found, `04-07` channel id |
-| 0x8ADC2004 | ? (read channel) | 4 | 20 | Input: channel id. Output: `04-07` converted value, `10-13` raw value, rest ? |
+| 0x8ADC2000 | IOCTL_ADC_GET_CHANNEL | strlen + 1 | 8 | Input: channel name (ASCII). Output: `00-03` 1 = found, `04-07` channel id |
+| 0x8ADC2004 | IOCTL_ADC_READ | 4 | 20 | Input: channel id. Output: `04-07` converted value, `10-13` raw value, rest ? |
 | 0x8ADC2008 | ? (threshold / async read) | 16 | 24 | Sent asynchronously by `sub_401A1C` with 2 values, 1000000, 0. Only reachable from its own timer, which is never started: unused |
 
 Sent to `{9E03B1E8-…}`:  
