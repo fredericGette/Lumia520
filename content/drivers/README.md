@@ -42,3 +42,7 @@
 [nokiadataloggerdriver.sys](./nokiadataloggerdriver.md)  
 [nokiathermsensordriver.sys](./nokiathermsensordriver.md)  
 [qcbattminiclass8930.sys](./qcbattminiclass8930.md)  
+[qcbattmngr8930.sys](./qcbattmngr8930.md)  
+[qcfmtransport8930.sys](./qcfmtransport8930.md)  
+[qcpowerkeygpio8930.sys](./qcpowerkeygpio8930.md)  
+[synapticstouch.sys](./synapticstouch.md)  

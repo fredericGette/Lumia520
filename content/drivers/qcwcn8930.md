@@ -1,7 +1,7 @@
 ## Qcwcn8930.sys
 
 WCN subsystem (WCNSS / RIVA: Wi-Fi, Bluetooth, FM) driver.  
-It loads the WCN image through [qcpil8930.sys](./qcpil8930.md), configures the `IRIS XO` clock, releases the WCNSS from reset, waits for it to come up through [qcsmsm8930.sys](./qcsmsm8930.md), then creates the PDOs of the Bluetooth, the Wi-Fi and the FM radio (it's the bus driver of [qcbluetooth8930.sys](./qcbluetooth8930.md), qcwlan8930.sys and qcfmtransport8930.sys).  
+It loads the WCN image through [qcpil8930.sys](./qcpil8930.md), configures the `IRIS XO` clock, releases the WCNSS from reset, waits for it to come up through [qcsmsm8930.sys](./qcsmsm8930.md), then creates the PDOs of the Bluetooth, the Wi-Fi and the FM radio (it's the bus driver of [qcbluetooth8930.sys](./qcbluetooth8930.md), qcwlan8930.sys and [qcfmtransport8930.sys](./qcfmtransport8930.md)).  
 It also handles the WCN crashes: SubSystem Restart (SSR) when it's enabled, bug check otherwise.  
 It's a client of the RPE notifier [qcrpen8930.sys](./qcrpen8930.md) (client name `WCN`).  
 The PDB path embedded in the binary is `E:\build_e\subtask\916AB28C_98\output\wcn\fre\FAME\qcwcn8930.pdb`.
@@ -66,7 +66,7 @@ After the WCNSS is up, state 0 of the [state machine](#state-machine) (`sub_40DC
 |-------|-------------------------|--------|----------|
 | 1 | `ACPI\QCOM01E0` | [qcbluetooth8930.sys](./qcbluetooth8930.md) | bth |
 | 2 | `ACPI\QCOM0E50` | qcwlan8930.sys ? | wlan |
-| 3 | `QWCN\QCOM2150` | qcfmtransport8930.sys ? | fmt |
+| 3 | `QWCN\QCOM2150` | [qcfmtransport8930.sys](./qcfmtransport8930.md) ? | fmt |
 
 Common properties of the PDOs: device type `FILE_DEVICE_BUS_EXTENDER` (0x2A), instance ID `1`, device description `WCN_Child%02d` (e.g. `WCN_Child01`) and location `WCN Bus 0` (locale 0x409), PnP capabilities `Address` and `UINumber` = child number.  
 Each PDO exposes the query-interface `GUID_BUS_INTERFACE_STANDARD` `{496B8280-6F25-11D0-BEAF-08002BE2092F}`.  
@@ -85,7 +85,7 @@ From the DSDT. The node is `\_SB.RIVA` (`_HID` `QCOM0E20`, no `_UID`). It declar
 |------|-----------------|-------|---------|
 | `\_SB.RIVA.BTH0` | `_ADR` 1 | Bluetooth (`ACPI\QCOM01E0`, [qcbluetooth8930.sys](./qcbluetooth8930.md)) | Nothing else |
 | `\_SB.RIVA.QWLN` | `_ADR` 2 | WLAN (`ACPI\QCOM0E50`) | `_CRS`: `Memory32Fixed` 0x03000000, 0x1000000 (WCNSS register space), `Interrupt (Level, ActiveHigh, Shared, Wake)` 234, `Interrupt (Level, ActiveHigh, Exclusive)` 235. `_PRW` {0, 0}, `_S0W` = `_S4W` = 2 (D2). Empty `_DIS`, `_PS0`…`_PS3` |
-| `\_SB.RIVA.FMT0` | `_ADR` 3 | FM transport (`QWCN\QCOM2150`) | Nothing else |
+| `\_SB.RIVA.FMT0` | `_ADR` 3 | FM transport (`QWCN\QCOM2150`, [qcfmtransport8930.sys](./qcfmtransport8930.md) ?) | Nothing else |
 | `\_SB.RIVA.WPXY` | `_HID` `NOKIA_WLAN_PROXY` | — | Enumerated by acpi.sys, not by this driver |
 
 acpi.sys presumably attaches these `_ADR` nodes to the PDOs created by the driver (matched by `Address`), which gives the WLAN child its memory and interrupt resources ?  
@@ -94,7 +94,8 @@ A separate top-level node `\_SB.FTM0` (`_HID` `QCOM01E1`, no resources) also exi
 ### Interface GUID
 
 WCN device interface, published (`WdfDeviceCreateDeviceInterface` + `WdfDeviceSetDeviceInterfaceState`, `PublishDeviceInterfaceClass` = `sub_40B47C`) when the WCNSS is ready and revoked when it crashes or the device is removed:  
-`{917DF3C3-4938-4056-8F74-D3501BCD51EA}`
+`{917DF3C3-4938-4056-8F74-D3501BCD51EA}`  
+Consumer: [qcfmtransport8930.sys](./qcfmtransport8930.md) waits for its arrival (`IoRegisterPlugPlayNotification`) before opening its SMD channel `APPS_FM`. It ignores the removal, so it does not reopen the channel after an SSR.
 
 ### RPE
 

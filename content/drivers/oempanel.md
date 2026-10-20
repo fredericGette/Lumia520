@@ -23,7 +23,7 @@ Registry key `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NOKIA_PANEL\P
 | EsdFailLimit | 3 | REG_DWORD, default 3 |
 | IsUpsideDown | 0 | REG_DWORD, default 0 |
 | HwPlatform | 1 | REG_DWORD, default 0. Device context `+0x38AC` |
-| Flags | 0 | REG_DWORD, default 0. Device context `+0x38B0`. Bit 0: ? (tested in `_sub_402A2C`). Bit 1: ? (tested in `_sub_408DD0`). Bit 2: drive the backlight current through the PMIC WLED (`IOCTL_PM_WLED_*`, see [IOCTLs sent to qcpmic8930.sys](#ioctl-0x80140fa0--ioctl_pm_wled_config)) |
+| Flags | 0 | REG_DWORD, default 0. Device context `+0x38B0`. Bit 0: pulse `Touch\Improved\Enabled` to 0 while the key lights are switched on (see [Key lights and improved touch](#key-lights-and-improved-touch)). Bit 1: ? (tested in `_sub_408DD0`). Bit 2: drive the backlight current through the PMIC WLED (`IOCTL_PM_WLED_*`, see [IOCTLs sent to qcpmic8930.sys](#ioctl-0x80140fa0--ioctl_pm_wled_config)) |
 | LIGHT_SRELimitLow/Med/High_Vendor_0/1 | e.g. `0xE3004E20`, `0x88B8`, `0xC350` | Sunlight Readability Enhancement lux thresholds, per panel vendor. Bits 0–23 = lux. The top byte of `SRELimitLow_Vendor_N` is the panel vendor ID (Vendor_0: a value of 0 is replaced by 0xE3). Defaults when missing: Vendor_0 = 5000 / 20000 / 35000 lux with vendor 0xE3, Vendor_1 = 0 |
 | LIGHT_CAbcLevel_Vendor_0/1 | 0 | CABC level per panel vendor: bits 0–2 = level, top byte also kept (purpose unknown). `CAbcLevel_Vendor_0` is written back with 2 when it is missing |
 | LIGHT_GlassDampingCompensationFactor | 0x64 | Percent applied to the ALS reading ? |
@@ -47,7 +47,7 @@ Other registry keys read (and, for the first five and `MotionClarity`, watched w
 | `HKLM\Software\OEM\Nokia\Display\MotionClarity` | `Enabled`, `WindowSize`, `Framecount`, `Overdrive` | Created at panel init if the panel supports MotionClarity, seeded with the driver defaults (except `Overdrive`), then read back and watched for changes. Deleted at init if the panel does not support it. See [MotionClarity](#motionclarity) |
 | `HKLM\Software\OEM\Nokia\Display\Lpm` | `OPR_Low`, `OPR_Med` | Low Power Mode (glance screen). Read once at panel init by `init_motionclarity_lpm_registry` (0x423EC8) into device context `+0x38DC` / `+0x38E0` (not watched) |
 | `HKLM\Software\OEM\Nokia\lpm` | `Mode` | |
-| `HKLM\SOFTWARE\OEM\Nokia\Touch\Improved` | `Enabled` | |
+| `HKLM\SOFTWARE\OEM\Nokia\Touch\Improved` | `Enabled` | "Improved touch" setting of the touch screen (glove / high sensitivity mode ?). The key is created (`Enabled` = 1 if missing) and watched by the touch driver [synapticstouch.sys](./synapticstouch.md#hklmsoftwareoemnokiatouch), which writes the value to the controller on each change. Not watched by oempanel.sys: read and written by `_sub_418700` (0x418700) only, see [Key lights and improved touch](#key-lights-and-improved-touch) |
 | `HKLM\Software\Microsoft\ManufacturingOS` | `ManufacturingMode` | Read by `RegReadAlcRegistries` (not watched). If the value can be read, Assertive Display is disabled and a flag records whether it is non-zero |
 | `HKLM\System\ControlSet001\services\Sensors\ALS\TestInterface`, `…\Sensors\PS\TestInterface` | `Enable`, `Value` | Written by `IOCTL_SET_REGISTRY_VALUE2`. Test override watched by the light/proximity sensor driver [ltr554als02.sys](./ltr554als02.md): `Enable` ≠ 0 replaces the ALS samples by `Value` (milli-lux) / the proximity samples by `Value` ≠ 0 = detected |
 | `HKLM\Software\OEM\Nokia\Display` ? | `AidRegistryExist`, `AidRegistry1_1` … `AidRegistry3_9` | ? |
@@ -93,6 +93,21 @@ GPIO connections of `\_SB.DISP` on the Lumia 520 (`_CRS` from the DSDT, all on t
 * the level is sent to the panel by `call_CreateDisplaySequence_18` (0x41147C) as MIPI DCS commands: `0x51` (set display brightness), `0x53` = `0x24` or `0x2C` (display control: backlight control on, backlight on, + dimming), `0x55` (CABC mode) and the vendor command `0xD7`. The panel controller then dims the backlight (on a Lumia 520 the PM8038 WLED is never touched at run time);
 * if `Flags` bit 2 is set, `UpdateWledCurrent` (0x417BD0) also sets the PMIC WLED string current through `sendIoctlQcpmic8930_LedCurrentMilliAmp` (0x41789C);
 * otherwise the HBM GPIO (`+0x8C`) is updated.
+
+### Key lights and improved touch
+
+Worker message 0x21 (`process_type` → `_sub_402A2C` 0x402A2C) applies a pending light level. The level slots are 200 bytes apart from `ctx+0x1178` (pending flag `+0x1178`, level `+0x1194`):
+* slot 0: the level is posted as message `0x80000017` (display backlight ?);
+* the other slots: key lights ? The level is forced to 0 when `ctx+0x13AB` is clear, or `ctx+0x12F0` bit 0 is set, or one of `ctx+0x12E9`, `+0x13FE`, `+0x13F4` is 0. Then `call_KeWaitForSingleObject` (0x402DB8, misleading IDA name) applies it: under a mutex (`.data:0x4212A0`) it updates up to 4 LED levels (`ctx+0x13EC`, words) and queues a work item.
+
+When `Flags` bit 0 is set and the key lights go from off to on (previous level 0, kept in `.data:0x421171`):
+1. `_sub_418700` reads `HKLM\SOFTWARE\OEM\Nokia\Touch\Improved\Enabled` and writes 0;
+2. if the old value was ≠ 0: wait 1 ms (`KeDelayExecutionThread`) and clear `.data:0x421194`;
+3. the key lights are switched on;
+4. if the old value was ≠ 0, `_sub_418700` writes it back.
+
+So the improved-touch mode is briefly turned off while the key lights come on. [synapticstouch.sys](./synapticstouch.md#hklmsoftwareoemnokiatouch) watches this key and writes each change to the touch controller. Turning the lights on may disturb the capacitive buttons ?  
+This doesn't happen with the default `Flags` = 0. A Lumia 520 has no key lights anyway (`HKLM\SYSTEM\TOUCH\BUTTONS\BACKLIGHT` `LedCount` = 0).
 
 ### Panels
 

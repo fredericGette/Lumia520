@@ -52,13 +52,14 @@ It communicates with the following devices:
 `\_SB.BTN0` `_CRS` has 10 resources: one `GpioInt` + `GpioIo` pair per button, on the same pin. `BNWP` returns `00 02 03 07 08`, the button number of each interrupt (in resource order). `BNAS` (`01 00 00 00 00`) isn't used by this driver.  
 | Interrupt index | Button (`BNWP`) | GPIO controller | Pin | `GpioInt` flags | Pull | Debounce | Physical button |
 |-----------------|-----------------|-----------------|-----|-----------------|------|----------|-----------------|
-| 0 | 0 | `\_SB.PWIO` | 16 | Edge, ActiveBoth, Shared | PullDown | 0 | Power |
+| 0 | 0 | `\_SB.PWIO` | 16 (any pin is the power key) | Edge, ActiveBoth, Shared | PullDown | 0 | Power |
 | 1 | 2 | `\_SB.PM01` | 194 (PMIC GPIO3) | Edge, ActiveBoth, Shared, Wake | PullUp | 62 ms | Volume up/down ? |
 | 2 | 3 | `\_SB.PM01` | 199 (PMIC GPIO8) | Edge, ActiveBoth, Shared, Wake | PullUp | 62 ms | Volume up/down ? |
 | 3 | 7 | `\_SB.PM01` | 202 (PMIC GPIO11) | Edge, ActiveBoth, Shared (no wake) | PullUp | 62 ms | Camera half press (focus) ? |
 | 4 | 8 | `\_SB.PM01` | 201 (PMIC GPIO10) | Edge, ActiveBoth, Shared, Wake | PullUp | 62 ms | Camera full press ? |
 
 The `\_SB.PM01` pins are PMIC interrupt numbers (see [qcpmicgpio8930.sys](./qcpmicgpio8930.md#pin-numbering)).  
+`\_SB.PWIO` is the power key controller of [qcpowerkeygpio8930.sys](./qcpowerkeygpio8930.md). It ignores the pin number: every pin is PMIC interrupt 51 (the power key), itself received through `GpioInt` pin 51 on `\_SB.PM01`.  
 
 ### Start-up
 

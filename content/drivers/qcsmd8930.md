@@ -136,7 +136,7 @@ Channels opened by the other drivers (from their binaries):
 | APPS_RIVA_CTRL | [qcdiagrouter8930.sys](./qcdiagrouter8930.md) |
 | apr_audio_svc | qcq6ad8930.sys |
 | apr_apps2 | qcq6ad8930.sys |
-| APPS_FM | qcfmtransport8930.sys |
+| APPS_FM | [qcfmtransport8930.sys](./qcfmtransport8930.md) |
 | APPS_RIVA_BT_CMD | [qcbluetooth8930.sys](./qcbluetooth8930.md) |
 | APPS_RIVA_BT_ACL | [qcbluetooth8930.sys](./qcbluetooth8930.md) |
 | WLAN_CTRL | qcwlan8930.sys |
