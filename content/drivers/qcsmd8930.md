@@ -134,8 +134,8 @@ Channels opened by the other drivers (from their binaries):
 | DATA14_CNTL | [qcqmux8930.sys](./qcqmux8930.md#smd-channels) |
 | APPS_RIVA_DATA | [qcdiagrouter8930.sys](./qcdiagrouter8930.md) |
 | APPS_RIVA_CTRL | [qcdiagrouter8930.sys](./qcdiagrouter8930.md) |
-| apr_audio_svc | qcq6ad8930.sys |
-| apr_apps2 | qcq6ad8930.sys |
+| apr_audio_svc | qcq6ad8930.sys (Q6 audio, interface `{5F51A34C-6834-479D-9EA2-EAFA622524BA}`, used by [qc8x60aud.sys](./qc8x60aud.md#q6-audio-entry-point)) |
+| apr_apps2 | qcq6ad8930.sys (Q6 audio, see above) |
 | APPS_FM | [qcfmtransport8930.sys](./qcfmtransport8930.md) |
 | APPS_RIVA_BT_CMD | [qcbluetooth8930.sys](./qcbluetooth8930.md) |
 | APPS_RIVA_BT_ACL | [qcbluetooth8930.sys](./qcbluetooth8930.md) |

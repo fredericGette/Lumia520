@@ -1,13 +1,15 @@
 ## Ltr554als02.sys
 
 Driver of the Lite-On **LTR-554ALS-02** ambient light (ALS) + proximity (PS) sensor.  
-It's a client of the Microsoft sensor class extension `SensorsClx` (KMDF, PDB `E:\build_e\subtask\D06E3E63_98\output\sensors\fre\ltr554als02.pdb`). It has no device name of its own: the sensor device and its interface are managed by SensorsClx, which calls the driver through a table of callbacks (see [SensorsClx client](#sensorsclx-client)).  
+It's a client of the Microsoft sensor class extension `SensorsClx` ([wpsensorsclx.sys](./wpsensorsclx.md)) (KMDF, PDB `E:\build_e\subtask\D06E3E63_98\output\sensors\fre\ltr554als02.pdb`). It has no device name of its own: the sensor device and its interface are managed by SensorsClx, which calls the driver through a table of callbacks (see [SensorsClx client](#sensorsclx-client)).  
 The same chip is described by **two ACPI devices**, `\_SB.ALS2` (`LTR_554ALS_02_ALS`) and `\_SB.PRX2` (`LTR_554ALS_02_PRX`), so the driver is loaded twice. The ACPI method `MODE` tells each instance what it is. Both instances share one global context (one I²C target, one register shadow, one wait lock, one ALS polling thread): the first `DriverEntry` initializes it, the second waits for it (`InitSharedContext`, 0x4058FC).  
 The ALS is polled by a system thread (the chip interrupt is only used for the proximity). The lux value is computed from the 2 photodiode channels with a Lite-On ratio table and reported in milli-lux. The proximity is reported as DETECTED / NOT DETECTED, optionally with "dynamic thresholds" that follow the crosstalk of the cover glass.  
 Calibration is read from `C:\DPP\Nokia\Sensors\ALS_LITEON_LTR554ALS02.bin` and `C:\DPP\Nokia\Sensors\PRX_LITEON_LTR554ALS02.bin` (see [DPP calibration files](#dpp-calibration-files)).  
 It's the alternative of the `QPDS_T900` sensor (`\_SB.ALS1` / `\_SB.PRX1`, address 0x39) on the same I²C bus: see [qcgsbi8930.sys](./qcgsbi8930.md) and [acpiex.sys](./acpiex.md).
 
-There's no device name and no symbolic link created by the driver itself (they are managed by `SensorsClx`).  
+There's no device name and no symbolic link created by the driver itself (they are managed by `SensorsClx`). Applications open the sensor through the device interface that SensorsClx creates for the sensor type:  
+ALS instance: `{97F115C8-599A-4153-8894-D2D12899918A}`  
+Proximity instance: `{5220DAE9-3179-4430-9F90-06266D2A34DE}`  
 
 Registries of the driver:  
 `HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\services\ltr554als02` ?  
@@ -66,7 +68,7 @@ Pool tags: `LTR5` (`WDF_DRIVER_CONFIG.DriverPoolTag`, 0x4C545235), `UTLx` (0x784
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| SensorsClx (class extension) | sensorsclx.sys ? | Bound through `WdfVersionBindClass("SensorsClx")`. Receives the samples, calls the callbacks |
+| SensorsClx (class extension) | [wpsensorsclx.sys](./wpsensorsclx.md) | Bound through `WdfVersionBindClass("SensorsClx")`. Receives the samples, calls the callbacks |
 | `\Device\RESOURCE_HUB\<connection id>` | [acpiex.sys](./acpiex.md) → [qci2c8930.sys](./qci2c8930.md) | I²C connection to `\_SB.IC12`, address 0x23, 400 kHz. Opened with `WdfIoTargetOpen` by the first instance only |
 | Own ACPI PDO (`WdfDeviceGetIoTarget`) | [acpi.sys](./acpi.md) | `IOCTL_ACPI_EVAL_METHOD_EX` (0x32C018) to evaluate `MODE` |
 | GPIO interrupt | — | Only the proximity instance creates a `WdfInterrupt` (passive-level handling) |
@@ -97,15 +99,20 @@ Their `_PS0` / `_PS3` write `\_SB.ALS2` / `\_SB.PRX2` + D-state 0 / 3 to `\_SB.P
 | InitializeDevice | `LTR554InitializeDevice` 0x404AFC | Opens the I²C target (first instance), reads `MODE`, loads defaults → registry → DPP, starts the test mode |
 | UnInitializeDevice | `LTR554UnInitializeDevice` 0x404D9C | Stops the test mode, closes the I²C target |
 | InitializeHardware | `LTR554InitializeHardware` 0x404E68 | First instance: reads PART_ID / MANUFAC_ID (0x86, 2 bytes). Fails with `STATUS_NOT_SUPPORTED` if the part number (PART_ID >> 4) isn't 9. Then sets the default register shadow |
-| QueryDeviceInformation | `LTR554QueryDeviceInformation` 0x404E04 | Returns version 1, size 24, sensor type (1 = PS, 2 = ALS), data size 32, `1`, `2`, `0` |
-| GetSensorTiming | `LTR554GetSensorTiming` 0x405860 | `110`, `1`, sample time: 225 ms (ALS) or 15 × (PrxPersistence + 1) ms (PS) |
+| QueryDeviceInformation | `LTR554QueryDeviceInformation` 0x404E04 | Returns version 1, size 24, sensor type (1 = PS, 2 = ALS), maximum sample size 32, number of ranges 1, capabilities 2 (`SENSOR_CAPS_CLIENT_PUSH`), flags 0 |
+| GetSensorTiming | `LTR554GetSensorTiming` 0x405860 | `110`, `1`, sample time: 225 ms (ALS) or 15 × (PrxPersistence + 1) ms (PS). SensorsClx uses the sample time as the minimum notification interval |
 | StartAcquisition | `LTR554StartAcquisition` 0x405B6C | Interval in µs. Minimum 225 ms (ALS) / 15 ms (PS), otherwise `STATUS_NOT_SUPPORTED` and the sensor is stopped |
 | StopAcquisition | `LTR554StopAcquisition` 0x405AC4 | Disables the function. When both ALS and PS are off, the chip will be reset at the next start |
 | PowerEnable | `LTR554PowerEnable` 0x404F68 | Stub, returns 0 |
 | InterruptEnable | `LTR554InterruptEnable` 0x405798 | Sets the PS (or ALS, unused) interrupt flag and rewrites INTERRUPT (0x8F) |
 | DeviceIoControl | `LTR554DeviceIoControl` 0x4052F8 | The 3 OEM IOCTLs below. Anything else: `STATUS_INVALID_DEVICE_REQUEST` |
 
-The other entries of the table are NULL. Samples are sent to SensorsClx with a 32-byte buffer:  
+The other entries of the table are NULL. This is allowed because the driver is a push client: SensorsClx only requires GetSensorTiming, PowerEnable and StartAcquisition (see [wpsensorsclx.sys](./wpsensorsclx.md#client-interface)).  
+The capabilities declare no threshold notification mode, so applications can only use the periodic mode (mode 0x00 of IOCTL 0x220014).  
+SensorsClx starts the sensor (PowerEnable(1) + StartAcquisition with the smallest interval of the subscribers) when the first handle starts its notification. It stops the sensor when the last one stops, and also during the "low power epoch" unless a subscriber enabled idle operation.  
+SensorsClx applies the DACL of `WpSecurity` to the sensor devices, unless the service key of ltr554als02 has `EnableOemSecurity` ≠ 0.  
+The OEM IOCTLs below are not handled by SensorsClx itself: they reach `LTR554DeviceIoControl` through the SensorsClx fallback.  
+Samples are sent to SensorsClx (`SensorClxSampleReady`) with a 32-byte buffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
 | 00-03 | 20 00 00 00 | Size (32) |

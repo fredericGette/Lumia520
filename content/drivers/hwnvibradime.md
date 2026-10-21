@@ -22,7 +22,7 @@ Other registry keys:
 | Registry key | Value | comment |
 |--------------|-------|---------|
 | `HKLM\Software\Microsoft\ManufacturingOS` | (key existence) | If the key exists, `DriveVoltage` is forced to 31 (3.1 V), overriding the value above (`sub_401670`) |
-| `HKLM\Software\OEM\Nokia\Audio\EnhancedRecording\Vibra` | Disable | REG_DWORD. When not 0, requests with an intensity of 100% are refused (`STATUS_UNSUCCESSFUL`) and a running vibration is stopped. The key is watched with `ZwNotifyChangeKey` (work item `sub_4018D8`), so the change is applied immediately. Probably used to avoid vibration noise during audio recording ? |
+| `HKLM\Software\OEM\Nokia\Audio\EnhancedRecording\Vibra` | Disable | REG_DWORD. When not 0, requests with an intensity of 100% are refused (`STATUS_UNSUCCESSFUL`) and a running vibration is stopped. The key is watched with `ZwNotifyChangeKey` (work item `sub_4018D8`), so the change is applied immediately. The value is written by the audio driver [qc8x60aud.sys](./qc8x60aud.md#registry): 1 when the Nokia enhanced (stereo) recording starts, 0 when it stops, so that the vibrator doesn't disturb the recording |
 
 There's no ETW provider.  
 

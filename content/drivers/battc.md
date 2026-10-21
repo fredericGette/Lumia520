@@ -29,7 +29,7 @@ It communicates with the following devices:
 | Battery class upper filter | [battfltr.sys](./battfltr.md) | Not called by BATTC. The `IOCTL_BATTERY_*` requests go through it before reaching the miniclass driver and `BatteryClassIoctl`; it can change `BATTERY_WAIT_STATUS` and the returned status/information |
 | Device with interface `GUID_INTERFACE_CHARGING_POWERSOURCE` `{DE246FC9-6529-4927-BED2-907856A9C14F}` | ? (USB charger detection ?) | `IoRegisterPlugPlayNotification`, `IoGetDeviceObjectPointer`, then `IRP_MN_QUERY_INTERFACE` (see [Charging power source](#charging-power-source)) |
 | Kernel power manager | ntoskrnl | `ZwPowerInformation(PlatformInformation)` |
-| WMI | WMILIB.SYS | `WmiSystemControl`, `WmiCompleteRequest` |
+| WMI | [wmilib.sys](./wmilib.md) | `WmiSystemControl`, `WmiCompleteRequest` |
 
 ### Exports
 
@@ -128,7 +128,7 @@ Only the first device that exposes `GUID_INTERFACE_CHARGING_POWERSOURCE` `{DE246
 
 ### WMI
 
-On the first `BatteryClassSystemControl` call, BATTC copies the miniclass `WMILIB_CONTEXT` and appends 8 GUIDs (`BattWmiGuidList`, 1 instance each, flag 0x20). For `IRP_MN_REGINFO`/`IRP_MN_REGINFO_EX` it adds the MOF resource `BATTCWMI` from `\REGISTRY\MACHINE\SYSTEM\CurrentControlSet\Services\BattC`.  
+On the first `BatteryClassSystemControl` call, BATTC copies the miniclass [`WMILIB_CONTEXT`](./wmilib.md#wmilib_context) and appends 8 GUIDs (`BattWmiGuidList`, 1 instance each, flag 0x20). For `IRP_MN_REGINFO`/`IRP_MN_REGINFO_EX` it adds the MOF resource `BATTCWMI` from `\REGISTRY\MACHINE\SYSTEM\CurrentControlSet\Services\BattC`.  
 | Index | GUID | Name | Size | Content (`BattCWmi`, 0x11C64) |
 |-------|------|------|------|-------------------------------|
 | 0 | `{FC4670D1-EBBF-416E-87CE-374A4EBC111A}` | BATTERY_STATUS_WMI_GUID | 24 | Tag, RemainingCapacity, ChargeRate (Rate if ≥ 0, else 0), DischargeRate (−Rate if < 0, else 0), Voltage, then 4 bytes PowerOnline, Charging, Discharging, Critical. From the **cached** status (no new query) |

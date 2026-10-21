@@ -46,3 +46,7 @@
 [qcfmtransport8930.sys](./qcfmtransport8930.md)  
 [qcpowerkeygpio8930.sys](./qcpowerkeygpio8930.md)  
 [synapticstouch.sys](./synapticstouch.md)  
+[wmilib.sys](./wmilib.md)  
+[wpsensorsclx.sys](./wpsensorsclx.md)  
+[qc8x60aud.sys](./qc8x60aud.md)  
+[qcacdb8930.sys](./qcacdb8930.md)  
