@@ -50,3 +50,5 @@
 [wpsensorsclx.sys](./wpsensorsclx.md)  
 [qc8x60aud.sys](./qc8x60aud.md)  
 [qcacdb8930.sys](./qcacdb8930.md)  
+[qcadsp8930.sys](./qcadsp8930.md)  
+[qcamss8930.sys](./qcamss8930.md)  

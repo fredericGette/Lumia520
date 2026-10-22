@@ -54,7 +54,7 @@ The subsystem nodes have a `CONF` method that returns their memory regions as `{
 | `\_SB.ADSP` | QCOM0E10 | 0x8DA00000–0x8F200000 (0x1800), 0x28400000–0x28420000 (0x20) | ADSP 0x8DA00000–0x8EC00000 (smaller), 0x28400000–0x28420000 (same) |
 | `\_SB.RIVA` | QCOM0E20 | 0x8F200000–0x8F700000 (0x500) | WCN 0x8F000000–0x8F700000 (larger) |
 
-The AMSS/ADSP `CONF` methods are evaluated by the modem/ADSP drivers (not documented yet), and the RIVA one by [qcwcn8930.sys](./qcwcn8930.md#rpe). The AMSS `CONF` also lists RPM, IMEM, MDSP and QDSS regions, not just the modem memory: probably everything that's dumped with the modem ?
+The AMSS `CONF` method is evaluated by the modem driver [qcamss8930.sys](./qcamss8930.md#rpe) (12 regions, see [its ACPI node](./qcamss8930.md#lumia-520-acpi-node)), the ADSP one by [qcadsp8930.sys](./qcadsp8930.md#rpe), and the RIVA one by [qcwcn8930.sys](./qcwcn8930.md#rpe). The AMSS `CONF` also lists RPM, IMEM, MDSP and QDSS regions, not just the modem memory: probably everything that's dumped with the modem ?
 
 ### Initialisation
 
@@ -100,7 +100,7 @@ Every range is mapped with `MmMapIoSpace(MmNonCached)`. If nothing is found ("Th
 The GUID of the secondary dump data of a segment is the GUID of the subsystem whose last byte is incremented by the index of the segment.
 
 `BcSecondaryDumpDataCallback`:
-- First call (size query, `OutBuffer` = NULL): returns the size of the segment. If the subsystem has not been halted yet, it sends the AP error state 7 to the subsystem through callback [1] of its RPE descriptor (`PerformHalt`, 0x4029C0). The halt is skipped for `ADSP` ("Bypassing halt for this subsystem (ADSP) due to a known issue").
+- First call (size query, `OutBuffer` = NULL): returns the size of the segment. If the subsystem has not been halted yet, it sends the AP error state 7 to the subsystem through callback [1] of its RPE descriptor (`PerformHalt`, 0x4029C0). The halt is skipped for `ADSP` ("Bypassing halt for this subsystem (ADSP) due to a known issue"): the callback [1] of [qcadsp8930.sys](./qcadsp8930.md#rpe) would send an NMI to the QDSP6 (write 1 to `LPASS_QDSP6SS_STOP`, 0x28800010).
 - Second call: if the subsystem is xPU protected, unlocks the memory with the PIL `SetMemoryProtection` function (protection 0x20 `PAGE_EXECUTE_READ`), which actually sends the PAS "Shutdown" command to the TrustZone. When `AMSS` (modem SW region) is unlocked, the modem FW region `{BA58766D-…}` is unlocked too. Then it returns the virtual address and the size of the segment.
 
 If the maximum size allowed by the kernel is smaller than `ExpectedCrashDumpSegmentSize`, the segment is skipped.
@@ -239,9 +239,9 @@ Secondary dump data of the Dump Segment Directory
 | Region | GUID | Origin |
 |--------|------|--------|
 | TRACE_LOG | `{87D53509-C8CF-4528-B6E5-07839265CD61}` | qccdi8930.sys |
-| AMSS (modem SW region) | `{936DC601-5530-4B82-9D2A-72A488BEC7C1}` | hard coded |
-| modem FW region | `{BA58766D-ABF2-4402-88D7-90AB243F6C77}` | unlocked with AMSS |
-| ADSP | `{D58464D3-5B28-4EA6-A2E2-E8E57C5C69B8}` | hard coded |
+| AMSS (modem SW region) | `{936DC601-5530-4B82-9D2A-72A488BEC7C1}` | hard coded. Also the GUID of the RPE client `AMSS` of [qcamss8930.sys](./qcamss8930.md#rpe) and of its software image |
+| modem FW region | `{BA58766D-ABF2-4402-88D7-90AB243F6C77}` | unlocked with AMSS. GUID of the firmware image loaded by [qcamss8930.sys](./qcamss8930.md#ioctl-0x9c41241c) (not an RPE client) |
+| ADSP | `{D58464D3-5B28-4EA6-A2E2-E8E57C5C69B8}` | hard coded. Also the GUID of the RPE client `ADSP` of [qcadsp8930.sys](./qcadsp8930.md#rpe) |
 | RPM | `{7F8E50DC-FAD4-4A31-A243-3AB83708E49F}` | hard coded |
 | SYS_IMEM | `{ADF3B53C-6657-4D83-83DA-A5F3B2544F3C}` | hard coded |
 | MDSP_RAM | `{7D72D7E9-67DF-48B3-8F07-BE28C12009B5}` | hard coded |

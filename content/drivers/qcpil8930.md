@@ -1,7 +1,7 @@
 ## Qcpil8930.sys
 
 Peripheral Image Loader (PIL).  
-On request of the subsystem drivers (the "RPE clients", e.g. [qcwcn8930.sys](./qcwcn8930.md)), it parses the `.mbn` firmware files (ELF), copies their segments to physical memory and asks the TrustZone, through qcscm8930.sys (Secure Channel Manager), to authenticate the image and bring the subsystem out of reset.  
+On request of the subsystem drivers (the "RPE clients", e.g. [qcwcn8930.sys](./qcwcn8930.md), [qcadsp8930.sys](./qcadsp8930.md) and [qcamss8930.sys](./qcamss8930.md)), it parses the `.mbn` firmware files (ELF), copies their segments to physical memory and asks the TrustZone, through qcscm8930.sys (Secure Channel Manager), to authenticate the image and bring the subsystem out of reset.  
 It follows the Qualcomm "PAS" (Peripheral Authentication Service, SCM service 2) sequence: init image (metadata) → load segments → auth & reset, and shutdown before a reload.  
 Every loaded image is remembered (keyed by the GUID of the RPE client) so that it can be reloaded after a subsystem restart, and its memory can be given to [qccdi8930.sys](./qccdi8930.md) for the crash dump through a query-interface.  
 Build path found in the binary: `P:\PIL\rel\8.2.1.1\arm\Release\qcpil8930.pdb` (Mar 24 2014).  
@@ -53,7 +53,8 @@ When the SCM interface arrives (work item `sub_40EDF0`), the driver:
 2. enables its second device interface `{E2EB84C1-4068-4994-A48F-F3AC0D38DC29}` (`sub_40EC74`),
 3. queries the SCM query-interface `{999642D1-34E8-4759-AABB-29C62AB58627}` (size 20, version 1) and keeps its function at offset 0x10 (`sub_403668`). This function sends an SCM command synchronously without IRP; it is used by the PIL query-interface (see below) to send the "shutdown" command.
 
-When the SCM interface is removed, the interface `{E2EB84C1-…}` is disabled.
+When the SCM interface is removed, the interface `{E2EB84C1-…}` is disabled.  
+[qcadsp8930.sys](./qcadsp8930.md#start-of-the-subsystem) waits for the arrival of `{E2EB84C1-…}` (not of the first interface) before it loads the ADSP image, and keeps an I/O target open on it: its removal revokes the ADSP interface. The load itself is sent to `\Device\PIL`.
 
 ### Image loading
 
@@ -157,6 +158,7 @@ Returns 0xE0008000 if this handle has no pending image.
 ### IOCTL 0x9C412408
 
 This IOCTL is processed by Qcpil8930.sys  
+Sent by [qcamss8930.sys](./qcamss8930.md#ioctl-0x9c412408) during a modem SSR (software image, then firmware image).  
 
 | Property | Value |
 |----------|-------|
@@ -230,7 +232,7 @@ This IOCTL is processed by Qcpil8930.sys
 |------|------------------|-------------------|
 | IOCTL_PIL_TZ_AUTH_IMAGE_AND_RESET | 0 | 0 |
 
-The input buffer is ignored ([qcwcn8930.sys](./qcwcn8930.md) sends an empty buffer): the command applies to the image loaded (0x9C41241C or 0x9C412420) through the same handle.  
+The input buffer is ignored ([qcwcn8930.sys](./qcwcn8930.md), [qcadsp8930.sys](./qcadsp8930.md#ioctl-0x9c412410) and [qcamss8930.sys](./qcamss8930.md#ioctl-0x9c412410) send an empty buffer): the command applies to the image loaded (0x9C41241C or 0x9C412420) through the same handle.  
 It sends the SCM command [0x805 "Auth and reset"](#command-0x805-auth-and-reset) (`sub_403AB4`) with the secured channel ID of the image: the TrustZone checks the segments against the hash segment and starts the subsystem.  
 On success, the metadata buffer is freed and the image is saved in the global list (it can then be reloaded or unloaded). On failure, the image is released.
 
@@ -349,9 +351,9 @@ NTSTATUS returned:
 Images loaded on a Lumia 520:  
 | GUID RPE client | Secured channel ID | .mbn file path | file size (in bytes) | IoCtl sent by |
 |-----------------|--------------------|----------------|----------------------|---------------|
-| {d58464d3-5b28-4ea6-a2e2-e8e57c5c69b8} | 0x00000001 | `\SystemRoot\system32\qcadsp8930.mbn` | 6091904 | qcadsp8930.sys |
-| {936dc601-5530-4b82-9d2a-72a488bec7c1} | 0x00000004 | `\SystemRoot\system32\qcdsp28930.mbn` | 29776208 | qcamss8930.sys |
-| {ba58766d-abf2-4402-88d7-90ab243f6c77} | 0x00000005 | `\SystemRoot\system32\qcdsp1v18930.mbn` | 2839752 | qcamss8930.sys |
+| {d58464d3-5b28-4ea6-a2e2-e8e57c5c69b8} | 0x00000001 | `\SystemRoot\system32\qcadsp8930.mbn` | 6091904 | [qcadsp8930.sys](./qcadsp8930.md#ioctl-0x9c41241c) |
+| {936dc601-5530-4b82-9d2a-72a488bec7c1} | 0x00000004 | `\SystemRoot\system32\qcdsp28930.mbn` | 29776208 | [qcamss8930.sys](./qcamss8930.md#ioctl-0x9c41241c) (modem SW, `AmssSwImagePath`) |
+| {ba58766d-abf2-4402-88d7-90ab243f6c77} | 0x00000005 | `\SystemRoot\system32\qcdsp1v18930.mbn` | 2839752 | [qcamss8930.sys](./qcamss8930.md#ioctl-0x9c41241c) (modem FW, `AmssFwImagePath`) |
 | {93367d0f-35ce-4ec4-8e38-bb33030c58b2} | 0x00000006 | `\SystemRoot\system32\qcwcnss8930.mbn` | 2007056 | qcwcn8930.sys |
 
 The channel IDs are the PAS peripheral IDs of the Qualcomm TrustZone (1 = Q6/ADSP, 4 = modem SW, 5 = modem FW, 6 = WCNSS).
@@ -557,7 +559,7 @@ Outputbuffer:
 PIL interface class (published at start, unless `TestState` is 2; used by [qccdi8930.sys](./qccdi8930.md))  
 `{20E0709D-AF59-4CE8-9D91-39E11B4C0231}`
 
-Second PIL interface class (enabled only while the SCM device is available)  
+Second PIL interface class (enabled only while the SCM device is available; waited for by [qcadsp8930.sys](./qcadsp8930.md) and [qcamss8930.sys](./qcamss8930.md))  
 `{E2EB84C1-4068-4994-A48F-F3AC0D38DC29}`
 
 ### Query-interface
