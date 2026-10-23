@@ -51,4 +51,6 @@
 [qc8x60aud.sys](./qc8x60aud.md)  
 [qcacdb8930.sys](./qcacdb8930.md)  
 [qcadsp8930.sys](./qcadsp8930.md)  
+[qcaudhwi8930.sys](./qcaudhwi8930.md)  
 [qcamss8930.sys](./qcamss8930.md)  
+[qcbcryptcipherkm8930.sys](./qcbcryptcipherkm8930.md)  

@@ -102,7 +102,7 @@ It communicates with the following devices (found with `IoGetDeviceInterfaces` /
 | `{5F51A34C-6834-479D-9EA2-EAFA622524BA}` | qcq6ad8930.sys (`\_SB.Q6AD`) | Q6 audio (APR: ASM, ADM, AFE, voice). Mandatory at start. `IOCTL 0xADAD2BA1` returns its entry point, then all the commands go through that function (see [Q6 audio](#q6-audio-entry-point)) |
 | `{3FE58EBD-6A7D-4760-A01F-66369C501AB0}` | audio codec driver (`\_SB.ACHW` ?) | ADIE codec. Mandatory at start. `ADIE_CODEC_DRIVER_IOCTL_*` (`0x5001xxxx`) |
 | `{6DB5B55F-B7D5-4D95-A0AE-40DD78A17817}` | ? | `0x50012004` (4 bytes in, 4 bytes out) and `0x50012008` (8 bytes in, 4 bytes out), same IOCTL family as the codec |
-| `{ABFE8B0D-5D26-4C5A-B5F2-1F33E47A4F65}` | ? (`\_SB.TICO` or `\_SB.AHWI` ?) | `0x50032000` / `0x50032004`, 16-byte input |
+| `{ABFE8B0D-5D26-4C5A-B5F2-1F33E47A4F65}` | [qcaudhwi8930.sys](./qcaudhwi8930.md) (`\_SB.AHWI`) | AFE port start / stop. Opened for each request. See [IOCTL 0x50032000 / 0x50032004](#ioctl-0x50032000--0x50032004--afe-port-start--stop) |
 | `{093C3754-B2D1-4AC7-B93E-A8FD62FDF7C3}` | GPIO headset detection (`\_SB.MBGP`) ? | Used when `GpioBasedHeadsetDetection` ≠ 0. `0x500A2800` |
 | `{790370AE-6E34-4800-8927-351A338FB740}` | codec headset detection (`\_SB.MBHC`) ? | Used when `GpioBasedHeadsetDetection` = 0. `0x500A2800` |
 | `{BE446647-F655-4919-8BD0-125BA5D4CE65}` | Bluetooth HFP profile driver | `GUID_DEVINTERFACE_BLUETOOTH_HFP_SCO_HCIBYPASS`. SCO audio over HCI bypass. `IOCTL_BTHHFP_*` (`0x0022xxxx`) |
@@ -471,6 +471,39 @@ These IOCTLs are sent by Qc8x60aud.sys to the Bluetooth HFP driver (interface `G
 - 0x22000F / 0x220013 are sent by the "BTSCO Property Handler" (`sub_410570`) for `KSPROPSETID_BtAudio` (`{7FA06C40-B8F6-4C7E-8556-E8C33A12E54D}`) properties 0 (`ONESHOT_RECONNECT`) and 1 (`ONESHOT_DISCONNECT`). The same handler also answers `KSPROPSETID_Jack` (`{4509F757-…}`) properties 1, 2 and 4 (container id = 16 bytes from 0x22000B), and property 1 of `{7F50F0BE-8E26-4F96-A079-1CF84102B918}` (?).
 - 0x220017 (`sub_410944`): input = previous status, output = new status; the request stays pending until the status changes. It's cancelled with `IoCancelIrp` when the thread must stop. The status updates the jack "connected" field of the KS jack descriptions (`sub_429AD0`).
 - 0x22002B / 0x22002F are sent when the SCO stream starts / stops (`sub_429B6C` / `sub_429C3C`, only if not already open / open).
+
+---
+
+### IOCTL 0x50032000 / 0x50032004 — AFE port start / stop
+
+These IOCTLs are sent by Qc8x60aud.sys to [qcaudhwi8930.sys](./qcaudhwi8930.md) (interface `{ABFE8B0D-…}`).
+
+| Property | Value |
+|----------|-------|
+| Device | 0x5003 |
+| Function | 0x800 / 0x801 (2048 / 2049) |
+| Access | FILE_ANY_ACCESS |
+| Method | METHOD_BUFFERED |
+
+| Name | Device name | InputBuffer size | OutputBuffer Size |
+|------|-------------|------------------|-------------------|
+| 0x50032000 start AFE port | interface `{ABFE8B0D-5D26-4C5A-B5F2-1F33E47A4F65}` | 16 | 0 |
+| 0x50032004 stop AFE port | interface `{ABFE8B0D-5D26-4C5A-B5F2-1F33E47A4F65}` | 16 | 0 |
+
+Inputbuffer:  
+| Bytes | Value | Comment |
+|-------|-------|---------|
+| 00-01 | 00 00 | |
+| 02-03 | ? | Not initialised (stack) |
+| 04-07 | ? | ACDB device id |
+| 08-09 | 80 BB | Sample rate, e.g. 48000 |
+| 0A-0B | ? | ? (not used by qcaudhwi8930.sys) |
+| 0C-0F | 00 00 00 00 | |
+
+Each request opens the interface (`sub_4265B8`: `IoGetDeviceInterfaces` + `IoGetDeviceObjectPointer`), sends the IOCTL synchronously (`sub_42675C`: `IoBuildDeviceIoControlRequest` + `IofCallDriver`, waits on an event), then dereferences the device (`sub_4266DC`).  
+Start: `sub_426228` / `sub_42630C` → `sub_4269D4`. Stop: `sub_4263F0` / `sub_4264D4` → `sub_4268F4`. The last parameter of `sub_4269D4` / `sub_4268F4` (0 or 1) selects which of the 2 `{device id, sample rate, ?}` sets of the caller's structure is used. For start, the device id of the first set is used when the endpoint type is 10 or 11.  
+Callers: `sub_42A03C` (start, only for endpoint types 12 and 13), `sub_42A1EC`, `sub_42A39C`, `sub_42A568`, `sub_407F30`, `sub_408048`.  
+Errors are returned as `0x80007005` (no request), `0x80007004` (IOCTL failed) and `0x80007001` (interface not found).
 
 ---
 

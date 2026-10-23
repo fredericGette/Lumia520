@@ -50,20 +50,20 @@ On unload / cleanup (`EvtWdfObjectContextCleanup`), ACPH is stopped (`sub_4103CC
 
 ---
 
-### IOCTL 0x50011000
+### IOCTL 0x50022400
 
 This IOCTL is processed by Qcacdb8930.sys
 
 | Property | Value |
 |----------|-------|
-| Device | 0x5001 |
-| Function | 0x400 (1024) |
+| Device | 0x5002 |
+| Function | 0x900 (2304) |
 | Access | FILE_ANY_ACCESS |
 | Method | METHOD_BUFFERED |
 
 | Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|-------------------|
-| Get the `acdb_ioctl` entry point | ≥ 8 | ≥ 8 (not used) |
+| Get the `acdb_ioctl` entry point | ≥ 8 | 0 or ≥ 8 (not used) |
 
 Inputbuffer:  
 | Bytes | Value | Comment |
@@ -72,21 +72,22 @@ Inputbuffer:
 | 04-07 | ? | Pointer to a 4-byte variable that receives the address of `acdb_ioctl` (`sub_40275C`) |
 
 The handler writes the address of `acdb_ioctl` at the given pointer. The caller can then call it directly: `int acdb_ioctl(uint32 command, void *in, uint32 inLen, void *out, uint32 outLen)`, see [ACDB commands](#acdb-commands).  
-NULL pointer → `0xC022001C`.  
+NULL pointer (or input buffer smaller than 8 bytes) → `0xC022001C`. A missing output buffer is ignored.  
+Sent by [qcaudhwi8930.sys](./qcaudhwi8930.md#ioctl-0x50022400) with a 4-byte length and no output buffer.  
 
 > [!NOTE]
 > The input buffer contains kernel pointers that are used directly: only kernel-mode callers can use the IOCTLs of this driver.
 
 ---
 
-### IOCTL 0x5001100C
+### IOCTL 0x5002240C
 
 This IOCTL is processed by Qcacdb8930.sys
 
 | Property | Value |
 |----------|-------|
-| Device | 0x5001 |
-| Function | 0x403 (1027) |
+| Device | 0x5002 |
+| Function | 0x903 (2307) |
 | Access | FILE_ANY_ACCESS |
 | Method | METHOD_BUFFERED |
 
@@ -128,7 +129,7 @@ Outputbuffer:
 | 00-03 | ? | Length of the response structure |
 | 04-07 | ? | Pointer to the response structure |
 
-Calls `acdb_ioctl(IoControlCode, in[04-07], in[00-03], out[04-07], out[00-03])`. As for 0x5001100C, the ACDB result is returned in `IoStatus.Information`. A missing input or output buffer is replaced by `{0, NULL}`.
+Calls `acdb_ioctl(IoControlCode, in[04-07], in[00-03], out[04-07], out[00-03])`. As for 0x5002240C, the ACDB result is returned in `IoStatus.Information`. A missing input or output buffer is replaced by `{0, NULL}`.
 
 ---
 
