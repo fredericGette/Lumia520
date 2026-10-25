@@ -3,7 +3,7 @@
 Microsoft **Battery Class driver** (`battc.pdb`, 56 functions, PDB symbols available).  
 It isn't a device driver but a kernel-mode **export library** (`DriverEntry` at 0x19000 only returns 0; the real initialisation is in `DllInitialize`). A battery **miniclass driver** links to it and calls its exports. On the Lumia 520 the only miniclass driver is [NokiaEnergyDriver.sys](./nokiaenergydriver.md).  
 BATTC owns the generic part of the battery stack. It registers the `GUID_DEVICE_BATTERY` interface for the miniclass device and queues the `IOCTL_BATTERY_*` requests. A worker thread turns them into calls to the miniclass callbacks (`QueryTag`, `QueryInformation`, `QueryStatus`, `SetInformation`, `SetStatusNotify`, `DisableStatusNotify`). It completes the long-running "wait for status/tag" requests when their condition is met or when they time out. If the miniclass driver can't notify, BATTC also polls it.  
-It adds the Microsoft battery WMI data blocks (`MSBatteryClass`) and a **power meter** interface (`GUID_DEVICE_POWER_METER`, PMI IOCTLs) built from the cached battery status. It forwards the charger type and current from a "charging power source" interface to the miniclass driver as `BatteryChargingSource`.
+It adds the Microsoft battery WMI data blocks (`MSBatteryClass`) and a **power meter** interface (`GUID_DEVICE_POWER_METER`, PMI IOCTLs) built from the cached battery status. The phone has a second power meter on the same interface class, [qcepm8930.sys](./qcepm8930.md), which measures the power itself (ADC `VBATT` × battery current from [qcepmadc8930.sys](./qcepmadc8930.md)). It forwards the charger type and current from a "charging power source" interface to the miniclass driver as `BatteryChargingSource`.
 
 There's no named device and no `\DosDevices` link. For each miniclass device, BATTC registers two device interfaces on the miniclass PDO (`IoRegisterDeviceInterface`):  
 Battery interface : `GUID_DEVICE_BATTERY` `{72631E54-78A4-11D0-BCF7-00AA00B7B32A}`  
@@ -290,7 +290,7 @@ This IOCTL is processed by Battc.sys
 | IOCTL_PMI_SET_CONFIGURATION (0x458008) ? | — | — |
 | IOCTL_PMI_REGISTER_EVENT_NOTIFY (0x45C010) ? | — | — |
 
-Completed at once with `STATUS_NOT_IMPLEMENTED` (0xC0000002). The names are the Windows power meter interface codes for these function numbers.
+Completed at once with `STATUS_NOT_IMPLEMENTED` (0xC0000002). The names are the Windows power meter interface codes for these function numbers. [qcepm8930.sys](./qcepm8930.md#pmi-ioctl-dispatch) uses the same codes: it answers `0x454000` with a `PMI_CAPABILITIES`-like structure (version 1, size 54, type 1, name `\\.\QCPowerMeter`), returns `STATUS_NOT_IMPLEMENTED` for `0x454004` / `0x458008`, and `STATUS_INVALID_DEVICE_REQUEST` for `0x45C010`.
 
 ---
 
@@ -317,6 +317,8 @@ Outputbuffer (`PMI_MEASUREMENT_DATA` ?):
 
 Answered directly in `BatteryClassIoctl`, without asking the miniclass. The returned length is the **whole output buffer length**, not 8. Output < 8 → `STATUS_BUFFER_TOO_SMALL` (0xC0000023).
 
+[qcepm8930.sys](./qcepm8930.md#ioctl-0x45400c--ioctl_pmi_get_measurement) returns the same 8-byte layout (version 1, power in mW) for this code. It returns 8 bytes, not the whole buffer, and it reports the power during charging too (as a meaningless value, see that page).
+
 ---
 
 ### Interface GUID
@@ -324,7 +326,7 @@ Answered directly in `BatteryClassIoctl`, without asking the miniclass. The retu
 Battery device interface (registered by battc.sys on the miniclass PDO)  
 `{72631E54-78A4-11D0-BCF7-00AA00B7B32A}` (GUID_DEVICE_BATTERY)
 
-Power meter device interface (registered by battc.sys on the miniclass PDO)  
+Power meter device interface (registered by battc.sys on the miniclass PDO; also created by [qcepm8930.sys](./qcepm8930.md#interface-guid) on its own device)  
 `{E849804E-C719-43D8-AC88-96B894C191E2}` (GUID_DEVICE_POWER_METER)
 
 ### Other GUID

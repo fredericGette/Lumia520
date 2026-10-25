@@ -209,6 +209,20 @@ Regions mapped with `MmMapIoSpace` (non-cached):
 
 Others come from the clock/AVS property tables (sub_433DDC, sub_414C0C, sub_41272C).
 
+### Clock descriptors
+
+Each clock of the clock regime has a descriptor (name, function table, register table, id). The register table gives offsets in the clock controller (physical base 0x00900000) as (offset, mask) pairs: branch enable, branch enable (repeated, vote ?), halt status, then two pairs in the clock control register (reset ? / hardware control ?).  
+Clocks also driven directly by other drivers:  
+| Clock | Descriptor | Register table | Enable | Halt status | Other pairs | Also written by |
+|-------|------------|----------------|--------|-------------|-------------|-----------------|
+| `cc_ce1_hclk` | 0x4B1B10 | 0x4B1910 | 0x2720, 0x10 | 0x2FD4, 0x2 | 0x2720 0x20, 0x2720 0x80 | — ([qcearm8930.sys](./qcearm8930.md) maps the clock controller but never uses it) |
+| `cc_ce1_core_clk` | 0x4B17D0 | 0x4B17A8 | 0x2724, 0x10 | 0x2FD4, 0x08000000 | 0x2724 0x20, 0x2724 0x80 | — |
+| `cc_ce2_hclk` | 0x4B2190 | 0x4B20F8 | 0x2740, 0x10 | 0x2FD4, 0x1 | 0x2740 0x20, 0x2740 0x80 | [qce2arm8930.sys](./qce2arm8930.md#clocks) |
+| `cc_ce2_core_clk` | 0x4B2350 | 0x4B22F8 | 0x2744, 0x10 | 0x2FD0, 0x10000000 | 0x2744 0x20, 0x2744 0x80 | [qce2arm8930.sys](./qce2arm8930.md#clocks) |
+| `cc_prng_clk` | 0x4B28C0 | 0x4B2898 | 0x3080, 0x400 | 0x2FD8, 0x400 | 0x2E80 0x400, 0x2E80 0x1000 | [qcerng8930.sys](./qcerng8930.md#clock) |
+
+The enable register of `cc_prng_clk` (0x3080, `SC0_U_CLK_BRANCH_ENA_VOTE` in the Linux `clock-8960.c`) is shared with other clock votes. qcerng8930.sys changes its bit with a read-modify-write that isn't synchronised with the PEP ?
+
 ---
 
 ### Thermal zones

@@ -189,7 +189,7 @@ Each engine also has `PERF_CONTROLS` (e.g. `ReleaseVoteOnPowerCollapse`, `LimitF
 - Backlight type 3, 100 steps, default 80 %, low power 40 %.
 
 The panel-tuning methods are stubs: `PIGC`, `PPCC`, `PGCT` (1 argument) and `PGRT`, `PBRT` (2 arguments) return a 1-byte buffer `00`, and `BLCP` (1 argument) returns 256 zero bytes. `PCSC` isn't defined.  
-`_DOD` = `{ 0x00024321 }`. The children are `\_SB.GPU0.MON0` (`_ADR` 0, the monitor of [monitor.sys](./monitor.md#lumia-520-acpi-node)) and `\_SB.GPU0.AVS0` (`_ADR` 0x00024321, empty `_CRS`, `_DEP` on `\_SB.VPE` and `\_SB.VFE0`: the AVStream/camera child ?).
+`_DOD` = `{ 0x00024321 }`. The children are `\_SB.GPU0.MON0` (`_ADR` 0, the monitor of [monitor.sys](./monitor.md#lumia-520-acpi-node)) and `\_SB.GPU0.AVS0` (`_ADR` 0x00024321, empty `_CRS`, `_DEP` on `\_SB.VPE` and `\_SB.VFE0`: the AVStream/camera child, driven by [qccamavs8930.sys](./qccamavs8930.md)).
 
 ### Child devices
 
@@ -202,7 +202,7 @@ The panel-tuning methods are stubs: `PIGC`, `PPCC`, `PGCT` (1 argument) and `PGR
 | Compatible ID | `QCOM_AVSTREAM` |
 | Description | `Qualcomm Camera AVStream Mini Driver` |
 
-So the camera driver is enumerated as a child of the display adapter.
+So the camera driver, [qccamavs8930.sys](./qccamavs8930.md), is enumerated as a child of the display adapter.
 
 ### Query interfaces
 
@@ -214,7 +214,45 @@ So the camera driver is enumerated as a child of the display adapter.
 | `{BF4672DE-6B4E-4BE4-A325-68A91EA49C09}` | OPM interface ?, version 1, 52 bytes | sub_4AD194 | 9 functions: `sub_4ABE7C` (GetCertificateSize ?, loads the OPM keys), `sub_4ABF30`, `sub_4AC188`, `sub_4ABFF8`, `sub_4AC074` (decrypts 256 bytes in TrustZone: SetSigningKeyAndSequenceNumbers ?), `sub_4AC2D8`, `sub_4AC8B8`, `sub_4ACD78`, `sub_4AD05C`. See [OPM](#opm) |
 | `{ECBE47A8-C498-4BB9-BD70-E867E0940D22}` | `GUID_THERMAL_COOLING_INTERFACE`, version 1 | sub_4A51B0 | Per engine (`DisableThermalMitigation`). `PassiveCooling` = `sub_4A5264` |
 | `{2564AA4F-DDDB-4495-B497-6AD4A84163D7}`, `{496B8280-6F25-11D0-BEAF-08002BE2092F}` (`GUID_BUS_INTERFACE_STANDARD`), `{1A6A460B-194F-455D-B34B-B84C5B05712B}`, `{70211B0E-0AFB-47DB-AFC1-410BF842497A}` (`GUID_PNP_LOCATION_INTERFACE`), `{2AEB0243-6A6E-486B-82FC-D815F6B97006}` (`GUID_D3COLD_SUPPORT_INTERFACE`), `{B38290E5-3CD0-4F9D-9937-F5FE2B44D47A}` (`GUID_REENUMERATE_SELF_INTERFACE_STANDARD`), `{E8695F63-1831-4870-A8CF-9C2F03F9DCB5}` (`GUID_ACPI_INTERFACE_STANDARD2`), null GUID | — | — | Refused with `0xC00000BB` STATUS_NOT_SUPPORTED |
-| other | — | sub_4A4818 | ? |
+| `{93042446-D274-44F5-A8CB-2A28263B6A48}` + 7 other GUIDs | DirectX allocation sharing, version 0x1xx, 116 bytes | sub_4A4818 | Used by the camera driver [qccamavs8930.sys](./qccamavs8930.md#directx-allocations). See [Allocation sharing interface](#allocation-sharing-interface) |
+| other | — | sub_4A4818 | Not in the list of `sub_4A4818`: `0xC00000BB` STATUS_NOT_SUPPORTED |
+
+#### Allocation sharing interface
+
+`sub_4A4818` serves 8 interface GUIDs (`.rdata:0x45F634`…`0x45F790`), one client slot each (slot table `unk_482320`). The first one is requested by the child device [qccamavs8930.sys](./qccamavs8930.md#directx-allocations) (`IRP_MN_QUERY_INTERFACE` on its PDO); the 7 others don't appear in any other page:  
+| Slot | GUID | Client |
+|------|------|--------|
+| 0 | `{93042446-d274-44f5-a8cb-2a28263b6a48}` | qccamavs8930.sys (camera) |
+| 1 | `{4250f9f2-8772-4caa-bbe6-23b0c5e4eee3}` | ? |
+| 2 | `{c820ab98-3aa0-4452-a9cf-b0ea148bbc17}` | ? |
+| 3 | `{b15a53c1-228a-4c77-a79a-e85ba89d53dd}` | ? |
+| 4 | `{4e1ae8ce-b174-4fce-9998-03767e5ce206}` | ? |
+| 5 | `{12455b6c-5140-4188-9077-cff50f7a65e0}` | ? |
+| 6 | `{5d929fa9-ef4b-43c7-b3be-73df8d491531}` | ? |
+| 7 | `{e51e8a17-6d5f-4ae3-bcc4-d1dd2fea36ab}` | ? |
+
+Checks, in order:
+1. The slot must be free, otherwise `STATUS_UNSUCCESSFUL` (0xC0000001): one client per GUID.
+2. `Size` ≥ 116, otherwise `STATUS_BUFFER_TOO_SMALL` (0xC0000023).
+3. `Version` & 0xFF00 = 0x100, otherwise `STATUS_INVALID_PARAMETER` (0xC000000D).
+4. The client must have filled the interface buffer beforehand: the dwords at `+0x40` (client device) and `+0x54`, `+0x58`, `+0x5C`, `+0x60` (callbacks) must not be 0, otherwise `STATUS_INVALID_PARAMETER`. When the minor version is ≥ 1, a 0 at `+0x64` only logs a warning.
+
+Then it allocates the slot context (512 bytes, tag `qDX7`, adapter at `+0x78`, slot index at `+0x7C`, reference count at `+0x74`), fills the interface and keeps a copy of it (116 bytes) in the context:  
+| Offset | Value | Comment |
+|--------|-------|---------|
+| 00 | 116 | Size |
+| 02 | 0x100 | Version |
+| 04 | slot context | `Context` |
+| 08 | sub_403E10 | `InterfaceReference`: count + 1 |
+| 0C | sub_403E38 | `InterfaceDereference`: count − 1, frees the context and the slot at 0 |
+| 10 | adapter `+0xD4` | ? |
+| 14 | adapter `+0xD8` | ? |
+| 18 | slot context | |
+| 2C | sub_4A4F78 | Get stored handle (`ScbDxmGetStoredHandle` in qccamavs8930): `(context, hAllocation, &out)`, resolves a DirectX allocation handle through a dxgkrnl callback (adapter `+0x38`, object type 1 = allocation ?) |
+| 40 | client | Set by the client: its device |
+| 54-60 | client | Set by the client: for the camera, `OnReserveDxAllocation`, `OnUnreserveDxAllocation`, `OnMapDxAllocation`, `OnUnmapDxAllocation` |
+
+Finally it calls `InterfaceReference` once. With it, the display driver and the camera share the same buffers (camera frames mapped in the SMMU context of the camera, without copy).
 
 ### Escapes
 
@@ -410,6 +448,9 @@ qcscm8930 interface (GUID_SCM_DEVINTERFACE)
 
 OPM query interface ?  
 `{BF4672DE-6B4E-4BE4-A325-68A91EA49C09}`
+
+Allocation sharing query interface, slot 0 (camera, [qccamavs8930.sys](./qccamavs8930.md#directx-allocations))  
+`{93042446-D274-44F5-A8CB-2A28263B6A48}`
 
 `GUID_THERMAL_COOLING_INTERFACE`  
 `{ECBE47A8-C498-4BB9-BD70-E867E0940D22}`

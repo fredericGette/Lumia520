@@ -1,7 +1,7 @@
 ## Qcbcryptcipherkm8930.sys
 
 Kernel-mode CNG (BCrypt) cipher provider for AES, with hardware offload.  
-The kernel CNG router finds this driver and gets a `BCRYPT_CIPHER_FUNCTION_TABLE` from it with [internal IOCTL 0x220007](#internal-ioctl-0x220007). Most functions of the table are thin wrappers around the "Microsoft Primitive Provider" (`BCrypt*` exported by `ksecdd.sys`). Only `Encrypt` and `Decrypt` are replaced: AES-128 in ECB or CBC mode. Small buffers (< 64 bytes) are processed in software (AES tables in `.rdata` from 0x406000). Larger ones are sent with [IOCTL 0x23C40C](#ioctl-0x23c40c) to one of 2 peer devices (2 "hardware threads"), probably the crypto engine / TrustZone ?.  
+The kernel CNG router finds this driver and gets a `BCRYPT_CIPHER_FUNCTION_TABLE` from it with [internal IOCTL 0x220007](#internal-ioctl-0x220007). Most functions of the table are thin wrappers around the "Microsoft Primitive Provider" (`BCrypt*` exported by `ksecdd.sys`). Only `Encrypt` and `Decrypt` are replaced: AES-128 in ECB or CBC mode. Small buffers (< 64 bytes) are processed in software (AES tables in `.rdata` from 0x406000). Larger ones are sent with [IOCTL 0x23C40C](#ioctl-0x23c40c) to one of 2 peer devices (2 "hardware threads"): the 2 Qualcomm Crypto Engines, [qcearm8930.sys](./qcearm8930.md) and [qce2arm8930.sys](./qce2arm8930.md).  
 PDB path: `P:\qsecuremsm\rel\8.3.1\arm\Release\qcbcryptcipherkm8930.pdb`.
 
 Device name : `\Device\qcBCryptCipher_KM`  
@@ -15,11 +15,11 @@ GUID of the ETW provider (WPP):
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| Interface `{0923c751-56cd-4828-888b-80e586f7ec83}` | ? | Hardware thread 1. [IOCTL 0x23C40C](#ioctl-0x23c40c) |
-| Interface `{3453eddf-8fe0-4fd4-be0e-2c525a06e9b2}` | ? | Hardware thread 2. [IOCTL 0x23C40C](#ioctl-0x23c40c) |
+| Interface `{0923c751-56cd-4828-888b-80e586f7ec83}` | [qcearm8930.sys](./qcearm8930.md) | Hardware thread 1: Crypto Engine 1 (`\_SB.QQCE`). [IOCTL 0x23C40C](#ioctl-0x23c40c) |
+| Interface `{3453eddf-8fe0-4fd4-be0e-2c525a06e9b2}` | [qce2arm8930.sys](./qce2arm8930.md) | Hardware thread 2: Crypto Engine 2 (`\_SB.QCE2`). [IOCTL 0x23C40C](#ioctl-0x23c40c) |
 | — | ksecdd.sys | `BCryptOpenAlgorithmProvider`, `BCryptGenerateSymmetricKey`, `BCryptSetProperty`, `BCryptGetProperty`, `BCryptExportKey`, `BCryptDestroyKey` |
 
-The 2 peer interface GUIDs don't appear in any other driver documented here: the driver(s) behind them are not identified yet.
+The interface `{0923c751-…}` is created by [qcearm8930.sys](./qcearm8930.md) (Crypto Engine 1, `\_SB.QQCE`, `QCOM1100`), the interface `{3453eddf-…}` by [qce2arm8930.sys](./qce2arm8930.md) (Crypto Engine 2, `\_SB.QCE2`, `QCOM1190`).
 
 ### WDF configuration
 
@@ -172,7 +172,7 @@ The other codes of the same family are recognised but refused with `STATUS_NOINT
 
 ### IOCTL 0x23C40C
 
-This IOCTL is sent by Qcbcryptcipherkm8930.sys to the devices of the interfaces `{0923c751-56cd-4828-888b-80e586f7ec83}` (`sub_403FE8`) and `{3453eddf-8fe0-4fd4-be0e-2c525a06e9b2}` (`sub_404220`).
+This IOCTL is sent by Qcbcryptcipherkm8930.sys to the devices of the interfaces `{0923c751-56cd-4828-888b-80e586f7ec83}` (`sub_403FE8`, [qcearm8930.sys](./qcearm8930.md#ioctl-0x23c40c)) and `{3453eddf-8fe0-4fd4-be0e-2c525a06e9b2}` (`sub_404220`, [qce2arm8930.sys](./qce2arm8930.md#ioctl-0x23c40c)).
 
 | Property | Value |
 |----------|-------|
@@ -201,7 +201,7 @@ Inputbuffer (packed):
 Outputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-0F | ? | Copied into a 16-byte pool buffer (tag `qbc2`) that is never read: updated IV ? |
+| 00-0F | ? | Copied into a 16-byte pool buffer (tag `qbc2`) that is never read. qce2arm8930.sys never writes it: it holds the first 16 bytes of the input (METHOD_BUFFERED shared buffer) |
 
 The request fails (and disables the provider, see [Cipher function table](#cipher-function-table)) if the status is an error or if the output length isn't 16. The data buffers are passed by address, not copied: the peer driver must access the caller's memory directly.
 
