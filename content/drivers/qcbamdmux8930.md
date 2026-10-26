@@ -129,10 +129,10 @@ While the restart is in progress, writes fail with `STATUS_DEVICE_OFF_LINE` (0x8
 Query-interface `{EA38864C-56D4-4426-B145-AC2E39C2BB72}` (`WdfDeviceAddQueryInterface`, same GUID as the device interface), `INTERFACE` Size 0x18, Version 1, Context = the WDFDEVICE, no reference/dereference functions.  
 | Offset | Function | Comment |
 |--------|----------|---------|
-| 0x10 | `sub_403CDC(ULONG Stream, PVOID Buffer)` | Gives a receive buffer back to the pool (zeroed, 2048 bytes), and re-queues the RX work item of the stream if it was starved. For clients using an RX callback, which keep the buffer of a DATA packet (whether `Buffer` is the payload or the header address is ?) |
+| 0x10 | `sub_403CDC(ULONG Stream, PVOID Buffer)` | Gives a receive buffer back to the pool (zeroed, 2048 bytes), and re-queues the RX work item of the stream if it was starved. For clients using an RX callback, which keep the buffer of a DATA packet. `Buffer` is the address of the 8-byte header, i.e. the payload address given to the RX callback − 8 (that's what [qcmbb8930.sys](./qcmbb8930.md#data-path) passes) |
 | 0x14 | `BamMuxWrite(ULONG Stream, ULONG Channel, PVOID Data, ULONG Length)` (0x406738) | Synchronous submission of a DATA packet, no request involved. Errors: `STATUS_DEVICE_OFF_LINE` (subsystem restart), `STATUS_INVALID_DEVICE_STATE` (channel not open by the remote side), `STATUS_INVALID_PARAMETER` (Length > 2048), `STATUS_INSUFFICIENT_RESOURCES` (32 TX pending), `STATUS_NO_MEMORY` (no sub-request), `STATUS_MEMORY_NOT_ALLOCATED` (no buffer) |
 
-The client of this interface and of `\Device\DMUX` is not known (a network/RmNet driver ?).
+The client of this interface and of `\Device\DMUX` is the WWAN miniport [qcmbb8930.sys](./qcmbb8930.md#data-path). It waits for the device interface `{CCCB7664-…}` (i.e. for the A2 to be powered), opens `\Device\DMUX` with `ZwOpenFile`, binds its file object to **stream 2, channel = adapter index** (0–3) with an RX callback ([internal IOCTL 0x82003](#internal-ioctl-0x82003)), then gets this interface with `IRP_MN_QUERY_INTERFACE`. It sends the IP packets with `IRP_MJ_WRITE` (not `BamMuxWrite`), receives them through the RX callback and gives the buffers back with the function at offset 0x10.
 
 ### Write requests
 

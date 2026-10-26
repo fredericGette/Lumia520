@@ -27,7 +27,7 @@ It communicates with the following devices:
 | ACPI node of the device | acpi.sys | | [IOCTL 0x32C004](#ioctl-0x32c004) `EXQM`, selects the transport |
 | ? | ? | `{6064DC13-78B4-4A57-8D55-C49BA16CF99D}` | Alternative transport ("MBIM" mode), only when the ACPI method `EXQM` exists. Not used on the Lumia 520 |
 
-[qcremoteat8930.sys](./qcremoteat8930.md) waits for the interface `{7DCB3244-…}`, opens `\Device\QMUX` and uses [IOCTL 0x12410](#ioctl-0x12410), [IOCTL 0x12430](#ioctl-0x12430), `ReadFile` and `WriteFile` to carry QMI AT messages. The other clients are probably the user-mode RIL / QMI library (?).
+[qcremoteat8930.sys](./qcremoteat8930.md) waits for the interface `{7DCB3244-…}`, opens `\Device\QMUX` and uses [IOCTL 0x12410](#ioctl-0x12410), [IOCTL 0x12430](#ioctl-0x12430), `ReadFile` and `WriteFile` to carry QMI AT messages. The WWAN miniport [qcmbb8930.sys](./qcmbb8930.md) is another client: its QMI client library (QCCI) uses [IOCTL 0x12410](#ioctl-0x12410), [IOCTL 0x12418](#ioctl-0x12418--ioctl-0x1241c), [IOCTL 0x12430](#ioctl-0x12430) and read/write for its WDS, DMS, NAS, WMS, UIM and VOICE clients, and it sends [IOCTL 0x1242C](#ioctl-0x1242c) once per adapter. The other clients are probably the user-mode RIL / QMI library (?).
 
 ### Startup
 
@@ -437,7 +437,8 @@ Outputbuffer:
 |-------|-------|---------|
 | 00-01 | ? | Link protocol returned by the modem (TLV 0x10 of the answer) |
 
-A work item (sub_405D88) sends QMI_CTL SET_DATA_FORMAT and waits for the answer. Completes with `Information` = 2, or `STATUS_INSUFFICIENT_RESOURCES` (0xC000009A) / `STATUS_INVALID_DEVICE_STATE` (0xC0000184) like [IOCTL 0x12410](#ioctl-0x12410).
+A work item (sub_405D88) sends QMI_CTL SET_DATA_FORMAT and waits for the answer. Completes with `Information` = 2, or `STATUS_INSUFFICIENT_RESOURCES` (0xC000009A) / `STATUS_INVALID_DEVICE_STATE` (0xC0000184) like [IOCTL 0x12410](#ioctl-0x12410).  
+Sent by [qcmbb8930.sys](./qcmbb8930.md#ioctl-0x1242c) at initialisation with QoS flag 0, link protocol 3 (802.3 and IP) and port = adapter index; bytes 06-07 are left uninitialised.
 
 ---
 

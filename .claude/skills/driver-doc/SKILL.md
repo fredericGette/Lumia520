@@ -21,6 +21,10 @@ hardcoded physical addresses. Prefer "?" over a guess; mark tentative interpreta
 - Binary: ask for the path if not given, or use an IDA database the user already has open
   (`mcp__ida__list_databases`). Analyse it with the `mcp__ida__*` tools (decompile, xrefs, strings,
   imports) — load them with ToolSearch first.
+- Hex-Rays often fails on functions protected by a stack cookie (they call `__security_push_cookie` /
+  `__security_pop_cookie`) with "function frame is wrong" (`decompile` returns None). Read those
+  functions from the disassembly instead (e.g. dump `idautils.FuncItems` + `idc.generate_disasm_line`
+  to a file in the scratchpad). Don't try to fix the decompilation error (frame size, reanalysis, …).
 - The user may also supply runtime evidence (ETW traces, QXDM logs, hex dumps of buffers, registry
   exports). Use it for the "Value" / example columns; label values as observed ("e.g.").
 

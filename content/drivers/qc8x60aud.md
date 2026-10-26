@@ -61,7 +61,7 @@ On the Lumia 520 (`\_SB.QCRT._DEV`), the flag is 1 and there are 20 entries:
 Registry key `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\QCAUD` (read with `RtlQueryRegistryValues(RTL_REGISTRY_SERVICES, L"QCAUD", …)` in `sub_42F160`, `RTL_QUERY_REGISTRY_DIRECT`, REG_DWORD). Note the key name: `QCAUD`, not the service name `QC8x60AUD`. A missing value keeps the default.  
 | Registry value | value | comment |
 |----------------|-------|---------|
-| GpioBasedHeadsetDetection | 1 | Selects the headset detection driver: ≠0 → GPIO based (MBGP) interface `{093C3754-…}`, 0 → codec MBHC interface `{790370AE-…}` (`sub_42B850`) |
+| GpioBasedHeadsetDetection | 1 | Selects the headset detection driver: ≠0 → GPIO based (MBGP) interface `{093C3754-…}`, 0 → codec MBHC interface `{790370AE-…}` of [qcmbhc8930.sys](./qcmbhc8930.md) (`sub_42B850`) |
 | OffloadPreAllocMemorySize | 0x200000 | Size in bytes of the contiguous memory pre-allocated for the offload (compressed) playback (`MmAllocateContiguousMemorySpecifyCache`) ? |
 | MinBufferSize | 10 | WaveRT buffer size limit (unit ?) |
 | MaxBufferSize | 60000 | WaveRT buffer size limit (unit ?) |
@@ -100,11 +100,11 @@ It communicates with the following devices (found with `IoGetDeviceInterfaces` /
 | Interface class GUID | Driver | Comment |
 |----------------------|--------|---------|
 | `{5F51A34C-6834-479D-9EA2-EAFA622524BA}` | qcq6ad8930.sys (`\_SB.Q6AD`) | Q6 audio (APR: ASM, ADM, AFE, voice). Mandatory at start. `IOCTL 0xADAD2BA1` returns its entry point, then all the commands go through that function (see [Q6 audio](#q6-audio-entry-point)) |
-| `{3FE58EBD-6A7D-4760-A01F-66369C501AB0}` | audio codec driver (`\_SB.ACHW` ?) | ADIE codec. Mandatory at start. `ADIE_CODEC_DRIVER_IOCTL_*` (`0x5001xxxx`) |
+| `{3FE58EBD-6A7D-4760-A01F-66369C501AB0}` | audio codec driver (`\_SB.ACHW` ?) | ADIE codec. Mandatory at start. `ADIE_CODEC_DRIVER_IOCTL_*` (`0x5001xxxx`). Also used by [qcmbhc8930.sys](./qcmbhc8930.md#ioctl-0x50012048--rm_audio_sr_ioctl) as the audio resource manager (`0x50012048`) |
 | `{6DB5B55F-B7D5-4D95-A0AE-40DD78A17817}` | ? | `0x50012004` (4 bytes in, 4 bytes out) and `0x50012008` (8 bytes in, 4 bytes out), same IOCTL family as the codec |
 | `{ABFE8B0D-5D26-4C5A-B5F2-1F33E47A4F65}` | [qcaudhwi8930.sys](./qcaudhwi8930.md) (`\_SB.AHWI`) | AFE port start / stop. Opened for each request. See [IOCTL 0x50032000 / 0x50032004](#ioctl-0x50032000--0x50032004--afe-port-start--stop) |
 | `{093C3754-B2D1-4AC7-B93E-A8FD62FDF7C3}` | GPIO headset detection (`\_SB.MBGP`) ? | Used when `GpioBasedHeadsetDetection` ≠ 0. `0x500A2800` |
-| `{790370AE-6E34-4800-8927-351A338FB740}` | codec headset detection (`\_SB.MBHC`) ? | Used when `GpioBasedHeadsetDetection` = 0. `0x500A2800` |
+| `{790370AE-6E34-4800-8927-351A338FB740}` | [qcmbhc8930.sys](./qcmbhc8930.md) (`\_SB.MBHC`) | Codec (WCD93xx MBHC) headset detection. Used when `GpioBasedHeadsetDetection` = 0. `0x500A2800` |
 | `{BE446647-F655-4919-8BD0-125BA5D4CE65}` | Bluetooth HFP profile driver | `GUID_DEVINTERFACE_BLUETOOTH_HFP_SCO_HCIBYPASS`. SCO audio over HCI bypass. `IOCTL_BTHHFP_*` (`0x0022xxxx`) |
 | ACPI node of the device | acpi.sys | `IOCTL_ACPI_EVAL_METHOD` `_DEV` |
 
@@ -435,7 +435,7 @@ This IOCTL is sent by Qc8x60aud.sys to the headset detection driver (`sub_427020
 
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|-------------------|
-| ? | interface `{093C3754-…}` or `{790370AE-…}` | 8 | 0 |
+| Get the headset detection entry point | interface `{093C3754-…}` or `{790370AE-…}` ([qcmbhc8930.sys](./qcmbhc8930.md#ioctl-0x500a2800--get-the-mbhc_ioctl-entry-point)) | 8 | 0 |
 
 Inputbuffer:  
 | Bytes | Value | Comment |
@@ -443,7 +443,8 @@ Inputbuffer:
 | 00-03 | 04 00 00 00 | Size of the result |
 | 04-07 | ? | Kernel pointer to a dword that receives the entry point `fn(command, buffer, size)` |
 
-Commands then sent to the entry point: 3 = register the callback `{sub_404688, context}` (8 bytes), 1 = start/reset, 4 = ?, 5 = set mode (4-byte value 0–3). Jack events come back through the callback (`DbgPrint "HeadSet Event"` in `sub_427244`).
+Commands then sent to the entry point: 3 = register the callback `{sub_404688, context}` (8 bytes), 1 = start/reset, 4 = ?, 5 = set mode (4-byte value 0–3). Jack events come back through the callback (`DbgPrint "HeadSet Event"` in `sub_427244`).  
+With the codec MBHC driver [qcmbhc8930.sys](./qcmbhc8930.md#mbhc_ioctlcommand-buffer-size) the entry point is `mbhc_ioctl`: 1 = `MBHC_CMD_START`, 2 = `MBHC_CMD_STOP`, 3 = `MBHC_CMD_SET_CB`, 4 = `MBHC_CMD_FTM_INTR` (factory test: simulates a plug insertion). Command 5 is not supported by qcmbhc8930.sys (returns 0x1000), so "set mode" probably only applies to the GPIO based driver (`\_SB.MBGP`) ?. The callback is called as `callback(event, payload, 32, context)` with event 1 = plug insert, 2 = plug remove, 3 = button press, 4 = button release, 6 = button press+release.
 
 ---
 

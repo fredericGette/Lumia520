@@ -68,3 +68,6 @@
 [qcerng8930.sys](./qcerng8930.md)  
 [qcgnss.sys](./qcgnss.md)  
 [qcgpio.sys](./qcgpio.md)  
+[qcltecoexmgr8930.sys](./qcltecoexmgr8930.md)  
+[qcmbb8930.sys](./qcmbb8930.md)  
+[qcmbhc8930.sys](./qcmbhc8930.md)  

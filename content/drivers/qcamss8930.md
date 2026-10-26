@@ -279,7 +279,7 @@ Decoded `QMI_TMD_SET_MITIGATION_LEVEL` request (34 bytes):
 
 The response (8 bytes) is result + error.
 
-The QMI client library (QCCI, functions `0x4061EC`–`0x40A5A4`) has two transports (`sub_4073E8`): one on the IPC router (ops table `.data:0x0041321C`) and six on QMUX (ops table `.data:0x00413230`, with the parameters 16 to 21 ?). `qmi_client_get_any_service` asks all of them. The TMD service is looked up on the IPC router with [IOCTL 0x122008](#ioctl-0x122008).
+The QMI client library (QCCI, functions `0x4061EC`–`0x40A5A4`) has two transports (`sub_4073E8`): one on the IPC router (ops table `.data:0x0041321C`) and six on QMUX (ops table `.data:0x00413230`, with the parameters 16 to 21, i.e. QMUX ports 0 to 5, see [IOCTL 0x12418](#ioctl-0x12418)). `qmi_client_get_any_service` asks all of them. The TMD service is looked up on the IPC router with [IOCTL 0x122008](#ioctl-0x122008).
 
 ### Sysmon
 
@@ -611,7 +611,19 @@ This IOCTL is sent by Qcamss8930.sys to [qcqmux8930.sys](./qcqmux8930.md#ioctl-0
 |------|-------------|------------------|-------------------|
 | Bind the handle to a QMI service | \Device\QMUX | 8 | 4 |
 
-The buffer contents weren't analysed (service type and port ?).
+Inputbuffer:  
+| Bytes | Value | Comment |
+|-------|-------|---------|
+| 00-03 | e.g. 18 00 00 00 | QMI service type (service id of the service object, 0x18 = TMD) |
+| 04-07 | 00 00 00 00 … 05 00 00 00 | QMUX port: transport parameter (16 to 21) − 16 |
+
+Outputbuffer:  
+| Bytes | Value | Comment |
+|-------|-------|---------|
+| 00-01 | ? | Major version of the service. The service is "found" only when it's equal to the IDL version of the service object |
+| 02-03 | ? | Minor version (not used) |
+
+When the versions match, one service info record (20 bytes) is filled: byte 0 = index of the transport, byte 1 = version, byte 2 = transport parameter (16 to 21), the rest 0. The same code is in [qcltecoexmgr8930.sys](./qcltecoexmgr8930.md#ioctl-0x12418) (`sub_405B88`).
 
 ---
 
