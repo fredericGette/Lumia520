@@ -2,7 +2,7 @@
 
 ABD driver: a software I²C (SPB) target that lets ACPI code reach kernel drivers (Qualcomm KMDF driver, PDB `P:\ABD\rel\8.2.1.1\arm\Release\qcabd8930.pdb`, 47 functions).  
 It acts as the SPB controller of an `I2cSerialBus` connection. When AML code accesses a `GenericSerialBus` operation region on that connection, [acpiex.sys](./acpiex.md) sends `IOCTL_SPB_EXECUTE_SEQUENCE` (0x41808) to this driver. The driver then forwards a read or a write to a kernel driver that has registered itself for the I²C slave address of the connection.  
-The only known client is [qcpmicapps8930.sys](./qcpmicapps8930.md). It registers `IOCTL_PM_ABD_GET_PMIC_RTC_DATA` / `IOCTL_PM_ABD_SET_PMIC_RTC_DATA`, so ACPI `_GRT` / `_SRT` (see [acpitime.sys](./acpitime.md)) can read and write the PMIC real-time clock through an I²C operation region.  
+There are two known clients. [qcpmicapps8930.sys](./qcpmicapps8930.md) registers `IOCTL_PM_ABD_GET_PMIC_RTC_DATA` / `IOCTL_PM_ABD_SET_PMIC_RTC_DATA`, so ACPI `_GRT` / `_SRT` (see [acpitime.sys](./acpitime.md)) can read and write the PMIC real-time clock through an I²C operation region. [qcpepproxy8930.sys](./qcpepproxy8930.md) registers 0x9C414000 / 0x9C414004 for slave address 1, so the `_PSx` methods of several devices can report their D-state to the PEP.  
 The driver keeps up to 10 clients in a global table, with no locking.
 
 There's no named device and no `\DosDevices` link. The driver registers a device interface (`WdfDeviceCreateDeviceInterface`):  
@@ -26,11 +26,13 @@ It communicates with the following devices:
 |--------|--------|---------|
 | `\Device\RESOURCE_HUB` | [acpiex.sys](./acpiex.md) | Opened without a file name at device creation. `IOCTL_RH_QUERY_CONNECTION_PROPERTIES` (0x2AC000) on each file open |
 | Interface GUID given by the client at registration | e.g. [qcpmicapps8930.sys](./qcpmicapps8930.md) (`{CA95CEB1-A382-4F06-B65E-0A90115609A5}`) | The client's GET / SET IOCTLs (0x80100FA0 / 0x80100FA4 for qcpmicapps8930) |
+| Interface GUID given by the client at registration | [qcpepproxy8930.sys](./qcpepproxy8930.md) (`{55BECA03-BA2C-4FBC-9EFC-EE8ECA56F0C7}`) | GET / SET IOCTLs [0x9C414000](./qcpepproxy8930.md#ioctl-0x9c414000) / [0x9C414004](./qcpepproxy8930.md#ioctl-0x9c414004) |
 
 It is called by:  
 | Caller | IOCTL | Comment |
 |--------|-------|---------|
 | [qcpmicapps8930.sys](./qcpmicapps8930.md) | 0xC3502FA4 / 0xC3502FA8 | Registers / unregisters itself as the handler of an I²C slave address |
+| [qcpepproxy8930.sys](./qcpepproxy8930.md) | 0xC3502FA4 / 0xC3502FA8 | Registers / unregisters itself as the handler of I²C slave address 1 (`\_SB.PRXY.FLD0`) |
 | [acpiex.sys](./acpiex.md) | 0x41808 | `GenericSerialBus` operation region accesses (`RhpSendSpbIoctl`) |
 
 ### Lumia 520 ACPI node
@@ -48,7 +50,7 @@ Device (ABD) {
 `ROP1` is the `GenericSerialBus` operation region of the controller itself. Two fields are defined on it, each with its own I²C connection to `\_SB.ABD` (`I2cSerialBusV2 (addr, ControllerInitiated, 0, AddressingMode7Bit, "\_SB.ABD")`, speed 0, which this driver doesn't check):  
 | Slave address | Field | Access | Used by | Registered by |
 |---------------|-------|--------|---------|---------------|
-| 1 | `\_SB.PRXY.FLD0` (`QCOM0812`) | `AttribRawBytes (0x0B)` (11 bytes) | `_PS0`…`_PS3` of `\_SB.TCH1` (`NOKIA_TOUCH`) and `\_SB.NRSD` (`NRSD0001`) in the DSDT, and of `\_SB.ACC1` (`KXTNK` accelerometer), `\_SB.ALS1`/`\_SB.PRX1` (`QPDS_T900_ALS`/`_PRX`) and `\_SB.ALS2`/`\_SB.PRX2` (`LTR_554ALS_02_ALS`/`_PRX`) in the Nokia SSDT | The driver of `\_SB.PRXY` (not documented yet). Its `GEPT` returns 1 |
+| 1 | `\_SB.PRXY.FLD0` (`QCOM0812`) | `AttribRawBytes (0x0B)` (11 bytes) | `_PS0`…`_PS3` of `\_SB.TCH1` (`NOKIA_TOUCH`) and `\_SB.NRSD` (`NRSD0001`) in the DSDT, and of `\_SB.ACC1` (`KXTNK` accelerometer), `\_SB.ALS1`/`\_SB.PRX1` (`QPDS_T900_ALS`/`_PRX`) and `\_SB.ALS2`/`\_SB.PRX2` (`LTR_554ALS_02_ALS`/`_PRX`) in the Nokia SSDT | [qcpepproxy8930.sys](./qcpepproxy8930.md), the driver of `\_SB.PRXY`. Its `GEPT` returns 1 |
 | 2 | `\_SB.PRTC.FLD0` (`ACPI000E`) | `AttribRawBytes (0x10)` (16 bytes) | `_GRT` / `_SRT` (see [acpitime.sys](./acpitime.md#lumia-520-acpi-node)) | [qcpmicapps8930.sys](./qcpmicapps8930.md) (`GEPT` returns 2) |
 
 The `PRXY` record is a 13-byte AML buffer: status (byte 0), length (byte 1), then the 11 bytes written to the client, i.e. the ACPI path of the device (10 bytes, e.g. `\_SB.NRSD`) followed by the new D-state (0–3). So `\_SB.PRXY` is a "power proxy": devices whose `_PSx` methods have no hardware to touch report their D-state changes to a kernel driver through this software I²C target. The `_PSx` methods only write when `\_SB.ABD.AVBL` is set (the `_REG` of this node).  
@@ -107,7 +109,7 @@ An SPB connection is opened as `<this device>\<16 hex digits>` (the name a `\Dev
 
 ### IOCTL 0xC3502FA4 — Attach
 
-This IOCTL is processed by Qcabd8930.sys (sent by [qcpmicapps8930.sys](./qcpmicapps8930.md#ioctl-0xc3502fa4))  
+This IOCTL is processed by Qcabd8930.sys (sent by [qcpmicapps8930.sys](./qcpmicapps8930.md#ioctl-0xc3502fa4) and [qcpepproxy8930.sys](./qcpepproxy8930.md#ioctl-0xc3502fa4))  
 
 | Property | Value |
 |----------|-------|
@@ -141,7 +143,7 @@ Returns `STATUS_SUCCESS`, or `STATUS_UNSUCCESSFUL` (0xC0000001) for any failure 
 
 ### IOCTL 0xC3502FA8 — Detach
 
-This IOCTL is processed by Qcabd8930.sys (sent by [qcpmicapps8930.sys](./qcpmicapps8930.md#ioctl-0xc3502fa8))  
+This IOCTL is processed by Qcabd8930.sys (sent by [qcpmicapps8930.sys](./qcpmicapps8930.md#ioctl-0xc3502fa8) and [qcpepproxy8930.sys](./qcpepproxy8930.md#ioctl-0xc3502fa8))  
 
 | Property | Value |
 |----------|-------|

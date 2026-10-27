@@ -134,8 +134,8 @@ Channels opened by the other drivers (from their binaries):
 | DATA14_CNTL | [qcqmux8930.sys](./qcqmux8930.md#smd-channels) |
 | APPS_RIVA_DATA | [qcdiagrouter8930.sys](./qcdiagrouter8930.md) |
 | APPS_RIVA_CTRL | [qcdiagrouter8930.sys](./qcdiagrouter8930.md) |
-| apr_audio_svc | qcq6ad8930.sys (Q6 audio, interface `{5F51A34C-6834-479D-9EA2-EAFA622524BA}`, used by [qc8x60aud.sys](./qc8x60aud.md#q6-audio-entry-point)) |
-| apr_apps2 | qcq6ad8930.sys (Q6 audio, see above) |
+| apr_audio_svc | [qcq6ad8930.sys](./qcq6ad8930.md) (Q6 audio, interface `{5F51A34C-6834-479D-9EA2-EAFA622524BA}`, used by [qc8x60aud.sys](./qc8x60aud.md#q6-audio-entry-point)). Edge 1, opened through the [SMD Lite API interface](#smd-lite-api-interface), packet mode |
+| apr_apps2 | [qcq6ad8930.sys](./qcq6ad8930.md) (Q6 audio, see above). Edge 1, opened with [internal IOCTL 0x22003](#internal-ioctl-0x22003) |
 | APPS_FM | [qcfmtransport8930.sys](./qcfmtransport8930.md) |
 | APPS_RIVA_BT_CMD | [qcbluetooth8930.sys](./qcbluetooth8930.md) |
 | APPS_RIVA_BT_ACL | [qcbluetooth8930.sys](./qcbluetooth8930.md) |
@@ -165,7 +165,7 @@ When the watched subsystem enters state 4 (subsystem down, see [qcrpen8930.sys](
 
 ### SMD Lite API interface
 
-Query-interface `{07631ee5-21bd-455b-bd1f-f41b43f3a9bc}` (`WdfDeviceAddQueryInterface`), `INTERFACE` Size 0x38. It gives direct access to the SMD Lite functions, without the queues of `\Device\SMD`. The internal IOCTLs use the same functions.  
+Query-interface `{07631ee5-21bd-455b-bd1f-f41b43f3a9bc}` (`WdfDeviceAddQueryInterface`), `INTERFACE` Size 0x38. It gives direct access to the SMD Lite functions, without the queues of `\Device\SMD`. Used by [qcq6ad8930.sys](./qcq6ad8930.md) for `apr_audio_svc`. The internal IOCTLs use the same functions.  
 | Offset | Function | Comment |
 |--------|----------|---------|
 | 0x10 | `InterfaceFunction_00` = `smdl_open(char *name, smd_channel_type edge, ULONG flags, ULONG fsize, notify, cb_data)` | Returns a port handle, NULL on error. `fsize` 0 = 0x2000; otherwise a multiple of 32 between 0x400 and 0x20000. `flags` bit 2 = streaming mode (`SMD_STREAMING_TYPE`), otherwise packet mode (`SMD_PKTXFR_TYPE`). `notify(port, event, cb_data)` receives the [channel events](#smd-channels) |
@@ -184,7 +184,7 @@ Query-interface `{07631ee5-21bd-455b-bd1f-f41b43f3a9bc}` (`WdfDeviceAddQueryInte
 ### internal IOCTL 0x22003
 
 This IOCTL is processed by Qcsmd8930.sys (`EvtWdfIoQueueIoInternalDeviceControl`, 0x402AF0)  
-Sent by [qcbluetooth8930.sys](./qcbluetooth8930.md#internal-ioctl-0x22003), [qcdiagrouter8930.sys](./qcdiagrouter8930.md), [qcqmux8930.sys](./qcqmux8930.md#internal-ioctl-0x22003) and the other SMD clients.
+Sent by [qcbluetooth8930.sys](./qcbluetooth8930.md#internal-ioctl-0x22003), [qcdiagrouter8930.sys](./qcdiagrouter8930.md), [qcqmux8930.sys](./qcqmux8930.md#internal-ioctl-0x22003), [qcmbrg8930.sys](./qcmbrg8930.md#internal-ioctl-0x22003), [qcq6ad8930.sys](./qcq6ad8930.md#internal-ioctl-0x22003) (`apr_apps2`) and the other SMD clients.
 
 | Property | Value |
 |----------|-------|
@@ -275,6 +275,7 @@ Returns `STATUS_INVALID_PARAMETER` when the watermarks are invalid.
 ### internal IOCTL 0x2200F
 
 This IOCTL is processed by Qcsmd8930.sys  
+This IOCTL is also sent by [qcmbrg8930.sys](./qcmbrg8930.md#internal-ioctl-0x2200f) and [qcdiagrouter8930.sys](./qcdiagrouter8930.md#ioctls-sent-to-qcsmd8930sys)  
 
 | Property | Value |
 |----------|-------|
@@ -359,7 +360,7 @@ Returns `STATUS_INVALID_DEVICE_REQUEST` when the channel was not opened in defer
 
 ### internal IOCTL 0x2201F, 0x22023, 0x22027, 0x2202B
 
-These IOCTLs are processed by Qcsmd8930.sys. They set an outgoing signal of the channel with `smdl_sig_set` (`InterfaceFunction_08`); the remote processor is interrupted if the value changed.
+These IOCTLs are processed by Qcsmd8930.sys. They set an outgoing signal of the channel with `smdl_sig_set` (`InterfaceFunction_08`); the remote processor is interrupted if the value changed. Sent by [qcmbrg8930.sys](./qcmbrg8930.md#internal-ioctl-0x2201f-0x22023-0x22027-0x2202b) to forward the DTR/RTS lines of the USB host.
 
 | IOCTL | Function | Signal | Value |
 |-------|----------|--------|-------|
@@ -374,7 +375,7 @@ Device 0x2, FILE_ANY_ACCESS, METHOD_NEITHER. No buffers. Returns `STATUS_IO_DEVI
 
 ### internal IOCTL 0x2202F, 0x22033
 
-These IOCTLs are processed by Qcsmd8930.sys. They read a signal set by the remote processor with `smdl_sig_get` (`InterfaceFunction_09`). The value (0 or 1) is returned in `Information`, there's no OutputBuffer.
+These IOCTLs are processed by Qcsmd8930.sys. They read a signal set by the remote processor with `smdl_sig_get` (`InterfaceFunction_09`). The value (0 or 1) is returned in `Information`, there's no OutputBuffer. Sent by [qcmbrg8930.sys](./qcmbrg8930.md#internal-ioctl-0x2202f) (0x2202F only, to read the modem DSR).
 
 | IOCTL | Function | Signal |
 |-------|----------|--------|

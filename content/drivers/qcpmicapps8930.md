@@ -81,7 +81,7 @@ Device (PMAP) {
 - `GEPT` returns the integer 2. This is the I²C slave address used by the `_GRT`/`_SRT` operation-region field of `\_SB.PRTC` (`I2cSerialBusV2 (0x0002, …, "\_SB.ABD")`, 16-byte raw accesses, see [acpitime.sys](./acpitime.md#lumia-520-acpi-node)).
 - `_CRS` is empty, so on the Lumia 520 there's no GPIO connection and [IOCTL_GPIO_WRITE_PINS](#ioctl-0x480004--ioctl_gpio_write_pins) is never sent.
 - `\_SB.PRTC` (`ACPI000E`) declares `_DEP` on `\_SB.PMAP`, so acpitime.sys starts after this driver.
-- The DSDT has a second `GEPT` method, in `\_SB.PRXY` (`QCOM0812`), which returns 1: the other client of [qcabd8930.sys](./qcabd8930.md#lumia-520-acpi-node) uses the same registration mechanism.
+- The DSDT has a second `GEPT` method, in `\_SB.PRXY` (`QCOM0812`), which returns 1: the other client of [qcabd8930.sys](./qcabd8930.md#lumia-520-acpi-node), [qcpepproxy8930.sys](./qcpepproxy8930.md#acpi-gept), uses the same registration mechanism.
 
 ### Time format
 

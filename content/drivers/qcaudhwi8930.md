@@ -1,7 +1,7 @@
 ## Qcaudhwi8930.sys
 
 Qualcomm Audio Hardware Interface (AHWI) driver.  
-It starts and stops the QDSP6 AFE ports used by the audio driver [qc8x60aud.sys](./qc8x60aud.md). It receives an ACDB device id and a sample rate, reads the device description from the calibration database [qcacdb8930.sys](./qcacdb8930.md) (ACDB commands 0x11290 / 0x11291), builds the AFE port configuration, and sends it to the Q6 audio driver qcq6ad8930.sys (`\Device\Q6Audio`). It also registers 2 power framework (PoFx) components that are kept active while a port of a given type is running.  
+It starts and stops the QDSP6 AFE ports used by the audio driver [qc8x60aud.sys](./qc8x60aud.md). It receives an ACDB device id and a sample rate, reads the device description from the calibration database [qcacdb8930.sys](./qcacdb8930.md) (ACDB commands 0x11290 / 0x11291), builds the AFE port configuration, and sends it to the Q6 audio driver [qcq6ad8930.sys](./qcq6ad8930.md) (`\Device\Q6Audio`). It also registers 2 power framework (PoFx) components that are kept active while a port of a given type is running.  
 It is a small KMDF driver with no hardware resources. PDB path `P:\audio\rel\8.3.1\arm\Release\qcaudhwi8930.pdb`. Pool tags `1haq`…`8haq`, `8daq`, `9daq`.
 
 ACPI device `\_SB.AHWI` (`_HID` `QCOM0743`), with a `_DEP` on `\_SB.ACDB`. `\_SB.QCRT` (qc8x60aud.sys) has a `_DEP` on `\_SB.AHWI`.
@@ -24,7 +24,7 @@ It communicates with the following devices:
 | Device | Driver | Comment |
 |--------|--------|---------|
 | interface `{4EE2204F-14FF-4139-9853-0DA54D6849D5}` | [qcacdb8930.sys](./qcacdb8930.md) | ACDB. Found with `IoGetDeviceInterfaces`, opened with `WdfIoTargetOpen` (by name, `FILE_ALL_ACCESS`) only to get the `acdb_ioctl` entry point ([IOCTL 0x50022400](#ioctl-0x50022400)), then closed |
-| \Device\Q6Audio | qcq6ad8930.sys | Q6 audio (AFE). Opened by name with `WdfIoTargetOpen` on the first port start, closed when the last port is stopped (reference count `word_407ED4`) |
+| \Device\Q6Audio | [qcq6ad8930.sys](./qcq6ad8930.md) | Q6 audio (AFE). Opened by name with `WdfIoTargetOpen` on the first port start, closed when the last port is stopped (reference count `word_407ED4`) |
 
 ### Start sequence
 
@@ -190,7 +190,7 @@ See [IOCTL 0x50022400](./qcacdb8930.md#ioctl-0x50022400) of qcacdb8930.sys.
 
 ### IOCTL 0xADAD2B8D / 0xADAD2B91 / 0xADAD2B95
 
-These IOCTLs are sent by Qcaudhwi8930.sys to qcq6ad8930.sys
+These IOCTLs are sent by Qcaudhwi8930.sys to [qcq6ad8930.sys](./qcq6ad8930.md)
 
 | Property | Value |
 |----------|-------|

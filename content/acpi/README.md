@@ -27,7 +27,7 @@ Driver: the Windows driver that loads on the node, when it's documented in [driv
 | `\_SB.PMAP` | QCOM0B20 | [qcpmicapps8930.sys](../drivers/qcpmicapps8930.md#lumia-520-acpi-node) | PMIC RTC, method `GEPT` |
 | `\_SB.PRTC` | ACPI000E | [acpitime.sys](../drivers/acpitime.md#lumia-520-acpi-node) | Time and alarm device (`_GCP`, `_GRT`, `_SRT`) |
 | `\_SB.PEP0` | QCOM0811 | | Power engine plug-in (`_CID` `PNP0D80`); power-framework description of the devices (`DCFG`) |
-| `\_SB.PRXY` | QCOM0812 | | Power proxy, see [qcabd8930.sys](../drivers/qcabd8930.md#lumia-520-acpi-node) |
+| `\_SB.PRXY` | QCOM0812 | [qcpepproxy8930.sys](../drivers/qcpepproxy8930.md#lumia-520-acpi-node) | Power proxy, see [qcabd8930.sys](../drivers/qcabd8930.md#lumia-520-acpi-node) |
 | `\_SB.SDF1` | QCOM2134 | | |
 | `\_SB.AGR0` | ACPI000C | [acpipagr.sys](../drivers/acpipagr.md#lumia-520-acpi-definition) | Processor aggregator |
 | `\_SB.TZ0` … `\_SB.TZ11` | QCOM2400 … QCOM2409, NOKIA_THERMAL, QCOM2154 | | Thermal zones, see [acpipagr.sys](../drivers/acpipagr.md#lumia-520-acpi-definition) |
@@ -84,7 +84,8 @@ Driver: the Windows driver that loads on the node, when it's documented in [driv
 | `\_SB.MBB0` … `MBB3` | QCOM0EA0 | | Mobile broadband |
 | `\_SB.HWN0` | QCOM0D50 | hwnled ? | Hardware notification LEDs (`HWNL`), see [oempanel.sys](../drivers/oempanel.md) |
 | `\_SB.VIB1` | NOKIA_VIBRA_DIME | | Vibrator |
-| `\_SB.SSM`, `MBRG`, `RMNT` | QCOM2123, 2145, 2148 | | |
+| `\_SB.SSM`, `RMNT` | QCOM2123, 2148 | | |
+| `\_SB.MBRG` | QCOM2145 | [qcmbrg8930.sys](../drivers/qcmbrg8930.md) | Modem bridge (USB modem function ↔ SMD channel `DATA2`) |
 | `\_SB.RMAT` | QCOM2155 | [qcremoteat8930.sys](../drivers/qcremoteat8930.md) ? | Remote AT (QMI AT service bridge) |
 | `\_SB.TCH1` | NOKIA_TOUCH | | Touch screen, I²C 0x4B on `\_SB.I2C3` |
 | `\_SB.ATTS` | NOKIA_ATTS | | |

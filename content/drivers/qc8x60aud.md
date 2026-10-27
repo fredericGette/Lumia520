@@ -1,11 +1,11 @@
 ## Qc8x60aud.sys
 
 Qualcomm audio adapter driver (PortCls miniport) of the MSM8x60/8960/8930 family, with Nokia extensions.  
-It is a WDM PortCls adapter (`PcInitializeAdapterDriver` / `PcAddAdapterDevice`) linked with KMDF only for its stub library. It publishes two pairs of KS filters: the main audio endpoint (`TopologyHeadset` + `WaveHeadset`) and a second "stereo" pair (`Topology Stereo` + `Wave Stereo`) used for the Nokia "Enhanced Audio Recording Device" (Rich Recording). The audio data is played/recorded by the QDSP6 (LPASS) through the Q6 audio driver `qcq6ad8930.sys` (ASM/ADM sessions, AFE ports), and the codec (ADIE, WCD93xx "Tabla"/"Sitar" family) is switched on and routed through the audio codec driver. It also handles the voice call path, Bluetooth SCO (HFP HCI-bypass), the headset detection (MBHC), FM, telecoil and the Nokia audio effects (Dolby Headphone, graphic equalizer, volume normalizer).  
+It is a WDM PortCls adapter (`PcInitializeAdapterDriver` / `PcAddAdapterDevice`) linked with KMDF only for its stub library. It publishes two pairs of KS filters: the main audio endpoint (`TopologyHeadset` + `WaveHeadset`) and a second "stereo" pair (`Topology Stereo` + `Wave Stereo`) used for the Nokia "Enhanced Audio Recording Device" (Rich Recording). The audio data is played/recorded by the QDSP6 (LPASS) through the Q6 audio driver `[qcq6ad8930.sys](./qcq6ad8930.md)` (ASM/ADM sessions, AFE ports), and the codec (ADIE, WCD93xx "Tabla"/"Sitar" family) is switched on and routed through the audio codec driver. It also handles the voice call path, Bluetooth SCO (HFP HCI-bypass), the headset detection (MBHC), FM, telecoil and the Nokia audio effects (Dolby Headphone, graphic equalizer, volume normalizer).  
 Next to the PortCls IRP path, it exposes three private device interfaces with their own IOCTLs (see [Interfaces](#interfaces)).  
 PDB path `E:\build_e\subtask\E05A4CC0_98\output\audio\fre\qc8x60aud.pdb`. Pool tags `QAU0`…`QAU5`, `MSVD`, `PcCr`, `1GER`, `IPCA`.
 
-ACPI device `\_SB.QCRT` (`_HID` `QCOM0744`), with `_DEP` on `\_SB.Q6AD` (QCOM0750, Q6 audio), `\_SB.AHWI` (QCOM0743), `\_SB.MBGP` (QCOM2149, GPIO headset detection), `\_SB.TICO` (QCOM0742) and `\_SB.ACHW` (QCOM0741, audio codec hardware).
+ACPI device `\_SB.QCRT` (`_HID` `QCOM0744`), with `_DEP` on `\_SB.Q6AD` (QCOM0750, Q6 audio), `\_SB.AHWI` (QCOM0743), `\_SB.MBGP` (QCOM2149, GPIO headset detection, [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md)), `\_SB.TICO` (QCOM0742) and `\_SB.ACHW` (QCOM0741, audio codec hardware).
 
 There's no named `\Device\` object and no symbolic link created by the driver: PortCls creates the device object, and the driver registers device interfaces on it.  
 
@@ -61,7 +61,7 @@ On the Lumia 520 (`\_SB.QCRT._DEV`), the flag is 1 and there are 20 entries:
 Registry key `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\QCAUD` (read with `RtlQueryRegistryValues(RTL_REGISTRY_SERVICES, L"QCAUD", …)` in `sub_42F160`, `RTL_QUERY_REGISTRY_DIRECT`, REG_DWORD). Note the key name: `QCAUD`, not the service name `QC8x60AUD`. A missing value keeps the default.  
 | Registry value | value | comment |
 |----------------|-------|---------|
-| GpioBasedHeadsetDetection | 1 | Selects the headset detection driver: ≠0 → GPIO based (MBGP) interface `{093C3754-…}`, 0 → codec MBHC interface `{790370AE-…}` of [qcmbhc8930.sys](./qcmbhc8930.md) (`sub_42B850`) |
+| GpioBasedHeadsetDetection | 1 | Selects the headset detection driver: ≠0 → GPIO based (MBGP) interface `{093C3754-…}` of [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md), 0 → codec MBHC interface `{790370AE-…}` of [qcmbhc8930.sys](./qcmbhc8930.md) (`sub_42B850`) |
 | OffloadPreAllocMemorySize | 0x200000 | Size in bytes of the contiguous memory pre-allocated for the offload (compressed) playback (`MmAllocateContiguousMemorySpecifyCache`) ? |
 | MinBufferSize | 10 | WaveRT buffer size limit (unit ?) |
 | MaxBufferSize | 60000 | WaveRT buffer size limit (unit ?) |
@@ -99,11 +99,11 @@ It also writes debug messages with `DbgPrintEx` (component 0x4F), e.g. `CTablaTx
 It communicates with the following devices (found with `IoGetDeviceInterfaces` / `IoRegisterPlugPlayNotification`, opened with `IoGetDeviceObjectPointer`):  
 | Interface class GUID | Driver | Comment |
 |----------------------|--------|---------|
-| `{5F51A34C-6834-479D-9EA2-EAFA622524BA}` | qcq6ad8930.sys (`\_SB.Q6AD`) | Q6 audio (APR: ASM, ADM, AFE, voice). Mandatory at start. `IOCTL 0xADAD2BA1` returns its entry point, then all the commands go through that function (see [Q6 audio](#q6-audio-entry-point)) |
+| `{5F51A34C-6834-479D-9EA2-EAFA622524BA}` | [qcq6ad8930.sys](./qcq6ad8930.md) (`\_SB.Q6AD`) | Q6 audio (APR: ASM, ADM, AFE, voice). Mandatory at start. `IOCTL 0xADAD2BA1` returns its entry point, then all the commands go through that function (see [Q6 audio](#q6-audio-entry-point)) |
 | `{3FE58EBD-6A7D-4760-A01F-66369C501AB0}` | audio codec driver (`\_SB.ACHW` ?) | ADIE codec. Mandatory at start. `ADIE_CODEC_DRIVER_IOCTL_*` (`0x5001xxxx`). Also used by [qcmbhc8930.sys](./qcmbhc8930.md#ioctl-0x50012048--rm_audio_sr_ioctl) as the audio resource manager (`0x50012048`) |
 | `{6DB5B55F-B7D5-4D95-A0AE-40DD78A17817}` | ? | `0x50012004` (4 bytes in, 4 bytes out) and `0x50012008` (8 bytes in, 4 bytes out), same IOCTL family as the codec |
 | `{ABFE8B0D-5D26-4C5A-B5F2-1F33E47A4F65}` | [qcaudhwi8930.sys](./qcaudhwi8930.md) (`\_SB.AHWI`) | AFE port start / stop. Opened for each request. See [IOCTL 0x50032000 / 0x50032004](#ioctl-0x50032000--0x50032004--afe-port-start--stop) |
-| `{093C3754-B2D1-4AC7-B93E-A8FD62FDF7C3}` | GPIO headset detection (`\_SB.MBGP`) ? | Used when `GpioBasedHeadsetDetection` ≠ 0. `0x500A2800` |
+| `{093C3754-B2D1-4AC7-B93E-A8FD62FDF7C3}` | [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md) (`\_SB.MBGP`) | GPIO headset detection. Used when `GpioBasedHeadsetDetection` ≠ 0. `0x500A2800` |
 | `{790370AE-6E34-4800-8927-351A338FB740}` | [qcmbhc8930.sys](./qcmbhc8930.md) (`\_SB.MBHC`) | Codec (WCD93xx MBHC) headset detection. Used when `GpioBasedHeadsetDetection` = 0. `0x500A2800` |
 | `{BE446647-F655-4919-8BD0-125BA5D4CE65}` | Bluetooth HFP profile driver | `GUID_DEVINTERFACE_BLUETOOTH_HFP_SCO_HCIBYPASS`. SCO audio over HCI bypass. `IOCTL_BTHHFP_*` (`0x0022xxxx`) |
 | ACPI node of the device | acpi.sys | `IOCTL_ACPI_EVAL_METHOD` `_DEV` |
@@ -167,7 +167,7 @@ These IOCTLs are processed by Qc8x60aud.sys (interface `QC_AUDIO_THIRD_PARTY_PRO
 
 | IOCTL | Function | InputBuffer | Backend | Comment |
 |-------|----------|-------------|---------|---------|
-| 0x90003000 | 0xC00 | — | `sub_42751C` | Headset detection: entry point command 4 (start ?) |
+| 0x90003000 | 0xC00 | — | `sub_42751C` | Headset detection: entry point command 4 (enter the factory test state with [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md#mbhc_ioctlcommand-buffer-size)) |
 | 0x90003004 | 0xC01 | — | `sub_404F54` | ? (voice/device manager) |
 | 0x90003008 | 0xC02 | — | `sub_4279C4(0)` | Headset detection: command 5 with value 2 |
 | 0x9000300C | 0xC03 | — | `sub_4279C4(1)` | Headset detection: command 5 with value 3 |
@@ -359,7 +359,8 @@ Outputbuffer:
 
 ### IOCTL 0xADAD2BA1 — get Q6 entry point
 
-This IOCTL is sent by Qc8x60aud.sys to qcq6ad8930.sys (interface `{5F51A34C-…}`)
+This IOCTL is sent by Qc8x60aud.sys to [qcq6ad8930.sys](./qcq6ad8930.md) (interface `{5F51A34C-…}`)  
+This IOCTL is also sent by [qcomavsdecoder.sys](./qcomavsdecoder.md#ioctl-0xadad2ba1--get-q6-entry-points) and [qcomavsencoder.sys](./qcomavsencoder.md#ioctl-0xadad2ba1--get-q6-entry-points)
 
 | Property | Value |
 |----------|-------|
@@ -375,21 +376,21 @@ This IOCTL is sent by Qc8x60aud.sys to qcq6ad8930.sys (interface `{5F51A34C-…}
 Outputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-0F | ? | ? |
+| 00-0F | ? | 4 more entry points, as used by [qcomavsdecoder.sys](./qcomavsdecoder.md#ioctl-0xadad2ba1--get-q6-entry-points): open stream `handle = fn(1, message, 116)`, close stream `fn(handle)`, write buffer `fn(handle, buffer, 40)`, read buffer `fn(handle, buffer, 40)` |
 | 10-13 | ? | Entry point `NTSTATUS fn(handle, command, buffer, size)` |
 
 Sent by each Q6 client object of the driver (`sub_40BF84`, `sub_40CF14`, `sub_40E168`, `sub_40FBEC`, `sub_411A54`, `sub_438C28`, `sub_414DB4`).
 
 ### Q6 audio entry point
 
-All the audio commands are then calls of the entry point, with command codes in the same `0xADADxxxx` format (they are not IOCTLs). Codes found in the binary:  
+All the audio commands are then calls of the entry point, with command codes in the same `0xADADxxxx` format (they are not IOCTLs). The handles and the commands accepted by [qcq6ad8930.sys](./qcq6ad8930.md) are listed in [its page](./qcq6ad8930.md#q6-entry-points); 0xADAD2BCD goes to handle 0x10003. Codes found in the binary:  
 | Command | Used by | Comment |
 |---------|---------|---------|
-| 0xADAD2B45, 2B49, 2B4D, 2B51, 2B55, 2B59, 2B5D, 2B71, 2B79, 2B7D, 2B81, 2B85, 2B89 | stream objects (`sub_4152D0`…`sub_4166A4`, `sub_40B8C4`, …) | ASM/ADM session control ? (open, format, run, pause, close, …) |
+| 0xADAD2B45, 2B49, 2B4D, 2B51, 2B55, 2B59, 2B5D, 2B71, 2B79, 2B7D, 2B81, 2B85, 2B89 | stream objects (`sub_4152D0`…`sub_4166A4`, `sub_40B8C4`, …) ASM/ADM session control ? (open, format, run, pause, close, …). In [qcomavsdecoder.sys](./qcomavsdecoder.md#q6-audio-entry-points): 2B45 = memory map, 2B49 = memory unmap, 2B79 = set media format, 2B7D = end of stream, 2B4D = run ?, 2B51 = pause ?. [qcomavsencoder.sys](./qcomavsencoder.md#q6-audio-entry-points) uses the same codes, and sends 2B59 when its input pin goes back from PAUSE to RUN (resume ?) |
 | 0xADAD2BA9, 2BAD, 2BB1, 2BB5, 2BBD, 2BC5, 2BC9 | `sub_416A5C`, `sub_415430`, `sub_415ABC`, `sub_40D6D0`, `sub_4166A4` | ? |
 | 0xADAD2BCD | `sub_41494C` | Set post-processing parameters (IOCTL 0x90002C00) |
 | 0xADAD2C45, 2C49, 2C4D, 2C51, 2C55, 2C59 | `sub_416D1C`…`sub_415EEC` | 2C51 = read recording values (IOCTL 0x90007408) |
-| 0xADAD6B41, 6B45, 6B4D, 6B55, 6B59 | `sub_4163F0` | ? |
+| 0xADAD6B41, 6B45, 6B4D, 6B55, 6B59 | `sub_4163F0` | ? In [qcomavsdecoder.sys](./qcomavsdecoder.md#q6-audio-entry-points) 6B41, 6B45 and 6B4D are events received by the stream callback (write done, read done, end of stream), same in [qcomavsencoder.sys](./qcomavsencoder.md#q6-audio-entry-points): `sub_4163F0` is a stream callback ? |
 
 ---
 
@@ -435,7 +436,7 @@ This IOCTL is sent by Qc8x60aud.sys to the headset detection driver (`sub_427020
 
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|-------------------|
-| Get the headset detection entry point | interface `{093C3754-…}` or `{790370AE-…}` ([qcmbhc8930.sys](./qcmbhc8930.md#ioctl-0x500a2800--get-the-mbhc_ioctl-entry-point)) | 8 | 0 |
+| Get the headset detection entry point | interface `{093C3754-…}` ([qcmbhcgpio8930.sys](./qcmbhcgpio8930.md#ioctl-0x500a2800--get-the-mbhc_ioctl-entry-point)) or `{790370AE-…}` ([qcmbhc8930.sys](./qcmbhc8930.md#ioctl-0x500a2800--get-the-mbhc_ioctl-entry-point)) | 8 | 0 |
 
 Inputbuffer:  
 | Bytes | Value | Comment |
@@ -444,7 +445,7 @@ Inputbuffer:
 | 04-07 | ? | Kernel pointer to a dword that receives the entry point `fn(command, buffer, size)` |
 
 Commands then sent to the entry point: 3 = register the callback `{sub_404688, context}` (8 bytes), 1 = start/reset, 4 = ?, 5 = set mode (4-byte value 0–3). Jack events come back through the callback (`DbgPrint "HeadSet Event"` in `sub_427244`).  
-With the codec MBHC driver [qcmbhc8930.sys](./qcmbhc8930.md#mbhc_ioctlcommand-buffer-size) the entry point is `mbhc_ioctl`: 1 = `MBHC_CMD_START`, 2 = `MBHC_CMD_STOP`, 3 = `MBHC_CMD_SET_CB`, 4 = `MBHC_CMD_FTM_INTR` (factory test: simulates a plug insertion). Command 5 is not supported by qcmbhc8930.sys (returns 0x1000), so "set mode" probably only applies to the GPIO based driver (`\_SB.MBGP`) ?. The callback is called as `callback(event, payload, 32, context)` with event 1 = plug insert, 2 = plug remove, 3 = button press, 4 = button release, 6 = button press+release.
+With the codec MBHC driver [qcmbhc8930.sys](./qcmbhc8930.md#mbhc_ioctlcommand-buffer-size) the entry point is `mbhc_ioctl`: 1 = `MBHC_CMD_START`, 2 = `MBHC_CMD_STOP`, 3 = `MBHC_CMD_SET_CB`, 4 = `MBHC_CMD_FTM_INTR` (factory test: simulates a plug insertion). Command 5 is not supported by qcmbhc8930.sys (returns 0x1000). With the GPIO based driver [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md#mbhc_ioctlcommand-buffer-size) (`\_SB.MBGP`) the entry point has the same commands 1–3, 4 switches to the factory test state `FTM`, and 5 is a factory test sub-command (0 = arm a test codec interrupt, 1 = check the microphone line, 2 / 3 = write 0 / 1 to the US/EU swap GPIO), answered by the callback events 7–10. The callback is called as `callback(event, payload, 32, context)` with event 1 = plug insert, 2 = plug remove, 3 = button press, 4 = button release, 6 = button press+release.
 
 ---
 

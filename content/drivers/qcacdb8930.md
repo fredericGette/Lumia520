@@ -6,7 +6,7 @@ It also implements ACPH (Audio Calibration Protocol Handler) over DIAG, so that 
 KMDF driver. Source file names in the binary: `acdb_kmdf.c`, `actp\src\actp.c`. PDB path `E:\build_e\subtask\E05A4CC0_98\output\audio\fre\FAME_ROW\qcacdb8930.pdb`. Pool tags `qacA`…`qacF`, `qacM`, `qacN`, `qacQ`, `qaca`…`qace`, `qacp`.  
 
 ACPI device `\_SB.ACDB` (`_HID` `QCOM0790`). Its method `INFO` returns `Package { 1 }`, but the driver never evaluates it and uses no hardware resource (`EvtWdfDevicePrepareHardware` only walks the resource list).  
-`\_SB.ACHW` (audio codec), `\_SB.MBHC`, `\_SB.MBGP` (headset detection), `\_SB.Q6AD` (Q6 audio) and `\_SB.AHWI` have a `_DEP` on `\_SB.ACDB`.
+`\_SB.ACHW` (audio codec), `\_SB.MBHC`, `\_SB.MBGP` (headset detection, [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md)), `\_SB.Q6AD` (Q6 audio) and `\_SB.AHWI` have a `_DEP` on `\_SB.ACDB`.
 
 There's no named `\Device\` object and no symbolic link: the driver is reached through its device interface (see [Interface GUID](#interface-guid)).  
 
@@ -215,7 +215,7 @@ Request received from the router (a DCI request starting with `0x93` is accepted
 | 06-09 | ? | Length of the data that follows; must be equal to (packet length − 4) − 6 |
 | 0A-… | ? | Data (the ACDB command structure). The request is at most 2016 bytes after the DIAG header |
 
-The ACPH command is given to every registered handler until one accepts it (`sub_41054C`). Handler 1 is `acph_online_ioctl` (`sub_416854`), which maps the ACPH id to the ACDB command. Other drivers can add handlers with ACDB command 0x50022404.  
+The ACPH command is given to every registered handler until one accepts it (`sub_41054C`). Handler 1 is `acph_online_ioctl` (`sub_416854`), which maps the ACPH id to the ACDB command. Other drivers can add handlers with ACDB command 0x50022404: [qcq6ad8930.sys](./qcq6ad8930.md#acdb) registers handler 3 (`sub_412814`) and removes it with 0x50022408 at cleanup.  
 ACPH ids without an ACDB command: 48 (`sub_415900`, empty answer) and 208 (`sub_415D1C`, answers the 4-byte value 9465: maximum data size ?).
 
 Answer (written to `\Device\DiagRouter`, 4-byte DIAG header + 2016 bytes):  

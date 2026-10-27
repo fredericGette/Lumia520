@@ -2,7 +2,7 @@
 
 Qualcomm MBHC (Multi-Button Headset Control) driver: headset jack detection and headset button detection done by the WCD93xx audio codec.  
 It runs the MBHC state machine of the codec (states `START`, `NO_PLUG`, `CHECK_PLUG`, `AV_PLUG`, `INVALID_PLUG`, `NBTN_PRESSED`, `BTN_PRESSED`): it detects plug insertion/removal, tells a headphone from a headset with a microphone, detects a US/EU (CTIA/OMTP) plug mismatch, and polls the headset buttons. It reads/writes the codec registers directly over the **SLIMbus**, receives the codec interrupts through a WCD interrupt-handler driver, reads its thresholds from the calibration database [qcacdb8930.sys](./qcacdb8930.md), and drives 3 GPIOs through the GPIO resource hub.  
-It has no IOCTL interface of its own beyond one IOCTL that returns a kernel entry point `mbhc_ioctl`. The audio driver [qc8x60aud.sys](./qc8x60aud.md) uses that entry point when its registry value `GpioBasedHeadsetDetection` = 0 (otherwise it uses the GPIO-based driver of `\_SB.MBGP`). Jack and button events are reported to the client through a callback.  
+It has no IOCTL interface of its own beyond one IOCTL that returns a kernel entry point `mbhc_ioctl`. The audio driver [qc8x60aud.sys](./qc8x60aud.md) uses that entry point when its registry value `GpioBasedHeadsetDetection` = 0 (otherwise it uses the GPIO-based driver of `\_SB.MBGP`, [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md)). Jack and button events are reported to the client through a callback.  
 It is a KMDF driver. PDB path `P:\audio\rel\8.3.1\arm\Release\qcmbhc8930.pdb`. The log messages contain `Legacy mbhc_init …, 08/02 0930`. Pool tags `abmq`, `cbmq`, `ebmq`, `gbmq`, `hbmq`, WDF memory tags `Abmq`…`Lbmq`.
 
 ACPI device `\_SB.MBHC` (`_HID` `QCOM0746`), with `_DEP` on `\_SB.PEP0`, `\_SB.PMIC`, `\_SB.ACDB`, `\_SB.SLM1`, `\_SB.TICO` and `\_SB.ACHW`.
@@ -132,7 +132,7 @@ Entry point returned by IOCTL 0x500A2800. Returns 0 on success, 1 on failure, 0x
 | 3 | MBHC_CMD_SET_CB | 8 bytes `{ callback, context }` | Registers the client callback. Fails if MBHC is not initialised |
 | 4 | MBHC_CMD_FTM_INTR | - | Factory test mode: initialises MBHC if needed and triggers a plug insertion interrupt (`mbhc_state_FTM_test_INTR`) |
 
-Note: [qc8x60aud.sys](./qc8x60aud.md) also sends a command 5 ("set mode"). This driver doesn't handle it and returns 0x1000.
+Note: [qc8x60aud.sys](./qc8x60aud.md) also sends a command 5 ("set mode"). This driver doesn't handle it and returns 0x1000. The GPIO-based variant [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md#mbhc_ioctlcommand-buffer-size) handles it as a factory test sub-command (and uses command 4 to enter its `FTM` state).
 
 Callback: `callback(event, payload, 32, context)`:  
 | Event | Name | Sent by |

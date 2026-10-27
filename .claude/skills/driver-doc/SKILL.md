@@ -1,6 +1,6 @@
 ---
 name: driver-doc
-description: Reverse-engineer a Lumia 520 / Windows Phone 8 driver (.sys, typically Qualcomm MSM8930 `qc*8930.sys`) and write its reference page in content/drivers/<name>.md, matching the existing pages (device name, registry, ETW/interface GUIDs, peer devices, one section per IOCTL with CTL_CODE breakdown and byte-level buffer tables), then add it to content/drivers/README.md. Use when the user asks to document, describe, or write up a driver, or names a .sys file to add to the drivers folder.
+description: Reverse-engineer a Lumia 520 / Windows Phone 8 driver (.sys, typically Qualcomm MSM8930 `qc*8930.sys`) and write its reference page in content/drivers/<name>.md, matching the existing pages (device name, registry, ETW/interface GUIDs, peer devices, one section per IOCTL with CTL_CODE breakdown and byte-level buffer tables), then add it to content/drivers/README.md and propagate any new findings (GUID owners, IOCTL senders/receivers, corrections) to the other existing driver pages. Use when the user asks to document, describe, or write up a driver, or names a .sys file to add to the drivers folder.
 ---
 
 # Document a Windows Phone driver
@@ -87,6 +87,35 @@ Follow `template.md` (next to this file). Rules taken from the existing pages:
 2. Update `content/drivers/README.md` (CRLF line endings, each line ends with two spaces):
    replace an existing `[name.sys TODO](./name.md)` entry with `[name.sys](./name.md)`, or append
    `[name.sys](./name.md)  ` at the end.
-3. If a new GUID or IOCTL identifies something marked `?` / "Unknown" in another page, mention it to
-   the user (don't silently edit other pages).
-4. Tell the user what remains unknown. Commit only if asked (convention: `add <basename>`).
+3. Propagate the new findings to the other existing pages (see §5).
+4. Tell the user what remains unknown, and list every other page you changed in §5 with a one-line
+   summary of each change. Commit only if asked (convention: `add <basename>`; include the
+   propagated edits in the same commit).
+
+## 5. Propagate new information to existing pages
+
+Whenever the analysis reveals something about a driver that other pages already mention, update
+those pages automatically — don't just report it. This applies both when writing a new page and
+when new information about an already documented driver turns up (e.g. while analysing a peer).
+
+1. For each fact found, grep `content/drivers` for it: GUIDs (with and without braces, any case),
+   IOCTL codes (`0x` + upper and lower hex), device names / symbolic links (`\Device\X`), driver
+   names, SMD channel names, physical addresses, registry value names, exported/query-interface
+   function names.
+2. In every matching page, update the related entry when the new fact adds to or corrects it:
+   - fill in a `?` / "Unknown" / empty cell (e.g. a GUID's owner in a peer-devices table, the
+     driver that processes an IOCTL, a buffer field's meaning);
+   - turn a plain driver name into a relative link to its page (`[qcsmd8930.sys](./qcsmd8930.md)`);
+   - add the reverse view where the page has a matching section: an IOCTL sent by the new driver
+     to a documented driver goes into the receiver's page as `This IOCTL is also sent by X.sys`
+     (or as a row in its peer table), and an IOCTL the new driver processes that another page
+     sends gets its "Device name" / target filled in;
+   - correct a statement the binary contradicts, keeping the page's style, and tell the user what
+     was wrong.
+3. Edit only the specific lines/cells concerned: keep each page's structure, wording, line endings
+   and trailing double spaces. Don't add whole new sections to another page beyond the reverse-view
+   entries above, and don't upgrade a tentative "?" to a certainty unless the binary proves it.
+4. If the new fact only partially matches (ambiguous GUID owner, conflicting buffer sizes, …),
+   don't edit — list it for the user instead.
+5. If the new driver is listed as `TODO` in `README.md` and referenced by other pages as plain text,
+   link those references too.

@@ -1,7 +1,7 @@
 ## Qcadsp8930.sys
 
 ADSP (LPASS / QDSP6 audio DSP) subsystem driver.  
-It loads the ADSP image through [qcpil8930.sys](./qcpil8930.md), releases the QDSP6 from reset, waits for it to come up through [qcsmsm8930.sys](./qcsmsm8930.md), then publishes its device interface. It doesn't talk to the audio firmware itself: that's done by qcq6ad8930.sys (APR over SMD), which this driver feeds with the Dolby/third-party audio license (`AUDIO.PROVISION`).  
+It loads the ADSP image through [qcpil8930.sys](./qcpil8930.md), releases the QDSP6 from reset, waits for it to come up through [qcsmsm8930.sys](./qcsmsm8930.md), then publishes its device interface. It doesn't talk to the audio firmware itself: that's done by [qcq6ad8930.sys](./qcq6ad8930.md) (APR over SMD), which this driver feeds with the Dolby/third-party audio license (`AUDIO.PROVISION`).  
 It also handles the ADSP crashes: there's no SubSystem Restart, every crash (watchdog bite or fatal error) bug checks the phone.  
 It's a client of the RPE notifier [qcrpen8930.sys](./qcrpen8930.md) (client name `ADSP`), and it sends the SSR notifications of the WCN subsystem to the ADSP through the SMD channel `sys_mon`. Its RPE state 5 is a prerequisite of the modem driver [qcamss8930.sys](./qcamss8930.md#rpe): the modem is never loaded before the ADSP.  
 The PDB path embedded in the binary is `E:\build_e\subtask\E05A4CC0_98\output\audio\fre\qcadsp8930.pdb`.
@@ -38,7 +38,7 @@ It communicates with the following devices:
 | \Device\SMEM | [qcsmem8930.sys](./qcsmem8930.md) | [internal IOCTL 0x42000](#internal-ioctl-0x42000): function table, used to read the crash reason `SMEM_SSR_REASON_LPASS0` |
 | \Device\SMD | [qcsmd8930.sys](./qcsmd8930.md) | Channel `sys_mon` ([internal IOCTL 0x22003](#internal-ioctl-0x22003)), see [Sysmon](#sysmon) |
 | \Device\RPEN, Helper interface | [qcrpen8930.sys](./qcrpen8930.md) | See [RPE](#rpe) |
-| Interface `{5F51A34C-6834-479D-9EA2-EAFA622524BA}` | qcq6ad8930.sys (`\_SB.Q6AD`) | Q6 audio. [IOCTL 0xADAD2F41](#ioctl-0xadad2f41): audio license |
+| Interface `{5F51A34C-6834-479D-9EA2-EAFA622524BA}` | [qcq6ad8930.sys](./qcq6ad8930.md) (`\_SB.Q6AD`) | Q6 audio. [IOCTL 0xADAD2F41](#ioctl-0xadad2f41): audio license |
 | ACPI node of the device (default I/O target) | [acpi.sys](./acpi.md) | [IOCTL 0x32C004](#ioctl-0x32c004--ioctl_acpi_eval_method) `IOCTL_ACPI_EVAL_METHOD`, methods `CONF` and `MANU` |
 | `\Device\Harddisk0`… | disk.sys | `IOCTL_DISK_GET_DRIVE_LAYOUT_EX` (0x70050) to find the EFI system partition, only when `PhoneNT` is absent |
 | Power framework (PEP) | ? | `PoFxPowerControl`, see [Power management](#power-management) |
@@ -96,7 +96,7 @@ From the DSDT. The node is `\_SB.ADSP` (`_HID` `QCOM0E10`, no `_UID`), with `_DE
 
 ADSP device interface, published (`WdfDeviceCreateDeviceInterface` + `WdfDeviceSetDeviceInterfaceState`, `sub_411DCC`) when the ADSP is up, revoked on surprise removal, when the PIL interface goes away, or when the subsystem fails to start:  
 `{2D332EF9-18B0-4615-B47B-6C2F745F9CE6}`  
-Consumer: ? (not found in the other pages yet; qcq6ad8930.sys ?).
+Consumer: [qcq6ad8930.sys](./qcq6ad8930.md#start-sequence), which waits for it at start and opens it only to be notified of its removal.
 
 ### RPE
 
@@ -198,13 +198,13 @@ Content of the buffer:
 | 00-03 | 9D ED 51 35 | Manufacturer ID, from the ACPI method `MANU` (0x3551ED9D on the Lumia 520) |
 | 04-… | ? | Content of `AUDIO.PROVISION` |
 
-The physical address of this buffer is sent to qcq6ad8930.sys with [IOCTL 0xADAD2F41](#ioctl-0xadad2f41) when its interface arrives, then the buffer is freed.
+The physical address of this buffer is sent to [qcq6ad8930.sys](./qcq6ad8930.md) with [IOCTL 0xADAD2F41](#ioctl-0xadad2f41) when its interface arrives, then the buffer is freed.
 
 ---
 
 ### IOCTL 0xADAD2F41
 
-This IOCTL is sent by Qcadsp8930.sys to qcq6ad8930.sys (interface `{5F51A34C-6834-479D-9EA2-EAFA622524BA}`, opened by its symbolic link) in `SendQ6AudioAuthentication` (`sub_4104A4`). Synchronous (`WdfRequestSend` with `WDF_REQUEST_SEND_OPTION_SYNCHRONOUS`).
+This IOCTL is sent by Qcadsp8930.sys to [qcq6ad8930.sys](./qcq6ad8930.md) (interface `{5F51A34C-6834-479D-9EA2-EAFA622524BA}`, opened by its symbolic link) in `SendQ6AudioAuthentication` (`sub_4104A4`). Synchronous (`WdfRequestSend` with `WDF_REQUEST_SEND_OPTION_SYNCHRONOUS`).
 
 | Property | Value |
 |----------|-------|
@@ -224,6 +224,7 @@ Inputbuffer:
 | 04-07 | 01 00 00 00 | ? |
 | 08-0B | ? | Size of `AUDIO.PROVISION` (without the 4-byte manufacturer ID) |
 
+The ADSP core receives the 12 bytes as an APR packet, opcode 0x11285 (see [qcq6ad8930.sys](./qcq6ad8930.md#ioctl-0xadad2f41--audio-license)).  
 Logs: "Sending audio authentication request to Q6AD", "Audio authentication request sent to Q6AD successfully".  
 The IOCTL is formatted with `WdfIoTargetFormatRequestForIoctl` although a log string says "WdfIoTargetFormatRequestForInternalIoctl".
 

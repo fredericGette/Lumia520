@@ -44,11 +44,11 @@ GPIO connections on `\_SB.GIO0` in the DSDT/SSDT (decoded from the raw `_CRS` bu
 | 1 | `\_SB.DISP` | `GpioIo` Shared, PullDown | [oempanel.sys](./oempanel.md) |
 | 11 | `\_SB.TCH1` (`NOKIA_TOUCH`) | `GpioInt` Edge, ActiveLow, Exclusive, Wake, PullUp | [SynapticsTouch.sys](./synapticstouch.md) interrupt |
 | 42 | `\_SB.ACHW` (`QCOM0741`) | `GpioIo` Exclusive, PullDown | Audio codec hardware ([qc8x60aud.sys](./qc8x60aud.md)) |
-| 43 | `\_SB.MBGP` (`QCOM2149`) | `GpioInt` Edge, ActiveBoth, Shared, Wake, PullNone, debounce 500 ms + 2 × `GpioIo` | GPIO headset detection |
+| 43 | `\_SB.MBGP` (`QCOM2149`) | `GpioInt` Edge, ActiveBoth, Shared, Wake, PullNone, debounce 500 ms + 2 × `GpioIo` | [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md#acpi-bfsz-and-gpnf): jack detection interrupt, the 2 `GpioIo` are read as the jack detect and ANC detect ? inputs |
 | 43, 51 | `\_SB.MBHC` (`QCOM0746`) | `GpioIo` Exclusive, PullDown | ? |
 | 46, 67 | `\_SB.ACC1` (`KXTNK`, SSDT) | `GpioInt` Edge, ActiveLow, Exclusive, PullDown | Accelerometer |
 | 49 | `\_SB.ALS1`, `ALS2`, `PRX1`, `PRX2` (SSDT) | `GpioInt` Edge, ActiveLow, Shared, PullUp | [ltr554als02.sys](./ltr554als02.md) |
-| 51 | `\_SB.MBGP` | `GpioIo` Exclusive, PullDown | |
+| 51 | `\_SB.MBGP` | `GpioIo` Exclusive, PullDown | Not listed in `GPNF`: unused by [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md#acpi-bfsz-and-gpnf) |
 | 52 | `\_SB.TCH1` | `GpioIo` Exclusive, PullNone | [SynapticsTouch.sys](./synapticstouch.md) reset line |
 | 58 | `\_SB.DISP`, `MON0` (child of the display adapter) | `GpioIo` Shared, PullUp | `DSI_PANEL_RESET`, [oempanel.sys](./oempanel.md) / [qcdxkm8930.sys](./qcdxkm8930.md) |
 | 62 | `\_SB.TICO` (`QCOM0742`) | `GpioInt` Edge, ActiveHigh, Exclusive, PullUp | Audio ? |
