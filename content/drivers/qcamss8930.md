@@ -49,7 +49,7 @@ It communicates with the following devices:
 | \Device\IPC | [qcipcrouter8930.sys](./qcipcrouter8930.md) | QMI transport of the QMI client library: [IOCTL 0x122008](#ioctl-0x122008), [IOCTL 0x122017](#ioctl-0x122017), [IOCTL 0x12201B](#ioctl-0x12201b), read/write. Used for the QMI TMD service, see [Passive cooling](#passive-cooling) |
 | \Device\QMUX | [qcqmux8930.sys](./qcqmux8930.md) | Second QMI transport of the library: [IOCTL 0x12418](#ioctl-0x12418), [IOCTL 0x12410](#ioctl-0x12410), [IOCTL 0x12430](#ioctl-0x12430) |
 | ACPI node of the device (default I/O target) | [acpi.sys](./acpi.md) | [IOCTL 0x32C004](#ioctl-0x32c004--ioctl_acpi_eval_method) `IOCTL_ACPI_EVAL_METHOD`, methods `CONF` and `VLMT` |
-| Power framework (PEP) | ? | `PoFxPowerControl`, see [Power management](#power-management) |
+| Power framework (PEP) | [qcpep8930.sys](./qcpep8930.md#3404daac-set-p-state) | `PoFxPowerControl`, see [Power management](#power-management) |
 | Thermal framework | ? | Query interface `GUID_THERMAL_COOLING_INTERFACE`, see [Passive cooling](#passive-cooling) |
 
 There's no hardcoded physical address (no `MmMapIoSpace`).

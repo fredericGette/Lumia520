@@ -28,10 +28,10 @@ Driver: the Windows driver that loads on the node, when it's documented in [driv
 | `\_SB.PRTC` | ACPI000E | [acpitime.sys](../drivers/acpitime.md#lumia-520-acpi-node) | Time and alarm device (`_GCP`, `_GRT`, `_SRT`) |
 | `\_SB.PEP0` | QCOM0811 | | Power engine plug-in (`_CID` `PNP0D80`); power-framework description of the devices (`DCFG`) |
 | `\_SB.PRXY` | QCOM0812 | [qcpepproxy8930.sys](../drivers/qcpepproxy8930.md#lumia-520-acpi-node) | Power proxy, see [qcabd8930.sys](../drivers/qcabd8930.md#lumia-520-acpi-node) |
-| `\_SB.SDF1` | QCOM2134 | | |
+| `\_SB.SDF1` | QCOM2134 | [qcsysdef8930.sys](../drivers/qcsysdef8930.md#lumia-520-acpi-node) ? | System definition device; its PEP F-state F0 sets the default configuration of TLMM/PMIC GPIOs and regulators |
 | `\_SB.AGR0` | ACPI000C | [acpipagr.sys](../drivers/acpipagr.md#lumia-520-acpi-definition) | Processor aggregator |
 | `\_SB.TZ0` … `\_SB.TZ11` | QCOM2400 … QCOM2409, NOKIA_THERMAL, QCOM2154 | | Thermal zones, see [acpipagr.sys](../drivers/acpipagr.md#lumia-520-acpi-definition) |
-| `\_SB.SMMU` | QCOM0200 | qcvcm8930.sys ? | System MMU |
+| `\_SB.SMMU` | QCOM0200 | [qcsmmu8930.sys](../drivers/qcsmmu8930.md#lumia-520-acpi-node) | System MMU (9 multimedia IOMMUs; methods `BCDE`, `CORE`, `PTCA`, `AGPA`) |
 | `\_SB.GPU0` | QCOM0300 | [qcdxkm8930.sys](../drivers/qcdxkm8930.md#lumia-520-acpi-node) | Display/graphics adapter (`_ROM` panel XML, `RESI`, `ENGS`, `PMCL`) |
 | `\_SB.GPU0.MON0` | `_ADR` 0 | [monitor.sys](../drivers/monitor.md#lumia-520-acpi-node) | Monitor |
 | `\_SB.GPU0.AVS0` | `_ADR` 0x00024321 | | AVStream child ? |
@@ -58,7 +58,7 @@ Driver: the Windows driver that loads on the node, when it's documented in [driv
 | `\_SB.FTM0` | QCOM01E1 | | |
 | `\_SB.RFS0` | QCOM0F20 | | Remote file system ? (`Memory32Fixed` 0x8FB00000, 0x300000) |
 | `\_SB.IPC0` | QCOM0F40 | | |
-| `\_SB.SLM1` | QCOM0190 | | |
+| `\_SB.SLM1` | QCOM0190 | [qcslimbus8930.sys](../drivers/qcslimbus8930.md) | SLIMbus controller (`Memory32Fixed` 0x28080000, 0x4000; interrupt 65), methods `FNOC`, `EKOP` |
 | `\_SB.QQCE`, `QCE2` | QCOM1100, QCOM1190 | | Crypto engines |
 | `\_SB.QRNG` | QCOM1110 | | Random number generator |
 | `\_SB.QBCC` | QCOM1000 | | |
@@ -84,7 +84,8 @@ Driver: the Windows driver that loads on the node, when it's documented in [driv
 | `\_SB.MBB0` … `MBB3` | QCOM0EA0 | | Mobile broadband |
 | `\_SB.HWN0` | QCOM0D50 | hwnled ? | Hardware notification LEDs (`HWNL`), see [oempanel.sys](../drivers/oempanel.md) |
 | `\_SB.VIB1` | NOKIA_VIBRA_DIME | | Vibrator |
-| `\_SB.SSM`, `RMNT` | QCOM2123, 2148 | | |
+| `\_SB.SSM` | QCOM2123 | [qcssm8930.sys](../drivers/qcssm8930.md) ? | Secure Services Module (SMD channel `SSM_RTR`, MODEM key exchange through TrustZone) |
+| `\_SB.RMNT` | QCOM2148 | [qcrmnetbridge8930.sys](../drivers/qcrmnetbridge8930.md) ? | RmNet bridge (USB RmNet function ↔ SMD channel `DATA40_CNTL` + BAM DMUX stream 2, channel 8) |
 | `\_SB.MBRG` | QCOM2145 | [qcmbrg8930.sys](../drivers/qcmbrg8930.md) | Modem bridge (USB modem function ↔ SMD channel `DATA2`) |
 | `\_SB.RMAT` | QCOM2155 | [qcremoteat8930.sys](../drivers/qcremoteat8930.md) ? | Remote AT (QMI AT service bridge) |
 | `\_SB.TCH1` | NOKIA_TOUCH | | Touch screen, I²C 0x4B on `\_SB.I2C3` |

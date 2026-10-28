@@ -143,7 +143,8 @@ For each transport subkey, the arrival of the SMD interface calls `sub_401544`, 
 
 ### IOCTL 0x122000
 
-This IOCTL is processed by Qcipcrouter8930.sys
+This IOCTL is processed by Qcipcrouter8930.sys  
+This IOCTL is also sent by [qcremotefs8930.sys](./qcremotefs8930.md#ioctl-0x122000)  
 
 | Property | Value |
 |----------|-------|
@@ -246,7 +247,8 @@ No matching server: `STATUS_NOT_FOUND` (0xC0000225). Allocation failure: `STATUS
 
 ### IOCTL 0x12200C
 
-This IOCTL is processed by Qcipcrouter8930.sys
+This IOCTL is processed by Qcipcrouter8930.sys  
+This IOCTL is also sent by [qcremotefs8930.sys](./qcremotefs8930.md#ioctl-0x12200c)  
 
 | Property | Value |
 |----------|-------|
@@ -294,7 +296,8 @@ Not registered: `STATUS_INVALID_DEVICE_REQUEST` (0xC0000010).
 
 ### IOCTL 0x122017
 
-This IOCTL is processed by Qcipcrouter8930.sys
+This IOCTL is processed by Qcipcrouter8930.sys  
+This IOCTL is also sent by [qcremotefs8930.sys](./qcremotefs8930.md#ioctl-0x122017)  
 
 | Property | Value |
 |----------|-------|
@@ -313,7 +316,8 @@ No buffer is used. If a packet is waiting, the IOCTL completes at once with `Inf
 
 ### IOCTL 0x12201B
 
-This IOCTL is processed by Qcipcrouter8930.sys
+This IOCTL is processed by Qcipcrouter8930.sys  
+This IOCTL is also sent by [qcremotefs8930.sys](./qcremotefs8930.md#ioctl-0x12201b)  
 
 | Property | Value |
 |----------|-------|

@@ -41,7 +41,7 @@ It communicates with the following devices:
 | Interface `{5F51A34C-6834-479D-9EA2-EAFA622524BA}` | [qcq6ad8930.sys](./qcq6ad8930.md) (`\_SB.Q6AD`) | Q6 audio. [IOCTL 0xADAD2F41](#ioctl-0xadad2f41): audio license |
 | ACPI node of the device (default I/O target) | [acpi.sys](./acpi.md) | [IOCTL 0x32C004](#ioctl-0x32c004--ioctl_acpi_eval_method) `IOCTL_ACPI_EVAL_METHOD`, methods `CONF` and `MANU` |
 | `\Device\Harddisk0`… | disk.sys | `IOCTL_DISK_GET_DRIVE_LAYOUT_EX` (0x70050) to find the EFI system partition, only when `PhoneNT` is absent |
-| Power framework (PEP) | ? | `PoFxPowerControl`, see [Power management](#power-management) |
+| Power framework (PEP) | [qcpep8930.sys](./qcpep8930.md#3404daac-set-p-state) | `PoFxPowerControl`, see [Power management](#power-management) |
 
 Hardcoded physical address: `MmMapIoSpace(0x28800010, 4, MmNonCached)` in `EvtDriverDeviceAdd`, named `LPASS_QDSP6SS_STOP` in the logs. Writing 1 to it sends an NMI to the QDSP6 to stop it ([RPE](#rpe) callback [1]). If the mapping fails, the log says "Will not be able to send NMI to ADSP to stop subsystem" and the driver goes on.
 

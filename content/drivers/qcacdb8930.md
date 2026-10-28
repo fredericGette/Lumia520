@@ -215,7 +215,7 @@ Request received from the router (a DCI request starting with `0x93` is accepted
 | 06-09 | ? | Length of the data that follows; must be equal to (packet length − 4) − 6 |
 | 0A-… | ? | Data (the ACDB command structure). The request is at most 2016 bytes after the DIAG header |
 
-The ACPH command is given to every registered handler until one accepts it (`sub_41054C`). Handler 1 is `acph_online_ioctl` (`sub_416854`), which maps the ACPH id to the ACDB command. Other drivers can add handlers with ACDB command 0x50022404: [qcq6ad8930.sys](./qcq6ad8930.md#acdb) registers handler 3 (`sub_412814`) and removes it with 0x50022408 at cleanup.  
+The ACPH command is given to every registered handler until one accepts it (`sub_41054C`). Handler 1 is `acph_online_ioctl` (`sub_416854`), which maps the ACPH id to the ACDB command. Other drivers can add handlers with ACDB command 0x50022404: [qcq6ad8930.sys](./qcq6ad8930.md#acdb) registers handler 3 (`sub_412814`) and removes it with 0x50022408 at cleanup; [qcsitarcodec8930.sys](./qcsitarcodec8930.md#acdb) registers handler 2 (`sub_40CBDC`, codec).  
 ACPH ids without an ACDB command: 48 (`sub_415900`, empty answer) and 208 (`sub_415D1C`, answers the 4-byte value 9465: maximum data size ?).
 
 Answer (written to `\Device\DiagRouter`, 4-byte DIAG header + 2016 bytes):  

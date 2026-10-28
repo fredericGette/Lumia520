@@ -122,7 +122,7 @@ Channels opened by the other drivers (from their binaries):
 | DATA8_CNTL | [qcqmux8930.sys](./qcqmux8930.md#smd-channels) |
 | DATA9_CNTL | [qcqmux8930.sys](./qcqmux8930.md#smd-channels) |
 | DATA12_CNTL | [qcqmux8930.sys](./qcqmux8930.md#smd-channels) |
-| SSM_RTR | qcssm8930.sys |
+| SSM_RTR | [qcssm8930.sys](./qcssm8930.md) (Secure Services Module). Edge 0, flags 1, opened with [internal IOCTL 0x22003](#internal-ioctl-0x22003) |
 | DIAG | qcipcrouter8930.sys |
 | DIAG_2 | qcdiagcsi8930.sys |
 | DIAG_CNTL | qcipcrouter8930.sys |
@@ -140,6 +140,7 @@ Channels opened by the other drivers (from their binaries):
 | APPS_RIVA_BT_CMD | [qcbluetooth8930.sys](./qcbluetooth8930.md) |
 | APPS_RIVA_BT_ACL | [qcbluetooth8930.sys](./qcbluetooth8930.md) |
 | WLAN_CTRL | qcwlan8930.sys |
+| DATA40_CNTL | [qcrmnetbridge8930.sys](./qcrmnetbridge8930.md) (USB RmNet QMI control). Edge 0, packet mode, FIFO size from the registry value `SmdFifoSize` |
 
 Channel events (`SmdPortEventHandler`, 0x403BCC, the `notify` callback given to `smdl_open`). The names are those of the SMD Lite `smdl_event_type` and are tentative:  
 | Event | Name | Action |
@@ -184,7 +185,7 @@ Query-interface `{07631ee5-21bd-455b-bd1f-f41b43f3a9bc}` (`WdfDeviceAddQueryInte
 ### internal IOCTL 0x22003
 
 This IOCTL is processed by Qcsmd8930.sys (`EvtWdfIoQueueIoInternalDeviceControl`, 0x402AF0)  
-Sent by [qcbluetooth8930.sys](./qcbluetooth8930.md#internal-ioctl-0x22003), [qcdiagrouter8930.sys](./qcdiagrouter8930.md), [qcqmux8930.sys](./qcqmux8930.md#internal-ioctl-0x22003), [qcmbrg8930.sys](./qcmbrg8930.md#internal-ioctl-0x22003), [qcq6ad8930.sys](./qcq6ad8930.md#internal-ioctl-0x22003) (`apr_apps2`) and the other SMD clients.
+Sent by [qcbluetooth8930.sys](./qcbluetooth8930.md#internal-ioctl-0x22003), [qcdiagrouter8930.sys](./qcdiagrouter8930.md), [qcqmux8930.sys](./qcqmux8930.md#internal-ioctl-0x22003), [qcmbrg8930.sys](./qcmbrg8930.md#internal-ioctl-0x22003), [qcrmnetbridge8930.sys](./qcrmnetbridge8930.md#internal-ioctl-0x22003) (`DATA40_CNTL`), [qcq6ad8930.sys](./qcq6ad8930.md#internal-ioctl-0x22003) (`apr_apps2`), [qcssm8930.sys](./qcssm8930.md#internal-ioctl-0x22003) (`SSM_RTR`) and the other SMD clients.
 
 | Property | Value |
 |----------|-------|
@@ -211,7 +212,7 @@ Inputbuffer:
 Flags:  
 | Bit | Comment |
 |-----|---------|
-| 0x01 | Not used by qcsmd8930.sys (set by qcbluetooth8930.sys) |
+| 0x01 | Not used by qcsmd8930.sys (set by qcbluetooth8930.sys and [qcssm8930.sys](./qcssm8930.md)) |
 | 0x02 | Streaming mode (`smdl_open` flags = 4). Otherwise packet mode |
 | 0x04 | Deferred writes: written data is only queued; it's sent to the FIFO by [internal IOCTL 0x2201B](#internal-ioctl-0x2201b). [internal IOCTL 0x22017](#internal-ioctl-0x22017) is then refused |
 | 0x08 | Requests use MDL chains (`Irp->MdlAddress`, lengths summed over the chain). Two collections are created to track them |
@@ -360,7 +361,7 @@ Returns `STATUS_INVALID_DEVICE_REQUEST` when the channel was not opened in defer
 
 ### internal IOCTL 0x2201F, 0x22023, 0x22027, 0x2202B
 
-These IOCTLs are processed by Qcsmd8930.sys. They set an outgoing signal of the channel with `smdl_sig_set` (`InterfaceFunction_08`); the remote processor is interrupted if the value changed. Sent by [qcmbrg8930.sys](./qcmbrg8930.md#internal-ioctl-0x2201f-0x22023-0x22027-0x2202b) to forward the DTR/RTS lines of the USB host.
+These IOCTLs are processed by Qcsmd8930.sys. They set an outgoing signal of the channel with `smdl_sig_set` (`InterfaceFunction_08`); the remote processor is interrupted if the value changed. Sent by [qcmbrg8930.sys](./qcmbrg8930.md#internal-ioctl-0x2201f-0x22023-0x22027-0x2202b) to forward the DTR/RTS lines of the USB host, and by [qcrmnetbridge8930.sys](./qcrmnetbridge8930.md#internal-ioctl-0x2201f-0x22027) (0x2201F and 0x22027 only, DTR = USB RmNet function in D0).
 
 | IOCTL | Function | Signal | Value |
 |-------|----------|--------|-------|

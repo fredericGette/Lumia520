@@ -21,9 +21,9 @@ None.
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| interface `{88EEFAB5-35A8-42FF-80DB-00D97137608D}` | SLIMbus driver (`\_SB.SLM1`, QCOM0190) ? | Codec register read/write, codec logical address, and a "keep awake" vote ?. See [IOCTL 0x85B52xxx](#ioctl-0x85b52000--0x85b52400--0x85b52404--0x85b5240c--0x85b52410--slimbus) |
+| interface `{88EEFAB5-35A8-42FF-80DB-00D97137608D}` | [qcslimbus8930.sys](./qcslimbus8930.md) (`\_SB.SLM1`, QCOM0190) | Codec register read/write, codec logical address, and a bus vote. See [IOCTL 0x85B52xxx](#ioctl-0x85b52000--0x85b52400--0x85b52404--0x85b5240c--0x85b52410--slimbus) |
 | interface `{C383F1A1-0E73-47D9-A5B2-214CEC4EE713}` | WCD codec interrupt handler (`\_SB.TICO` ?) | Register / enable / disable / clear the codec interrupts. See [IOCTL 0x5001200C…0x5001201C](#ioctl-0x5001200c--0x50012010--0x50012014--0x50012018--0x5001201c--codec-interrupts) |
-| interface `{3FE58EBD-6A7D-4760-A01F-66369C501AB0}` | audio codec driver (`\_SB.ACHW` ?) | Audio "resource manager" (`rm_audio_sr_ioctl`). See [IOCTL 0x50012048](#ioctl-0x50012048--rm_audio_sr_ioctl) |
+| interface `{3FE58EBD-6A7D-4760-A01F-66369C501AB0}` | [qcsitarcodec8930.sys](./qcsitarcodec8930.md) (`\_SB.ACHW`) | Audio "resource manager" (`rm_audio_sr_ioctl`). See [IOCTL 0x50012048](#ioctl-0x50012048--rm_audio_sr_ioctl) |
 | interface `{4EE2204F-14FF-4139-9853-0DA54D6849D5}` | [qcacdb8930.sys](./qcacdb8930.md) | ACDB. Opened for each read only to get the `acdb_ioctl` entry point ([IOCTL 0x50022400](#ioctl-0x50022400)), then closed |
 | ACPI node of the device | acpi.sys | `IOCTL_ACPI_EVAL_METHOD` (0x32C004) of `BFSZ` and `GPNF`, sent to the device's own I/O target. See [ACPI](#acpi-bfsz-and-gpnf) |
 | `\Device\RESOURCE_HUB\<connection id>` | GPIO controller ([qcgpio.sys](./qcgpio.md)) | The `GpioIo` resources. `IOCTL_GPIO_WRITE_PINS` / `IOCTL_GPIO_READ_PINS`. See [GPIO](#gpio) |
@@ -40,7 +40,7 @@ The 4 interfaces are watched with `IoRegisterPlugPlayNotification` (`EvtWdfDevic
 5. The real initialisation (`sub_403D0C`) is **lazy**: it runs on the first IOCTL received:
    1. Allocates the context (0xC0 bytes) and 2 mutexes.
    2. SLIMbus: creates the I/O target and opens the interface `{88EEFAB5-…}`.
-   3. Gets the codec logical address from its enumeration address with [IOCTL 0x85B52000](#ioctl-0x85b52000--0x85b52400--0x85b52404--0x85b5240c--0x85b52410--slimbus). It tries up to 4 addresses (table `off_40F264`): `00 01 10 00 17 02`, `00 01 60 00 17 02`, `00 01 00 00 17 02`, `00 01 70 00 17 02` (manufacturer id 0x0217 = Qualcomm, 4 WCD93xx part ids ?).
+   3. Gets the codec logical address from its enumeration address with [IOCTL 0x85B52000](#ioctl-0x85b52000--0x85b52400--0x85b52404--0x85b5240c--0x85b52410--slimbus). It tries up to 4 addresses (table `off_40F264`): `00 01 10 00 17 02`, `00 01 60 00 17 02`, `00 01 00 00 17 02`, `00 01 70 00 17 02` (manufacturer id 0x0217 = Qualcomm, 4 WCD93xx part ids ?). The last two (part ids 0x0000 / 0x0070) are the codec addresses used by the Sitar codec driver [qcsitarcodec8930.sys](./qcsitarcodec8930.md#slimbus).
    4. Initialises the 9 states (`sub_404608`).
    5. Opens the interrupt handler interface `{C383F1A1-…}` and registers the codec interrupt callback `sub_4063D4` with [IOCTL 0x5001200C](#ioctl-0x5001200c--0x50012010--0x50012014--0x50012018--0x5001201c--codec-interrupts).
    6. Sets the GPIO interrupt callback (`sub_406DEC`) and creates the debounce timer (`sub_402DD4`: `KTIMER` + DPC + work item, callback `sub_406ED0`).
@@ -204,7 +204,7 @@ Payload of events 7–10: `00-03` = 9, `04-07` = `FF FF 00 00`, `08-0B` = `FF FF
 
 ### IOCTL 0x85B52000 / 0x85B52400 / 0x85B52404 / 0x85B5240C / 0x85B52410 — SLIMbus
 
-These IOCTLs are sent by Qcmbhcgpio8930.sys to the SLIMbus driver (interface `{88EEFAB5-35A8-42FF-80DB-00D97137608D}`). The first three are the same as for [qcmbhc8930.sys](./qcmbhc8930.md#ioctl-0x85b52000--0x85b52400--0x85b52404--slimbus).
+These IOCTLs are sent by Qcmbhcgpio8930.sys to the SLIMbus driver [qcslimbus8930.sys](./qcslimbus8930.md) (interface `{88EEFAB5-35A8-42FF-80DB-00D97137608D}`). The first three are the same as for [qcmbhc8930.sys](./qcmbhc8930.md#ioctl-0x85b52000--0x85b52400--0x85b52404--slimbus).
 
 | Property | Value |
 |----------|-------|
@@ -222,7 +222,7 @@ These IOCTLs are sent by Qcmbhcgpio8930.sys to the SLIMbus driver (interface `{8
 | 0x85B52410 Release (`sub_402BA4`) | interface `{88EEFAB5-…}` | 0 | 0 |
 
 The buffers of 0x85B52000, 0x85B52400 and 0x85B52404 are the same as for [qcmbhc8930.sys](./qcmbhc8930.md#ioctl-0x85b52000--0x85b52400--0x85b52404--slimbus).  
-0x85B5240C and 0x85B52410 have no buffer. The driver keeps a counter (`dword_41005C`): 0x85B5240C is only sent when it is 0, 0x85B52410 only when it is 1. They surround each burst of codec register accesses (`MBHC_CMD_START`, jack event): probably a vote that keeps the SLIMbus / codec awake ?.  
+0x85B5240C and 0x85B52410 have no buffer. The driver keeps a counter (`dword_41005C`): 0x85B5240C is only sent when it is 0, 0x85B52410 only when it is 1. They surround each burst of codec register accesses (`MBHC_CMD_START`, jack event): a vote that keeps the SLIMbus active: when the last vote is released, the SLIMbus driver pauses the bus clock (see [qcslimbus8930.sys](./qcslimbus8930.md#ioctl-0x85b5240c--0x85b52410--bus-vote)).  
 Reads are retried up to 5 times (10 ms apart), writes up to 5 times (10 ms apart).
 
 ---

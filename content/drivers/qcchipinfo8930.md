@@ -22,6 +22,7 @@ Drivers using qcchipinfo8930.sys:
 | \Device\SMD | [qcsmd8930.sys](./qcsmd8930.md) | Through the interface. [IOCTL 0x8C1F2008](#ioctl-0x8c1f2008) and [IOCTL 0x8C1F2004](#ioctl-0x8c1f2004) |
 | \Device\SMSM | [qcsmsm8930.sys](./qcsmsm8930.md) | Through the interface. [IOCTL 0x8C1F2008](#ioctl-0x8c1f2008) and [IOCTL 0x8C1F2004](#ioctl-0x8c1f2004) |
 | ? | [qcdiagrouter8930.sys](./qcdiagrouter8930.md) | Through `\??\QCOM_ChipInfo`. [IOCTL 0x8C1F2014](#ioctl-0x8c1f2014) |
+| ? | [qcsitarcodec8930.sys](./qcsitarcodec8930.md) | Through the interface. [IOCTL 0x8C1F2008](#ioctl-0x8c1f2008), once at init |
 
 ### WDF configuration
 

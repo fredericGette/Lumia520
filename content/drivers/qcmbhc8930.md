@@ -21,9 +21,9 @@ GUID of the ETW provider (`EtwRegister`, text messages `mbhc:…`; event ids 0xC
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| interface `{88EEFAB5-35A8-42FF-80DB-00D97137608D}` | SLIMbus driver (`\_SB.SLM1`, QCOM0190) ? | Codec register read/write and codec logical address. Opened at the first IOCTL (`EA_KMDF_mbhc_slimbus_start`). See [IOCTL 0x85B52000 / 0x85B52400 / 0x85B52404](#ioctl-0x85b52000--0x85b52400--0x85b52404--slimbus) |
+| interface `{88EEFAB5-35A8-42FF-80DB-00D97137608D}` | [qcslimbus8930.sys](./qcslimbus8930.md) (`\_SB.SLM1`, QCOM0190) | Codec register read/write and codec logical address. Opened at the first IOCTL (`EA_KMDF_mbhc_slimbus_start`). See [IOCTL 0x85B52000 / 0x85B52400 / 0x85B52404](#ioctl-0x85b52000--0x85b52400--0x85b52404--slimbus) |
 | interface `{C383F1A1-0E73-47D9-A5B2-214CEC4EE713}` | WCD codec interrupt handler (`\_SB.TICO` ?) | Register / enable / disable / clear the codec interrupts. See [IOCTL 0x5001200C…0x5001201C](#ioctl-0x5001200c--0x50012010--0x50012014--0x50012018--0x5001201c--codec-interrupts) |
-| interface `{3FE58EBD-6A7D-4760-A01F-66369C501AB0}` | audio codec driver (`\_SB.ACHW` ?) | Same interface as the ADIE codec of [qc8x60aud.sys](./qc8x60aud.md). Used as the audio "resource manager" (`rm_audio_sr_ioctl`). See [IOCTL 0x50012048](#ioctl-0x50012048--rm_audio_sr_ioctl) |
+| interface `{3FE58EBD-6A7D-4760-A01F-66369C501AB0}` | [qcsitarcodec8930.sys](./qcsitarcodec8930.md) (`\_SB.ACHW`) | Same interface as the ADIE codec of [qc8x60aud.sys](./qc8x60aud.md). Used as the audio "resource manager" (`rm_audio_sr_ioctl`). See [IOCTL 0x50012048](#ioctl-0x50012048--rm_audio_sr_ioctl) |
 | interface `{4EE2204F-14FF-4139-9853-0DA54D6849D5}` | [qcacdb8930.sys](./qcacdb8930.md) | ACDB. Opened for each read only to get the `acdb_ioctl` entry point ([IOCTL 0x50022400](#ioctl-0x50022400)), then closed |
 | `\Device\RESOURCE_HUB\<connection id>` | GPIO controller ([qcgpio.sys](./qcgpio.md)) | The 3 GpioIo resources. `IOCTL_GPIO_WRITE_PINS` / `IOCTL_GPIO_READ_PINS`. See [GPIO](#gpio) |
 
@@ -155,7 +155,7 @@ Payload (32 bytes):
 
 ### IOCTL 0x85B52000 / 0x85B52400 / 0x85B52404 — SLIMbus
 
-These IOCTLs are sent by Qcmbhc8930.sys to the SLIMbus driver (interface `{88EEFAB5-35A8-42FF-80DB-00D97137608D}`).
+These IOCTLs are sent by Qcmbhc8930.sys to the SLIMbus driver [qcslimbus8930.sys](./qcslimbus8930.md) (interface `{88EEFAB5-35A8-42FF-80DB-00D97137608D}`).
 
 | Property | Value |
 |----------|-------|
@@ -255,7 +255,7 @@ Note: 0x5001200C and 0x50012010 have the same codes as `ADIE_CODEC_DRIVER_IOCTL_
 
 ### IOCTL 0x50012048 — rm_audio_sr_ioctl
 
-This IOCTL is sent by Qcmbhc8930.sys to the audio codec driver (interface `{3FE58EBD-6A7D-4760-A01F-66369C501AB0}`) (`rm_audio_sr_ioctl` `sub_401008` → `sub_401208`). The target is opened at the first call (`ConnectToRM` `sub_4010AC`).
+This IOCTL is sent by Qcmbhc8930.sys to the audio codec driver [qcsitarcodec8930.sys](./qcsitarcodec8930.md#ioctl-0x50012048--rm_audio_sr_ioctl) (interface `{3FE58EBD-6A7D-4760-A01F-66369C501AB0}`) (`rm_audio_sr_ioctl` `sub_401008` → `sub_401208`). The target is opened at the first call (`ConnectToRM` `sub_4010AC`).
 
 | Property | Value |
 |----------|-------|

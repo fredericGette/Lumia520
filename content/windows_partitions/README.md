@@ -48,7 +48,7 @@ Sector size : 512 bytes
 | 0x20000-0x3FFFF | EFIESP           | :white_check_mark:   | **Qualcomm EFI System Partition**<br>*Read-only*<br>File system:`FAT`<br>GUID:`EBD0A0A2-B9E5-4433-87C0-68B6B72699C7`<br>Attribute:`0x8000000000000000` |
 | 0x40000-0x417FF | MODEM_FS1        | :white_large_square: | **Qualcomm Modem live file system**<br>*Read-Write*<br>GUID:`EBBEADAF-22C9-E33B-8F5D-0E81686A68CB`<br>Attribute:`0x8000000000000000` |
 | 0x41800-0x41FFF |                  |                      | Empty space. |
-| 0x42000-0x437FF | MODEM_FS2        | :white_large_square: | **Qualcomm Modem live file system**<br>*Read-Write*<br>GUID:`EBBEADAF-22C9-E33B-8F5D-0E81686A68CB`<br>Attribute:`0x8000000000000000` |
+| 0x42000-0x437FF | MODEM_FS2        | :white_large_square: | **Qualcomm Modem live file system**<br>*Read-Write*<br>GUID:`0A288B1F-22C9-E33B-8F5D-0E81686A68CB`<br>Attribute:`0x8000000000000000` |
 | 0x43800-0x43FFF |                  |                      | Empty space. |
 | 0x44000-0x441FF | UEFI_RT_NV       | :white_large_square: | **Qualcomm UEFI Variable Services Partition**<br>*Non Volatile*<br>*Read-Write*<br>GUID:`6BB94537-7D1C-44D0-9DFE-6D77C011DBFC`<br>Attribute:`0x8000000000000000` |
 | 0x44200-0x44FFF |                  |                      | Empty space. |

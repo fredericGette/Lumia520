@@ -840,7 +840,7 @@ The driver creates 22 device interfaces on the same device, in this order (`Regi
 | 13 | `{A5B9E9A8-EE02-46DC-B9EF-562A78C3E5C9}` | VREG (`0x8006`). Used by [qcpep8930.sys](./qcpep8930.md#pmic-requests) for the `PMICVREGVOTE` resources of LDO16, LDO19, LDO26 and LDO27 (the other regulators are voted through the RPM) |
 | 14 | `{5B9DF049-70D3-4698-8E48-85B26C1AA59F}` | Used by [oempanel.sys](./oempanel.md) for the `IOCTL_PM_WLED_*` controls (WLED) |
 | 15 | `{1CF4643A-F9BF-42D3-88E8-F37EE6C0677C}` | Used by [NokiaEnergyDriver.sys](./nokiaenergydriver.md) for the charger (`0x8008`) and `IOCTL_PM_IRQ_GET_INTERRUPTS_STATUS` (`0x8007`) IOCTLs |
-| 16 | `{1408ACF4-24D1-43AB-8F80-2F7D8AEDD372}` | ? |
+| 16 | `{1408ACF4-24D1-43AB-8F80-2F7D8AEDD372}` | Loudspeaker (`0x8012`). Used by [qcsitarcodec8930.sys](./qcsitarcodec8930.md#ioctl-0x80120fa0--0x80120fa4--0x80120fb0--pmic-loudspeaker) for `IOCTL_PM_SPEAKER_ENABLE` / `MUTE` / `CD_GAIN` |
 | 17 | `{F9938F2D-3756-4760-A044-CB29AFBA5A69}` | ? |
 | 18 | `{CF19BFD2-31C2-47FC-A334-B78F00A8292D}` | PMIC hardware info (`0x8015`). Used by [qcpep8930.sys](./qcpep8930.md#pmic-requests) |
 | 19 | `{FF22FC8B-383D-40D3-AFC0-2C37A30D060A}` | Used by [NokiaEnergyDriver.sys](./nokiaenergydriver.md) for the battery alarm (`0x801A`) IOCTLs |

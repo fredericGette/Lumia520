@@ -39,7 +39,7 @@ It communicates with the following devices:
 | \Device\SMSM | [qcsmsm8930.sys](./qcsmsm8930.md) | Shared Memory State Machine. [internal IOCTL 0x32008](#internal-ioctl-0x32008), [internal IOCTL 0x32010](#internal-ioctl-0x32010), [IOCTL 0x3200C](#ioctl-0x3200c) |
 | \Device\PIL | [qcpil8930.sys](./qcpil8930.md) | Peripheral Image Loader. [IOCTL 0x9C41241C](#ioctl-0x9c41241c), [IOCTL 0x9C412420](#ioctl-0x9c412420), [IOCTL 0x9C412410](#ioctl-0x9c412410) |
 | ACPI node of the device (default I/O target) | [acpi.sys](./acpi.md) | [IOCTL 0x32C004](#ioctl-0x32c004--ioctl_acpi_eval_method) `IOCTL_ACPI_EVAL_METHOD`, method `CONF` |
-| Power framework (PEP) | ? | `PoFxPowerControl`, see [Power management](#power-management) |
+| Power framework (PEP) | [qcpep8930.sys](./qcpep8930.md#3404daac-set-p-state) | `PoFxPowerControl`, see [Power management](#power-management) |
 
 ### WDF setup
 
@@ -132,15 +132,15 @@ PowerControlCode `{3404DAAC-8E2C-41E4-8458-3158E5AD442B}`
 Inputbuffer (8 bytes):  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | 00 00 00 00 | Component index ? (the WCN has only component 0) |
+| 00-03 | 00 00 00 00 | Component index (the WCN has only component 0), checked by the PEP, see [qcpep8930.sys](./qcpep8930.md#3404daac-set-p-state) |
 | 04-07 | 00 00 00 00 | P-state: 0 = P0 (WCNSS powered, before the image is loaded), 1 = P1 (after the children are created) |
 
 Outputbuffer (12 bytes):  
 | Bytes | Value | Comment |
 |-------|-------|---------|
 | 00-03 | 03 00 00 00 | 3 = `PEP_STATE_SYNC_PATH` (done), 1 = `PEP_STATE_ASYNC_PATH_IN_PROGRESS` (the PEP calls `PEPPowerControlCallback` with code 2 when the transition is done, which sends event 4) |
-| 04-07 | 00 00 00 00 ? | Checked = 0 by qcuart8930.sys |
-| 08-0B | ? | Echo of the requested P-state ? (qcuart8930.sys checks that it equals input `04-07`) |
+| 04-07 | 00 00 00 00 | NTSTATUS of the request (written by the PEP). Checked = 0 by qcuart8930.sys |
+| 08-0B | ? | Echo of the requested P-state, written by the PEP (qcuart8930.sys checks that it equals input `04-07`) |
 
 The same PowerControlCode is used by [qcdxkm8930.sys](./qcdxkm8930.md#other-guid) to change the P-state of its engines (`sub_4A2E68`), through `DxgkCbPowerRuntimeControlRequest` with a 16-byte input: `00-03` component index, `04-07` P-state (clamped to the component's limits), `08-0B` signature `4D 50 50 52` ("MPPR"), `0C-0F` pointer to an event (or 0). Same 12-byte output: when `00-03` is not 3, qcdxkm8930 waits up to 1 s for the event. This supports reading `00-03` above as the component index.  
 It's also used by [qcuart8930.sys](./qcuart8930.md#power-management), always on component 0, where the "P-states" are actually commands to the PEP: 0/1 = UART GPIOs on/off, 2–5 = GSBI bus clock and UART core clock on/off, 6–16 = UART core clock frequency (7.3728 to 64 MHz). It treats the request as successful only if the output is `03 00 00 00`, `00 00 00 00`, then the requested value.

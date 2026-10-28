@@ -426,7 +426,7 @@ Inputbuffer:
 | 04-07 | ? | `PKEVENT` `phHardwareEnterD3Event`: set when it's suspended / disconnected |
 
 Sent synchronously by `UsbDiag_Ioctl_0x808520C0` (0x40196C) after opening `\Device\USB_DIAG` (access 0x1F0000). The names come from an assert in `DiagRouterComposite.c` (`pUsbOpenParams->phHardwareEnterD0Event && pUsbOpenParams->phHardwareEnterD3Event`). Kernel mode only: the buffer contains kernel pointers.  
-The same IOCTL is sent by [qcmbrg8930.sys](./qcmbrg8930.md#ioctl-0x808520c0) to `\Device\USB_MODEM_BRIDGE`, with the same buffer: device type 0x8085 seems to be the common control interface of the USB function drivers.
+The same IOCTL is sent by [qcmbrg8930.sys](./qcmbrg8930.md#ioctl-0x808520c0) to `\Device\USB_MODEM_BRIDGE` and by [qcrmnetbridge8930.sys](./qcrmnetbridge8930.md#ioctl-0x808520c0) to `\Device\USB_RMNET`, with the same buffer: device type 0x8085 seems to be the common control interface of the USB function drivers.
 
 ---
 

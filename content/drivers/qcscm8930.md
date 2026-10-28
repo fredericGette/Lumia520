@@ -207,7 +207,7 @@ This IOCTL is processed by Qcscm8930.sys
 |------|------------------|-------------------|
 | IOCTL_INTERNAL_SCM_CONTROL_CLASS_SYSCALL | ≥ 16 | same as InputBuffer (same buffer) |
 
-Same buffer and processing as [IOCTL 0xC3514000](#ioctl-0xc3514000--ioctl_scm_control_class_syscall). Sent by [qcpil8930.sys](./qcpil8930.md#ioctl-0xc3514004) for the PAS commands 0x801, 0x805 and 0x806.
+Same buffer and processing as [IOCTL 0xC3514000](#ioctl-0xc3514000--ioctl_scm_control_class_syscall). Sent by [qcpil8930.sys](./qcpil8930.md#ioctl-0xc3514004) for the PAS commands 0x801, 0x805 and 0x806, and by [qcssm8930.sys](./qcssm8930.md#internal-ioctl-0xc3514004) for the commands 0x2C01, 0x2C02 (service 0xB) and the trustlet `TzappName` (0x3F001, 0x3F401).
 
 ---
 
@@ -476,7 +476,8 @@ If the signature or the count is wrong: 0xC014000F (logged as info). The result 
 
 ### IOCTL 0x71E8C
 
-This IOCTL is sent by Qcscm8930.sys to the SD storage interface `{27447C21-…}` (`SdStorIssueIRP`, `sub_404F94`), synchronously (`WdfRequestSend` with `WDF_REQUEST_SEND_OPTION_SYNCHRONOUS`)
+This IOCTL is sent by Qcscm8930.sys to the SD storage interface `{27447C21-…}` (`SdStorIssueIRP`, `sub_404F94`), synchronously (`WdfRequestSend` with `WDF_REQUEST_SEND_OPTION_SYNCHRONOUS`)  
+It is also sent by [qcremotefs8930.sys](./qcremotefs8930.md#ioctl-0x71e8c) to `\Device\Harddisk0\Partition0` to read and write the modem file system partitions (operations 0x10000, 0x10001, 0x10002)  
 
 | Property | Value |
 |----------|-------|
@@ -493,7 +494,7 @@ Inputbuffer / Outputbuffer:
 | Bytes | Value | Comment |
 |-------|-------|---------|
 | 00-03 | 20 04 00 00 | Size of the header (1056) |
-| 04-07 | | Operation: 0 = get the reliable write size (`SdStorQueryReliableWriteSize`), 2 = read the write counter (`SdStorQueryWriteCounter`), 3 = write frames (`FlushStore`, `FlushTpmStore`) |
+| 04-07 | | Operation: 0 = get the reliable write size (`SdStorQueryReliableWriteSize`), 2 = read the write counter (`SdStorQueryWriteCounter`), 3 = write frames (`FlushStore`, `FlushTpmStore`). Used by [qcremotefs8930.sys](./qcremotefs8930.md#ioctl-0x71e8c): 0x10000 = probe, 0x10001 = read sectors, 0x10002 = write sectors |
 | 10-13 | | Number of 512-byte blocks |
 | 14-17 | | Reliable write size, returned by the operation 0 |
 | 20-21F | | RPMB response frame (big-endian; result at offset 508 of the frame, must be 0 else 0xC000009C) |
@@ -504,7 +505,7 @@ Inputbuffer / Outputbuffer:
 
 ### Interface GUID
 
-GUID_SCM_DEVINTERFACE (raw TZ syscalls, IOCTL 0xC35140xx), opened by [qcpil8930.sys](./qcpil8930.md) and [qccdi8930.sys](./qccdi8930.md)  
+GUID_SCM_DEVINTERFACE (raw TZ syscalls, IOCTL 0xC35140xx), opened by [qcpil8930.sys](./qcpil8930.md), [qccdi8930.sys](./qccdi8930.md) and [qcssm8930.sys](./qcssm8930.md)  
 `{41C66D2A-A9F1-40CA-A329-AE096C03EE68}`
 
 GUID_SYSENV_INTERFACE (UEFI variable service, internal IOCTL 0x5200xx), used by [qcpmicapps8930.sys](./qcpmicapps8930.md) and awaited by [qcbms8930.sys](./qcbms8930.md) and [wpcrdmp.sys](./wpcrdmp.md)  

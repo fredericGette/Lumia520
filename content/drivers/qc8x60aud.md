@@ -5,7 +5,7 @@ It is a WDM PortCls adapter (`PcInitializeAdapterDriver` / `PcAddAdapterDevice`)
 Next to the PortCls IRP path, it exposes three private device interfaces with their own IOCTLs (see [Interfaces](#interfaces)).  
 PDB path `E:\build_e\subtask\E05A4CC0_98\output\audio\fre\qc8x60aud.pdb`. Pool tags `QAU0`…`QAU5`, `MSVD`, `PcCr`, `1GER`, `IPCA`.
 
-ACPI device `\_SB.QCRT` (`_HID` `QCOM0744`), with `_DEP` on `\_SB.Q6AD` (QCOM0750, Q6 audio), `\_SB.AHWI` (QCOM0743), `\_SB.MBGP` (QCOM2149, GPIO headset detection, [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md)), `\_SB.TICO` (QCOM0742) and `\_SB.ACHW` (QCOM0741, audio codec hardware).
+ACPI device `\_SB.QCRT` (`_HID` `QCOM0744`), with `_DEP` on `\_SB.Q6AD` (QCOM0750, Q6 audio), `\_SB.AHWI` (QCOM0743), `\_SB.MBGP` (QCOM2149, GPIO headset detection, [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md)), `\_SB.TICO` (QCOM0742) and `\_SB.ACHW` (QCOM0741, audio codec hardware, [qcsitarcodec8930.sys](./qcsitarcodec8930.md)).
 
 There's no named `\Device\` object and no symbolic link created by the driver: PortCls creates the device object, and the driver registers device interfaces on it.  
 
@@ -100,7 +100,7 @@ It communicates with the following devices (found with `IoGetDeviceInterfaces` /
 | Interface class GUID | Driver | Comment |
 |----------------------|--------|---------|
 | `{5F51A34C-6834-479D-9EA2-EAFA622524BA}` | [qcq6ad8930.sys](./qcq6ad8930.md) (`\_SB.Q6AD`) | Q6 audio (APR: ASM, ADM, AFE, voice). Mandatory at start. `IOCTL 0xADAD2BA1` returns its entry point, then all the commands go through that function (see [Q6 audio](#q6-audio-entry-point)) |
-| `{3FE58EBD-6A7D-4760-A01F-66369C501AB0}` | audio codec driver (`\_SB.ACHW` ?) | ADIE codec. Mandatory at start. `ADIE_CODEC_DRIVER_IOCTL_*` (`0x5001xxxx`). Also used by [qcmbhc8930.sys](./qcmbhc8930.md#ioctl-0x50012048--rm_audio_sr_ioctl) as the audio resource manager (`0x50012048`) |
+| `{3FE58EBD-6A7D-4760-A01F-66369C501AB0}` | [qcsitarcodec8930.sys](./qcsitarcodec8930.md) (`\_SB.ACHW`) | ADIE codec. Mandatory at start. `ADIE_CODEC_DRIVER_IOCTL_*` (`0x5001xxxx`). Also used by [qcmbhc8930.sys](./qcmbhc8930.md#ioctl-0x50012048--rm_audio_sr_ioctl) as the audio resource manager (`0x50012048`) |
 | `{6DB5B55F-B7D5-4D95-A0AE-40DD78A17817}` | ? | `0x50012004` (4 bytes in, 4 bytes out) and `0x50012008` (8 bytes in, 4 bytes out), same IOCTL family as the codec |
 | `{ABFE8B0D-5D26-4C5A-B5F2-1F33E47A4F65}` | [qcaudhwi8930.sys](./qcaudhwi8930.md) (`\_SB.AHWI`) | AFE port start / stop. Opened for each request. See [IOCTL 0x50032000 / 0x50032004](#ioctl-0x50032000--0x50032004--afe-port-start--stop) |
 | `{093C3754-B2D1-4AC7-B93E-A8FD62FDF7C3}` | [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md) (`\_SB.MBGP`) | GPIO headset detection. Used when `GpioBasedHeadsetDetection` ≠ 0. `0x500A2800` |
@@ -396,7 +396,7 @@ All the audio commands are then calls of the entry point, with command codes in 
 
 ### IOCTL 0x50012004 / 0x50012008 / 0x5001200C / 0x50012010 — ADIE codec
 
-These IOCTLs are sent by Qc8x60aud.sys to the audio codec driver (interface `{3FE58EBD-…}`), from `CTablaTxHelper::CodecHardwareStart` (`sub_4283AC`) and `CodecHardwareStop` (`sub_428218`), and by the Rx helper (`sub_42E204`, `sub_42E0C0`).
+These IOCTLs are sent by Qc8x60aud.sys to the audio codec driver [qcsitarcodec8930.sys](./qcsitarcodec8930.md#ioctl-0x50012004--0x50012008--0x5001200c--0x50012010--0x50012018--0x5001201c--adie-codec-device) (interface `{3FE58EBD-…}`), from `CTablaTxHelper::CodecHardwareStart` (`sub_4283AC`) and `CodecHardwareStop` (`sub_428218`), and by the Rx helper (`sub_42E204`, `sub_42E0C0`).
 
 | Property | Value |
 |----------|-------|
@@ -419,7 +419,7 @@ Inputbuffer (ACQUIRE_DEVICE):
 | 04-07 | 01 00 00 00 | Number of entries ? |
 | 08-0B | ? | Kernel pointer to a 16-byte descriptor `{ device id, 1, ?, bits per sample }` |
 
-The names come from the `DbgPrintEx` messages of the driver. Other codes of the same family sent to the same interface: 0x50012020 (`sub_42DBC4`), 0x50012040 (`sub_42D884`), 0x50012044 (`sub_42D980`).
+The names come from the `DbgPrintEx` messages of the driver. Other codes of the same family sent to the same interface: 0x50012020 (`sub_42DBC4`, [read codec registers](./qcsitarcodec8930.md#ioctl-0x50012020--0x50012024--codec-registers)), 0x50012040 (`sub_42D884`), 0x50012044 (`sub_42D980`) ([connect / disconnect](./qcsitarcodec8930.md#ioctl-0x50012040--0x50012044--connect--disconnect)).
 
 ---
 

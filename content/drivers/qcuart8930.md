@@ -25,7 +25,7 @@ It communicates with the following devices:
 |--------|--------|---------|
 | ACPI node of the device (attached device) | acpi.sys | [IOCTL 0x32C004](#ioctl-0x32c004--ioctl_acpi_eval_method) `INFO` |
 | `\Device\RESOURCE_HUB` | [acpiex.sys](./acpiex.md) | [IOCTL 0x2AC000](#ioctl-0x2ac000--ioctl_rh_query_connection_properties), only when the port is opened through the resource hub |
-| Power framework (PEP) | ? | `PoFxRegisterDevice` + `PoFxPowerControl`, see [Power management](#power-management) |
+| Power framework (PEP) | [qcpep8930.sys](./qcpep8930.md#3404daac-set-p-state) | `PoFxRegisterDevice` + `PoFxPowerControl`, see [Power management](#power-management) |
 | UART / GSBI / TCSR / ADM / GIC / clock controller registers | — | Mapped directly with `MmMapIoSpace`, addresses from the [property tables](#property-tables) |
 
 Pool tags: `qua0` (driver, `WDF_DRIVER_CONFIG.DriverPoolTag`), `qua1` (`\DosDevices\COMn` string), `qua2` (resource hub connection properties), `quaa` (UART context, 512 bytes), `quab` (RX ring buffer, 2048 bytes), `quaC` (interrupt context, 76 bytes).

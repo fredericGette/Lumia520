@@ -92,7 +92,7 @@ These IOCTLs are processed by Acpi.sys
 |------|------------------|-------------------|
 | IOCTL_ACPI_ASYNC_EVAL_METHOD / IOCTL_ACPI_EVAL_METHOD | ≥ 8 | 0 or ≥ 20 |
 
-Handlers: `ACPIIoctlAsyncEvalControlMethod` / `ACPIIoctlEvalControlMethod`, both use `ACPIIoctlEvalPreProcessing` (0x12EEC) then `AMLIAsyncEvalObject` / `AMLIEvalNameSpaceObject`. The async variant returns `STATUS_PENDING` and completes in `ACPIIoctlAsyncEvalControlMethodCompletion`. This is the IOCTL used by qcpmic8930.sys and qcbms8930.sys to evaluate `PMCF`.
+Handlers: `ACPIIoctlAsyncEvalControlMethod` / `ACPIIoctlEvalControlMethod`, both use `ACPIIoctlEvalPreProcessing` (0x12EEC) then `AMLIAsyncEvalObject` / `AMLIEvalNameSpaceObject`. The async variant returns `STATUS_PENDING` and completes in `ACPIIoctlAsyncEvalControlMethodCompletion`. This is the IOCTL used by qcpmic8930.sys and qcbms8930.sys to evaluate `PMCF`, and by [qcsmmu8930.sys](./qcsmmu8930.md#ioctl-0x32c004--ioctl_acpi_eval_method) to evaluate `BCDE`, `PTCA`, `AGPA` and `CORE`.
 
 Inputbuffer, one of 4 formats selected by the signature:  
 | Bytes | Value | Comment |

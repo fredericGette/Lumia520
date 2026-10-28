@@ -111,10 +111,10 @@ Record (28 bytes, pool tag `'qpp5'`, `sub_402154`), also the input buffer of `Po
 | Bytes | Value | Comment |
 |-------|-------|---------|
 | 00-0B | e.g. `\_SB.TCH1` | Device path (1 to 9 characters), NUL padded |
-| 0C-0F | 00 00 00 00 | ? |
-| 10-13 | 01 00 00 00 | Current D-state as `DEVICE_POWER_STATE` ? Set to 1 (`PowerDeviceD0`) at creation, to 0 after a failure. This driver never sets it to the new state (the PEP may update it ?) |
-| 14-17 | e.g. 04 00 00 00 | Requested D-state + 1 = `DEVICE_POWER_STATE` (1 = D0 … 4 = D3) |
-| 18 | 01 | ? |
+| 0C-0F | 00 00 00 00 | Cached PEP device pointer: [qcpep8930.sys](./qcpep8930.md#5e7a62c2-set-d-state-by-name) looks the path up when it's 0 and writes the pointer here |
+| 10-13 | 01 00 00 00 | Current D-state as `DEVICE_POWER_STATE`. Set to 1 (`PowerDeviceD0`) at creation, to 0 after a failure. This driver never sets it to the new state: the PEP copies `14-17` here on success |
+| 14-17 | e.g. 04 00 00 00 | Requested D-state + 1 = `DEVICE_POWER_STATE` (1 = D0 … 4 = D3). Reset to 0 by the PEP on success |
+| 18 | 01 | ? Reset to 0 by the PEP on success |
 | 19-1B | 00 00 00 | |
 
 ### D-state change
@@ -123,7 +123,7 @@ Record (28 bytes, pool tag `'qpp5'`, `sub_402154`), also the input buffer of `Po
 1. `buffer` NULL → "Memory Not Valid or Argument is not in range", failure.
 2. `strlen(buffer)` must be 1–9 and the byte at offset 10 (D-state) must be 0–3, otherwise the same error.
 3. Under the fast mutex, looks for the path in the [device list](#device-list) (`strcmp`), or creates a new record. The byte at offset 10 of the request buffer is **incremented in place**, and the new value (1–4) is stored at `+0x14` of the record.
-4. If `+0x14` = `+0x10`, success without calling the PEP (with the values above: a request for D0 while `+0x10` is still 1).
+4. If `+0x14` = `+0x10`, success without calling the PEP (a request for D0 while `+0x10` is still 1, or a repeated request for the state the PEP stored in `+0x10` after the previous success).
 5. Otherwise (fails if there's no PoFx handle), `PoFxPowerControl(handle, {5E7A62C2-1983-44C1-A399-5B8353A4A933}, record, 28, output, 12, &returned)`. The mutex is released before the call.
    * failure → "ExSocDStateChange Failed", failure.
    * output `00-03` = 3 and output `04-07` ≠ 0 → "PoFxPowerControl Result Failed=0x%x" (value of `04-07`), `+0x10` and `+0x14` of the record are reset to 0, failure.
@@ -136,7 +136,7 @@ Output of `PoFxPowerControl` (12 bytes, initialised to 0):
 | 04-07 | ? | Error code when ≠ 0 |
 | 08-0B | ? | Not read |
 
-The control code `{5E7A62C2-…}` must be handled by the power-control callback of [qcpep8930.sys](./qcpep8930.md); its handler is not identified yet.
+The control code `{5E7A62C2-…}` is handled by sub_4098B0 of [qcpep8930.sys](./qcpep8930.md#5e7a62c2-set-d-state-by-name): it applies the `DSTATE` resources of the device described in `DCFG`/`ECFG`. Its result `04-07` is 0 or `STATUS_UNSUCCESSFUL` (0xC0000001), `08-0B` is 0.
 
 ---
 

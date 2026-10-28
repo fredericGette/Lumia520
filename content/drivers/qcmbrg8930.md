@@ -148,7 +148,7 @@ Inputbuffer:
 | 00-03 | ? | `PKEVENT` `phHardwareEnterD0Event` (context +0x4C): set when the USB modem function becomes active |
 | 04-07 | ? | `PKEVENT` `phHardwareEnterD3Event` (context +0x5C): set when it's suspended / disconnected |
 
-Same IOCTL and same buffer as the one sent by [qcdiagrouter8930.sys](./qcdiagrouter8930.md#ioctl-0x808520c0) to `\Device\USB_DIAG`; the names come from the same assert (`usbOpenParams.phHardwareEnterD0Event && usbOpenParams.phHardwareEnterD3Event`, `mbrgusb.c`). Kernel mode only: the buffer contains kernel pointers.
+Same IOCTL and same buffer as the one sent by [qcdiagrouter8930.sys](./qcdiagrouter8930.md#ioctl-0x808520c0) to `\Device\USB_DIAG` and by [qcrmnetbridge8930.sys](./qcrmnetbridge8930.md#ioctl-0x808520c0) to `\Device\USB_RMNET`; the names come from the same assert (`usbOpenParams.phHardwareEnterD0Event && usbOpenParams.phHardwareEnterD3Event`, `mbrgusb.c`). Kernel mode only: the buffer contains kernel pointers.
 
 ---
 

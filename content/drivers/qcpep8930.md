@@ -58,6 +58,7 @@ The driver writes `~MHz` (REG_DWORD) in `HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION
 GUID of the ETW providers (`EtwRegister`):  
 `{878B6F92-11BE-472A-9CE4-022003CD8B2D}` (PEP)  
 `{2010E0B6-79DB-4C4A-9CCE-7AB31EFBCA97}`  
+`{39A3D3E9-9260-45FA-8778-14AFEE6FE944}` (registered with the two above by sub_40CCA4, at the first [debug control request](#9e50a259--f1923a9a-xo-statistics-and-debug-control))  
 `{C2EF64A6-79C9-462E-849F-33C76FAC759B}` PEP_PPP (registered when the first VREG PPP client registers)  
 `{1A01E46E-E48A-4C7E-908C-E84F193B44CE}` PMIC_KMDF, the same GUID as the provider of [qcpmic8930.sys](./qcpmic8930.md) (shared source code)
 
@@ -106,9 +107,9 @@ Device notifications handled:
 | 4 | sub_40DFBC | Unregister device ? |
 | 5 | sub_40835C | Device power state (`PepDevicePowerStateWork`, `PEP_DState_Mgmt.c`) |
 | 7 | — | Accepted, nothing done |
-| 13 | sub_40DFD4 | Component state change, applies the `DCFG` resources (clock regime) |
-| 14 | sub_40ECB4 | Component state change, applies the `DCFG` resources (clock regime) |
-| 15 | sub_40EE94 | ? |
+| 13 | sub_40DFD4 | Work (`PEP_DPM_WORK` ?): dequeues one deferred request and fills the `PEP_WORK` structure, see [Power control requests](#power-control-requests) |
+| 14 | sub_40ECB4 | Power control request (`PEP_DPM_POWER_CONTROL_REQUEST` ?), see [Power control requests](#power-control-requests) |
+| 15 | sub_40EE94 | Power control complete (`PEP_DPM_POWER_CONTROL_COMPLETE` ?): frees the result buffer of an asynchronous request (tag `qpex` for `{9E50A259-…}`, `qpe5` otherwise) |
 | 16 | sub_40E340 | ? |
 | 19 | sub_409C48 | ? |
 | 21 | sub_40E288 | Register debugger: NPA clients `Debugger_client` on `/clk/bus/dfab` and `Debugger_client2` on `/clk/bus/cfpb`, clock `cc_usb_hs1_hclk` |
@@ -132,6 +133,94 @@ Processor notifications handled:
 The ids follow `pepfx.h`; the names with "?" are guesses.
 
 Low power modes (LPRM) defined for the sleep solver (strings at `.rdata:0x0044DF10`…): `rpm.handshake`, `cpu_vdd0/1.power_collapse`, `cpu_vdd0.power_collapse_rpmhs`, `cpu_vdd1.power_collapse_ni`, `swfi_core0/1.clk_gate_with_ramp`, `l2_cache.retention/no_retention`, `pxo.shutdown`, `cxo.shutdown`, `vdd_dig.min_level_0`, `vdd_dig_svs.svs_min_level/svs_nom_level`, `mpm_warmup`, `mpm_rampup`, `rpm_batch.send_handshake`. The solver also contains a path to a `sleep_config.ini` (`/nv/item_files/sleep/core%d/sleep_config.ini`) inherited from the modem code.
+
+---
+
+### Power control requests
+
+Requests sent by device drivers with `PoFxPowerControl` (or `DxgkCbPowerRuntimeControlRequest`) arrive as device notification 14 (sub_40ECB4) with a `PEP_POWER_CONTROL_REQUEST` (8 DWORDs: device handle, `PowerControlCode` GUID pointer, InBuffer, InBufferSize, OutBuffer, OutBufferSize, BytesReturned, Status).  
+`sub_40E648` compares the GUID with 5 codes (`.rdata:0x448498`…`0x4484E7`):  
+| PowerControlCode | Handler | Request | Senders |
+|------------------|---------|---------|---------|
+| `{3404DAAC-8E2C-41E4-8458-3158E5AD442B}` | sub_410B6C (`PepPerformanceWork`, `PEP_PState_Mgmt.c`) | [Set the P-state of a component](#3404daac-set-p-state) | [qcwcn8930.sys](./qcwcn8930.md#power-management), [qcadsp8930.sys](./qcadsp8930.md#power-management), [qcamss8930.sys](./qcamss8930.md#power-management), [qcuart8930.sys](./qcuart8930.md#power-management), [qccamvfe8930.sys](./qccamvfe8930.md), [qcdxkm8930.sys](./qcdxkm8930.md#other-guid) |
+| `{5E7A62C2-1983-44C1-A399-5B8353A4A933}` | sub_4098B0 | [Set the D-state of a device by name](#5e7a62c2-set-d-state-by-name) | [qcpepproxy8930.sys](./qcpepproxy8930.md#d-state-change) |
+| `{C9A3994A-E72C-4E73-8C8F-41225DCDC154}` | sub_414840 + sub_414A70 | [Configure a clock by name](#c9a3994a-configure-a-clock) | ? |
+| `{9E50A259-FB71-400B-975A-4680F895A04E}` | sub_40EF08 | [Read the RPM sleep statistics](#9e50a259--f1923a9a-xo-statistics-and-debug-control) | [qcsysdef8930.sys](./qcsysdef8930.md#ioctl-0x88880000) |
+| `{F1923A9A-D5FD-4C29-A72E-ABC9F2F8A3B9}` | sub_40CA34 | [Debug / logging control](#9e50a259--f1923a9a-xo-statistics-and-debug-control) | [qcsysdef8930.sys](./qcsysdef8930.md#ioctl-0x88880004) |
+
+Any other GUID: `04-07` = `STATUS_INVALID_PARAMETER` (0xC000000D) in the result.
+
+**Synchronous path** (request at PASSIVE_LEVEL): the request is handled immediately. The driver writes a 12-byte result into OutBuffer (48 bytes for `{9E50A259-…}`) **without checking OutBufferSize**, and sets BytesReturned = OutBufferSize field = 12 (48), Status = result `04-07`:  
+| Bytes | Value | Comment |
+|-------|-------|---------|
+| 00-03 | 03 00 00 00 | 3 = done synchronously (`PEP_STATE_SYNC_PATH` ?) |
+| 04-07 | 00 00 00 00 | NTSTATUS of the request |
+| 08-0B | ? | Request specific (the new P-state for `{3404DAAC-…}`, else 0) |
+
+**Asynchronous path** (IRQL > PASSIVE_LEVEL): a 52-byte work entry (tag `qpe3`, type 2, copy of the 8 DWORDs of the request) is appended to the work list (`dword_4CDD60`, spinlock `dword_4CC8D0`). The result is `01 00 00 00`, `00 00 00 00` (1 = in progress, `PEP_STATE_ASYNC_PATH_IN_PROGRESS` ?), BytesReturned 12, and the PEP calls the kernel `RequestWorker` callback (`off_4CC8CC`). The kernel then sends device notification 13 (sub_40DFD4), which runs the handler and fills the `PEP_WORK` with work type 3 (complete power control ?): device handle, same GUID, context, InBuffer/InBufferSize = the original input, OutBuffer/OutBufferSize = the 12-byte result (tag `qpe5`) whose `00-03` is now **2**. The kernel calls the `PowerControlCallback` of the requesting driver with these buffers (this is the "output buffer whose first DWORD is 2" seen by [qcadsp8930.sys](./qcadsp8930.md#power-management), [qcwcn8930.sys](./qcwcn8930.md#power-management) and [qccamvfe8930.sys](./qccamvfe8930.md)), and finally sends notification 15, which frees the result.  
+So the caller's InBuffer must stay valid until its `PowerControlCallback` runs. For `\_SB.SMMU.GPU0` (`dword_4CC8C8`, set by sub_403330 while parsing `DCFG`) the result is passed as InBuffer too. For `{9E50A259-…}` the asynchronous result is a 48-byte buffer (tag `qpex`) given as both InBuffer and OutBuffer with sizes 4.
+
+#### {3404DAAC} Set P-state
+
+Inputbuffer (≥ 8 bytes, the size isn't checked):  
+| Bytes | Value | Comment |
+|-------|-------|---------|
+| 00-03 | 00 00 00 00 | Component index. Must be < number of components of the device (device `+0x10`), else `STATUS_INVALID_PARAMETER` |
+| 04-07 | e.g. 01 00 00 00 | P-state. Must be < number of `PSTATE`s of the component (`+0x2C`), else `STATUS_INVALID_PARAMETER` |
+
+Result: `04-07` = status, `08-0B` = the requested P-state (that's why [qcuart8930.sys](./qcuart8930.md#power-management) checks that it equals its input).  
+If the component is busy (component `+0x18` ≠ 0) → `STATUS_UNSUCCESSFUL` (0xC0000001). Otherwise the resources of the matching `PSTATE` package of `DCFG` are applied one by one (sub_410E24: clocks, regulator votes, GPIOs, bus requests…) and the P-state is stored in the component (`+0x30`). The resources are applied even when the P-state doesn't change.
+
+#### {5E7A62C2} Set D-state by name
+
+Inputbuffer = the 28-byte record of [qcpepproxy8930.sys](./qcpepproxy8930.md#device-list):  
+| Bytes | Value | Comment |
+|-------|-------|---------|
+| 00-0B | e.g. `\_SB.TCH1` | ACPI path of the device (ANSI). Looked up (case-insensitive) in the devices registered with the PEP (sub_412794) |
+| 0C-0F | 00 00 00 00 | Cached device pointer: if 0 the name is looked up, and the PEP **writes the device pointer here** |
+| 10-13 | ? | Written by the PEP: the new state (copy of `14-17`) |
+| 14-17 | 01 … 04 | Requested state + 1 (1 = D0 … 4 = D3). Other values → failure. Reset to 0 by the PEP |
+| 18 | ? | Reset to 0 by the PEP |
+
+If the requested state differs from the device's current state (device `+0x34`), the resources of the `DSTATE` package with index `state − 1` (list at device `+0x40`) are applied with sub_410E24. Then the current state is updated.  
+Result `04-07` = 0, or `STATUS_UNSUCCESSFUL` (0xC0000001) when the name is unknown, the device has no `DSTATE` list, or the state is out of range. `08-0B` = 0.
+
+#### {C9A3994A} Configure a clock
+
+Inputbuffer (≥ 152 bytes ?, the size isn't checked):  
+| Bytes | Value | Comment |
+|-------|-------|---------|
+| 00-7F | e.g. `cc_gsbi4_qup_apps_clk` | Clock name, looked up with `strcmp` in the clock descriptor table (`unk_4CCCB0`, count `+0xA0`, 20-byte entries at `+0xA4`) |
+| 80-83 | ? | Frequency ? (used to compute the voltage requirement of the clock before the change, sub_41654C) |
+| 84-87 | ? | Configuration id, must be < 3 |
+| 88-97 | ? | 4 parameters passed to the configuration function of the clock |
+
+Unknown clock → `STATUS_UNSUCCESSFUL`. A failed configuration → `STATUS_UNSUCCESSFUL` and the debug message "PEP: CLKRGM Resource configuration failed!". No sender found among the documented drivers.
+
+#### {9E50A259} / {F1923A9A} XO statistics and debug control
+
+`{9E50A259-…}` (sub_40EF08) copies the RPM sleep statistics (physical 0x0010DD04, mapped by sub_4361C4: a DWORD count, then up to 4 records of 12 bytes) into the 48-byte result:  
+| Bytes | Value | Comment |
+|-------|-------|---------|
+| 00-03 | 03 00 00 00 | Synchronous |
+| 04-07 | 00 00 00 00 | Status. 0xC023001C if the statistics aren't mapped |
+| 08-0B | | Not written |
+| 0C-0F | ? | Number of records `n` (copied from the RPM, not bounded) |
+| 10-2F | ? | `n` × (record `+4`, record `+8`). The records are, in this order (from `PepDumpRPMStats`, which converts records 1 and 3 from 32768 Hz ticks): XO shutdown count, XO shutdown time, VDD min count, VDD min time ? |
+
+The input buffer isn't read.
+
+`{F1923A9A-…}` (sub_40CA34) reads only the DWORD at `00-03` of the input, a bit mask processed from bit 0 upwards:  
+| Bit | Action |
+|-----|--------|
+| 0x0001 | Start the PEP logging (`byte_4CD3C2` = 1, read by the processor idle code sub_40FD30) |
+| 0x0002 | Stop: `dword_4CE024` = 0, stops the info thread, `byte_4CD3C2` = 0 |
+| 0x0008 | Clock debug command `setflags top ff` (all clock debug flags). When the logging is later active without this bit, `setflags top 0` is sent |
+| 0x0010, 0x0020, 0x0040 | Add `--enabled`, `--on`, `--xovote` to an `info` clock command. The command (e.g. `info --enabled --on --xovote`) is run by sub_40D410, a thread that runs it again at each timeout of `KeWaitForMultipleObjects` until a stop |
+| 0x1000 | `dword_4CE024` = 1 ? |
+
+The clock commands are executed by the clock driver debug interpreter (sub_417D10, "Clock Debug Log", commands `enable`, `disable`, `setfreq`, `setdiv`, `setflags`, `config`, `reset`, `info`, `invert`, `bist`, `gpio`, `getfreq`, `log`).  
+The first request registers 3 ETW providers and creates 4 events (sub_40CCA4). If the logging is already active (or the info thread is running) and bit 0x0002 isn't set, the request fails with `STATUS_UNSUCCESSFUL`.
 
 ---
 
@@ -196,7 +285,7 @@ Regions mapped with `MmMapIoSpace` (non-cached):
 |---------|------|----------|---------|
 | 0x00108000 | 0x4000 | sub_42CD4C | RPM message RAM |
 | 0x0010DB00 | 0x9C | sub_4361C4 | ? (MPM ?) |
-| 0x0010DD04 | 0x34 | sub_4361C4 | ? |
+| 0x0010DD04 | 0x34 | sub_4361C4 | RPM sleep statistics (XO shutdown / VDD min ?), read by `PepDumpRPMStats` (sub_40CE08) and by the power control request [`{9E50A259-…}`](#9e50a259--f1923a9a-xo-statistics-and-debug-control) |
 | 0x00700000 | 0x8000 | sub_4D3F30 | QFPROM (TSENS calibration fuses ?) |
 | 0x00800000 | 0x4000 / 0x2154 | sub_4289C4, sub_42E7B4 | TLMM (GPIO) |
 | 0x00900000 | 0x4000 | sub_4D3F30 | Clock controller (GCC), TSENS registers |
@@ -342,3 +431,10 @@ ADC interface (awaited by `QCOM2154` and zones 10–11, see [NokiaEnergyDriver.s
 `{10542F20-9718-452A-897A-45785468E57A}`
 
 Interfaces of [qcpmic8930.sys](./qcpmic8930.md) used for the PPP requests: VREG `{A5B9E9A8-EE02-46DC-B9EF-562A78C3E5C9}`, GPIO `{5186FCEA-68FC-420A-9400-601A6D0CA988}`, MPP `{EF512E80-3E93-45D7-AF9D-D375D53596B8}`, LED `{D87538A4-32C4-46D8-985E-F7CA7731BA27}`, hardware `{CF19BFD2-31C2-47FC-A334-B78F00A8292D}`
+
+Power control codes handled, see [Power control requests](#power-control-requests):  
+`{3404DAAC-8E2C-41E4-8458-3158E5AD442B}` Set P-state  
+`{5E7A62C2-1983-44C1-A399-5B8353A4A933}` Set D-state by name  
+`{C9A3994A-E72C-4E73-8C8F-41225DCDC154}` Configure a clock  
+`{9E50A259-FB71-400B-975A-4680F895A04E}` Read the RPM sleep statistics  
+`{F1923A9A-D5FD-4C29-A72E-ABC9F2F8A3B9}` Debug / logging control

@@ -2,7 +2,7 @@
 
 BAM (Bus Access Manager, Qualcomm "SPS" DMA engine) driver.  
 KMDF function driver of the 3 `QCOM0910` ACPI nodes (`\_SB.BAM0`, `\_SB.BAM1`, `\_SB.BAM2`). For each BAM it resets the block, programs the pipe security (trust) registers, allocates the descriptor FIFOs of the pipes declared in ACPI, and gives kernel clients pipe connect / disconnect, descriptor submission and completion (callback or pended request) through `METHOD_NEITHER` IOCTLs (device type 4).  
-The known client is [qcbamdmux8930.sys](./qcbamdmux8930.md), which uses the A2 BAM (`DataBAM`, 0x124C2000). The clients of `BAMDMA` and `LPASS_BAM` are unknown.  
+The known client is [qcbamdmux8930.sys](./qcbamdmux8930.md), which uses the A2 BAM (`DataBAM`, 0x124C2000). [qcslimbus8930.sys](./qcslimbus8930.md) uses the `LPASS_BAM` (0x28084000) for the SLIMbus data ports. The clients of `BAMDMA` are unknown.  
 PDB path: `P:\BAM\rel\8.2.1.1\arm\Release\qckmbam8930.pdb`. The driver does nothing at `EvtDevicePrepareHardware` besides reading resources and ACPI: the hardware is only initialized at the first [IOCTL 0x42007](#ioctl-0x42007).
 
 Device name : `\Device\BAM<n>` (`"%ws%d"`, `n` = global counter starting at 0, incremented at each `EvtDriverDeviceAdd`: the order of enumeration, not the `_UID`)  
@@ -22,6 +22,7 @@ Peer drivers (clients):
 | Driver | Comment |
 |--------|---------|
 | [qcbamdmux8930.sys](./qcbamdmux8930.md) | Opens every `{3E77CCA9-…}` instance, keeps the one whose [IOCTL 0x42003](#ioctl-0x42003) returns 0x124C2000 (A2 BAM), then uses IOCTLs 0x4202B, 0x4200B, 0x4200F and 0x42007 |
+| [qcslimbus8930.sys](./qcslimbus8930.md) | Opens every `{3E77CCA9-…}` instance, keeps the one whose [IOCTL 0x42003](#ioctl-0x42003) returns 0x28084000 (`LPASS_BAM`), then uses IOCTLs 0x42007, 0x4200B, 0x4200F and 0x4201B (asynchronous, preallocated requests) |
 
 WDF objects:
 - `DriverEntry` (0x409008) → `WdfDriverCreate`, `EvtDriverDeviceAdd` = `sub_40855C` → `sub_4083F8`.

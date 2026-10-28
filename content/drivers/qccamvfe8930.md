@@ -27,7 +27,7 @@ It communicates with the following devices:
 | Device | Driver | Comment |
 |--------|--------|---------|
 | Interface `{3e9c0fdb-cef9-4c4a-8e85-36e4a82eb80f}` (exposed) | [qccamavs8930.sys](./qccamavs8930.md) | Client: VFE service of the AVStream driver, [internal IOCTLs](#internal-ioctl-0x2324030x2326af--vfe-command) |
-| Power framework (PEP) | [qcpep8930.sys](./qcpep8930.md) ? | `PoFxPowerControl`, VFE clock P-state, see [Power management](#power-management) |
+| Power framework (PEP) | [qcpep8930.sys](./qcpep8930.md#3404daac-set-p-state) | `PoFxPowerControl`, VFE clock P-state, see [Power management](#power-management) |
 
 ### Driver initialisation
 
