@@ -77,8 +77,8 @@ The meaning of component 4 and 0x411 is unknown. The notification argument is 1 
 
 | State name (bytes) | State name (QWORD) | Decoded | Usage |
 |--------------------|--------------------|---------|-------|
-| `75 30 bc a3 22 1d c6 41` (`.text:0x10004048`) | 0x41C61D22A3BC3075 | Well-known, owner tag `OS`, sequence 6 | Written (`ZwUpdateWnfStateData`, 4 bytes): 0 or 2. Written only when the value changes (cache `dword_10006014`, initial value 3) |
-| `75 38 bc a3 3e 06 8a 41` (`.text:0x10004050`) | 0x418A063EA3BC3875 | Well-known, owner tag `SHL`, sequence 7 | Read (4 bytes). Value 1 → release the activation of the PDC component 0x411. Shell ready ? |
+| `75 30 bc a3 22 1d c6 41` (`.text:0x10004048`) | 0x41C61D22A3BC3075 | Well-known, owner tag `OS`, sequence 6 | Written (`ZwUpdateWnfStateData`, 4 bytes): 0 or 2. Written only when the value changes (cache `dword_10006014`, initial value 3). Read by [ShellChromeAPI.dll](../libraries/shellchromeapi.md#wnf-states) before showing an action dialog during do not disturb |
+| `75 38 bc a3 3e 06 8a 41` (`.text:0x10004050`) | 0x418A063EA3BC3875 | Well-known, owner tag `SHL`, sequence 7 | Read (4 bytes). Value 1 → release the activation of the PDC component 0x411. Shell ready ? (`WNF_SHL_START_READY` in [wpcrdmp.sys](./wpcrdmp.md); also read by [ShellChrome.dll](../libraries/shellchrome.md#wnf-states)) |
 
 The names were decoded by XOR with 0x41C64E6DA3BC0074 (version 1, well-known lifetime, system scope, not permanent). Their symbolic names (`WNF_...`) are unknown.
 

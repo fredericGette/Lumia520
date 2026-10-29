@@ -31,6 +31,10 @@ All about Nokia Lumia 520
 
 ## [Windows drivers](content/drivers/README.md)
 
+## [Windows applications](content/applications/README.md)
+
+## [Windows libraries](content/libraries/README.md)
+
 ## [DIY phone box](content/protections/README.md)
 
 ## [Developer device configuration](content/developer_device/README.md)
