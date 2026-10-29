@@ -73,7 +73,7 @@ It communicates with the following devices:
 | DxgkDdiNotifyAcpiEvent | sub_49DD80 | No-op |
 | DxgkDdiUnload | sub_4A8160 | |
 | DxgkDdiQueryInterface | sub_4A816C | See [Query interfaces](#query-interfaces) |
-| DxgkDdiQueryAdapterInfo | sub_4A8408 | |
+| DxgkDdiQueryAdapterInfo | sub_4A8408 | `DXGKQAITYPE_UMDRIVERPRIVATE`: the UMD [qcdx9um8930.dll](../libraries/qcdx9um8930.md#adapter-information-sub_10001660) asks for 1424 bytes and expects `+0x04` = 2 and `+0x08` = 17; `+0x0C` is the GPU family |
 | DxgkDdiCreateDevice / DestroyDevice | sub_4A4380 / sub_4A4404 | |
 | DxgkDdiCreateAllocation / DestroyAllocation / DescribeAllocation | sub_49D56C / sub_49D9F0 / sub_49DAE8 | |
 | DxgkDdiOpenAllocation / CloseAllocation | sub_49DCD8 / sub_49DD80 (no-op) | |
@@ -257,7 +257,7 @@ Finally it calls `InterfaceReference` once. With it, the display driver and the 
 ### Escapes
 
 `DxgkDdiEscape` (`sub_4A95C4`), `DXGKARG_ESCAPE`:
-* with a context (`hContext`): forwarded to the escape function of the context's engine (engine block `+0x34`, i.e. adapter `+0x1C4` + 0x258 × engine).
+* with a context (`hContext`): forwarded to the escape function of the context's engine (engine block `+0x34`, i.e. adapter `+0x1C4` + 0x258 × engine). The video UMD [qcvidum8930.dll](../libraries/qcvidum8930.md#gpu-contexts-and-escapes) sends its decoder / encoder escapes this way (header `0x501`, codes `0x2001`…`0x2203`), on its context of the VIDEO engine.
 * without context: the private data must be ≥ 64 bytes and its dword at `+0x0C` (escape code) must be `0x2xxxxxxx`; handled by `sub_4B682C`:
 
 | Code | Size | Comment |

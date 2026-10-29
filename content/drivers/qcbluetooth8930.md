@@ -39,7 +39,7 @@ GUID Bus type (`WdfDeviceSetBusInformationForChildren`, legacy bus type 15 `PNPB
 `{4D36E978-E325-11CE-BFC1-08002BE10318}` (same GUID as the "Ports" device class)
 
 GUID of the interfaces:  
-`{B53A9DB7-1343-4C7F-B7BC-251B03DD8E34}` always created and enabled by `EvtDriverDeviceAdd`. It's the interface used to open the driver and send [IOCTL 0x2A8004](#ioctl-0x2a8004) / [IOCTL 0x2A8008](#ioctl-0x2a8008) ?  
+`{B53A9DB7-1343-4C7F-B7BC-251B03DD8E34}` always created and enabled by `EvtDriverDeviceAdd`. It's the interface used by [QcBtradioctrl8930.dll](../libraries/qcbtradioctrl8930.md) to open the driver and send [IOCTL 0x2A8004](#ioctl-0x2a8004) / [IOCTL 0x2A8008](#ioctl-0x2a8008).  
 `{2388B968-8AC1-401F-9C4C-11713C110F39}` only created when `DynamicSwitch`≠0, see [DynamicSwitch mode](#dynamicswitch-mode).
 
 GUID of the ETW provider:  
@@ -194,6 +194,7 @@ qcsmd8930.sys completes it once the close is acknowledged, or returns `STATUS_IN
 ### IOCTL 0x2A8004
 
 This IOCTL is processed by QcBluetooth8930.sys  
+This IOCTL is sent by [QcBtradioctrl8930.dll](../libraries/qcbtradioctrl8930.md#devices-and-ioctls) (`BluetoothEnableRadio`)  
 
 | Property | Value |
 |----------|-------|
@@ -218,6 +219,7 @@ Switching on runs the [controller initialization](#controller-initialization); s
 ### IOCTL 0x2A8008
 
 This IOCTL is processed by QcBluetooth8930.sys  
+This IOCTL is sent by [QcBtradioctrl8930.dll](../libraries/qcbtradioctrl8930.md#devices-and-ioctls) (`IsBluetoothRadioEnabled`)  
 
 | Property | Value |
 |----------|-------|

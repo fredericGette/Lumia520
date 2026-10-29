@@ -2,7 +2,7 @@
 
 IPC Router.  
 It implements the Qualcomm "MSM IPC Router" protocol (the QMI transport, same protocol as `ipc_router.c` of the Qualcomm Linux kernels): every processor of the SoC is a *node*, every endpoint is a *port* (`node:port` address), and services are published as `service:instance` *servers*. Messages are packets with a 32-byte header, carried here over SMD channels opened on [qcsmd8930.sys](./qcsmd8930.md).  
-Each handle opened on `\Device\IPC` is one local port. User mode clients (QMI clients/services) send and receive packets with `WriteFile`/`ReadFile` and register or look up servers with the IOCTLs below. The router also forwards packets and control messages between its transports (node-to-node routing), and tells the other nodes about the local servers.  
+Each handle opened on `\Device\IPC` is one local port. User mode clients (QMI clients/services, e.g. the QMI client library [qccium8930.dll](../libraries/qccium8930.md)) send and receive packets with `WriteFile`/`ReadFile` and register or look up servers with the IOCTLs below. The router also forwards packets and control messages between its transports (node-to-node routing), and tells the other nodes about the local servers.  
 The SMD links are described in the registry (one subkey per transport). They are opened when the SMD interface arrives.  
 Built from `P:\IPC_Router\rel\8.5\arm\Release\qcipcrouter8930.pdb`.
 
@@ -145,6 +145,7 @@ For each transport subkey, the arrival of the SMD interface calls `sub_401544`, 
 
 This IOCTL is processed by Qcipcrouter8930.sys  
 This IOCTL is also sent by [qcremotefs8930.sys](./qcremotefs8930.md#ioctl-0x122000)  
+This IOCTL is also sent by [qccium8930.dll](../libraries/qccium8930.md#ipc-router-transport)  
 
 | Property | Value |
 |----------|-------|
@@ -208,7 +209,8 @@ Not found: `STATUS_NOT_FOUND` (0xC0000225).
 
 ### IOCTL 0x122008
 
-This IOCTL is processed by Qcipcrouter8930.sys
+This IOCTL is processed by Qcipcrouter8930.sys  
+This IOCTL is also sent by [qccium8930.dll](../libraries/qccium8930.md#service-lookup)  
 
 | Property | Value |
 |----------|-------|
@@ -298,6 +300,7 @@ Not registered: `STATUS_INVALID_DEVICE_REQUEST` (0xC0000010).
 
 This IOCTL is processed by Qcipcrouter8930.sys  
 This IOCTL is also sent by [qcremotefs8930.sys](./qcremotefs8930.md#ioctl-0x122017)  
+This IOCTL is also sent by [qccium8930.dll](../libraries/qccium8930.md#ipc-router-transport)  
 
 | Property | Value |
 |----------|-------|

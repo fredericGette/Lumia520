@@ -288,7 +288,7 @@ Interface `{33D84484-3626-47EE-8C6F-E7E98B113BE1}` version 2.0 (stub descriptor 
 | 6 | `sub_1000B7F4` | `Shell_SetReminderState` | `[in] GUID *`, `[in] long` | Enable / disable ? |
 | 11 | `sub_1000B790` | `Shell_CreateReminder`, `Shell_DeleteReminder` | `[in] GUID *`, `[in,out]` 8 bytes | WNF state name of the task |
 
-Opnums 1, 2, 3, 4, 5 and 11 are also used by [ReminderEvents.dll](./reminderevents.md#rpc) (which adds 10, snooze); 0 and 6 are only used here. The errors 0x82CF010D and 0x82CF010E (end of enumeration / not found ?) are returned as 0x80070490 (`ERROR_NOT_FOUND`) by the find functions; `Shell_GetReminderData` returns S_OK with `*ppData = NULL` for 0x82CF010E.
+Opnums 1, 2, 3, 4, 5 and 11 are also used by [ReminderEvents.dll](./reminderevents.md#rpc) (which adds 10, snooze); 0 and 6 are only used here among the reminder clients. [WPTimeSvc.dll](./wptimesvc.md#task-scheduler-rpc) uses opnums 0, 1 and 5 for its `NTP Time Sync Schedule` task, whose action (type 3) publishes a WNF state instead of carrying data. The errors 0x82CF010D and 0x82CF010E (end of enumeration / not found ?) are returned as 0x80070490 (`ERROR_NOT_FOUND`) by the find functions; `Shell_GetReminderData` returns S_OK with `*ppData = NULL` for 0x82CF010E.
 
 ### Reminders
 

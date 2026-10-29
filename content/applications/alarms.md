@@ -42,6 +42,6 @@ The command line isn't used: `wWinMain` (`call_RunApplication`, 0x1001174) ignor
 |--------|------|-------|---------|
 | 0x00 | 4 | `L"res://AlarmsDll!Frame.uix"` | URI of the root UIX markup: resource `Frame.uix` of the module `AlarmsDll` (`AlarmsDll.dll` ?) |
 | 0x04 | 4 | `L"Home"` | Name of the page shown at startup |
-| 0x08 | 0x38 | 0 | Unknown (not used by Alarms.exe) |
+| 0x08 | 0x38 | 0 | Unknown (not used by Alarms.exe; [DateTimeCPL.exe](./datetimecpl.md#runapplication-parameter) sets 0x10, 0x20 and 0x28) |
 
 `RunApplication` probably loads the markup, creates the window and runs the message loop until the application is closed ? (`UIXMobile.dll` isn't analysed).
