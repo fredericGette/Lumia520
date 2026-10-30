@@ -48,7 +48,7 @@ Files used other than the static imports.
 
 | File | How | Use |
 |------|-----|-----|
-| `W32Time` service (`w32time.dll`, not analysed) | `OpenServiceW` + `StartServiceW` / `ControlService(SERVICE_CONTROL_STOP)`, RPC `ncalrpc:[W32TIME_ALT]` ([W32Time RPC](#w32time-rpc)) | NTP client that actually talks to the time servers |
+| `W32Time` service ([w32time.dll](./w32time.md)) | `OpenServiceW` + `StartServiceW` / `ControlService(SERVICE_CONTROL_STOP)`, RPC `ncalrpc:[W32TIME_ALT]` ([W32Time RPC](#w32time-rpc)) | NTP client that actually talks to the time servers |
 | `HKLM\System\ControlSet001\Services\W32Time\Parameters` and `\Config` | `RegSetKeyValueW` / `RegDeleteKeyValueW` | Configuration written for W32Time before each sync (server list, log file), see [Registry](#registry) |
 | `<known folder {8C19F0BC-CFD5-48E0-807B-0682F051E368}>\NonEtwLogs\w32time.log` | `SHGetKnownFolderPath(…, 0x4000)`, `CreateFileW(OPEN_ALWAYS)`, `SetNamedSecurityInfoW` | Log file of W32Time, only when `NTP Service Logging Enabled` is set; written by W32Time, not by this DLL |
 | RPC server of the Task Scheduler service (`ITaskSchedulerSvcRpc`, dynamic LRPC endpoint) | `RpcBindingCreateW` / `RpcBindingBind` ([Task Scheduler RPC](#task-scheduler-rpc)) | Task `NTP Time Sync Schedule`; the hosting service binary isn't known |
@@ -204,11 +204,11 @@ When the task fires, the Task Scheduler service publishes `WNF_SHL_NETWORK_TIME_
 `WpW32TimeSyncNow(force)` (`sub_100074D4`):
 1. `RpcStringBindingComposeW(NULL, "ncalrpc", NULL, "W32TIME_ALT")`, `RpcBindingFromStringBindingW`, `RpcBindingSetAuthInfoExW(h, NULL, 6 = RPC_C_AUTHN_LEVEL_PKT_PRIVACY, 10 = RPC_C_AUTHN_WINNT, …, QoS { version 5, capabilities 0, identity tracking static, impersonation 2 = identify })`. RPC errors are returned as 0x8001xxxx.
 2. Takes a [PDC activation](#pdc-activation) (create + activate), the error with bit 28 set if it fails.
-3. Opnum 0 (`W32TimeSync`) with `wait = 1` and `flags = 0x12` if forced, else 3 (`TimeSyncFlag_HardResync | TimeSyncFlag_ReturnResult`; 0x10 isn't a documented flag).
-4. Result: 0 → S_OK; 1…4 → 0x83130001…0x83130004 (`ResyncResult_NoData`, `StaleData`, `Shutdown`, `ChangeTooBig`); other Win32 errors → `HRESULT_FROM_WIN32`.
+3. Opnum 0 (`W32TimeSync`) with `wait = 1` and `flags = 0x12` if forced, else 3 (`TimeSyncFlag_HardResync | TimeSyncFlag_ReturnResult`; 0x10 is `ForceResync` in [w32time.dll](./w32time.md#w32timesync-opnum-0): the correction is applied even beyond the max phase correction).
+4. Result: 0 → S_OK; 1…4 → 0x83130001…0x83130004 (`ResyncResult_NoData`, `StaleData`, `Shutdown`, `ChangeTooBig`, see [w32time.dll](./w32time.md#w32timesync-opnum-0)); other Win32 errors → `HRESULT_FROM_WIN32`.
 5. Releases the activation and the binding.
 
-Interface `{8FB6D884-2388-11D0-8C35-00C04FDA2795}` version 4.1 (W32Time, stub descriptor at 0x10002AE0).
+Interface `{8FB6D884-2388-11D0-8C35-00C04FDA2795}` version 4.1 (W32Time, stub descriptor at 0x10002AE0; server side in [w32time.dll](./w32time.md#rpc-server)).
 
 | Opnum | Stub | Called by | Parameters | Use |
 |-------|------|-----------|------------|-----|
@@ -281,7 +281,7 @@ All under `HKLM`, read with `RegGetValueW` (REG_DWORD unless stated otherwise).
 
 | Name | Type | Use |
 |------|------|-----|
-| `W32TIME_ALT` | LRPC endpoint | W32Time RPC server |
+| `W32TIME_ALT` | LRPC endpoint | W32Time RPC server ([w32time.dll](./w32time.md#rpc-server)) |
 | `ITaskSchedulerSvcRpc\Server` | Transient object security descriptor | Expected security of the Task Scheduler RPC server |
 | `\PdcPort` | ALPC port | Power dependency coordinator |
 | `NTP Time Sync Schedule`, `{A92AC509-6753-47B3-9C05-CE0B08894392}` | Task (Task Scheduler service) | Next NTP sync |

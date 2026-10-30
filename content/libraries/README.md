@@ -10,3 +10,4 @@
 [WPTimeSvc.dll](./wptimesvc.md)  
 [QcBtradioctrl8930.dll](./qcbtradioctrl8930.md)  
 [qccium8930.dll](./qccium8930.md)  
+[w32time.dll](./w32time.md)  
