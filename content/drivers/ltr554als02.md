@@ -108,7 +108,7 @@ Their `_PS0` / `_PS3` write `\_SB.ALS2` / `\_SB.PRX2` + D-state 0 / 3 to `\_SB.P
 | DeviceIoControl | `LTR554DeviceIoControl` 0x4052F8 | The 3 OEM IOCTLs below. Anything else: `STATUS_INVALID_DEVICE_REQUEST` |
 
 The other entries of the table are NULL. This is allowed because the driver is a push client: SensorsClx only requires GetSensorTiming, PowerEnable and StartAcquisition (see [wpsensorsclx.sys](./wpsensorsclx.md#client-interface)).  
-The capabilities declare no threshold notification mode, so applications can only use the periodic mode (mode 0x00 of IOCTL 0x220014).  
+The capabilities returned by QueryDeviceInformation declare no threshold notification mode. On a real Lumia 520, however, SensorsClx GetCaps ([IOCTL 0x220004](./wpsensorsclx.md#ioctl-0x220004--getcaps)) on the ALS device returns capabilities **0xF002**: push + modes 0x10, 0x20, 0x40 and 0x50 (not 0x30 / 0x60), with minimum interval 225000 µs and 1 range. The threshold bits are probably added by the ALS-specific code of SensorsClx ?  
 SensorsClx starts the sensor (PowerEnable(1) + StartAcquisition with the smallest interval of the subscribers) when the first handle starts its notification. It stops the sensor when the last one stops, and also during the "low power epoch" unless a subscriber enabled idle operation.  
 SensorsClx applies the DACL of `WpSecurity` to the sensor devices, unless the service key of ltr554als02 has `EnableOemSecurity` ≠ 0.  
 The OEM IOCTLs below are not handled by SensorsClx itself: they reach `LTR554DeviceIoControl` through the SensorsClx fallback.  
@@ -182,6 +182,10 @@ Default parameters (`.data:0x0040E540`, type 2, 10 params). They are Lite-On's 3
 
 LuxCc, VisibleCc, IrCc default to 1.0 and the dark currents to 0. They come from the DPP file.
 
+The Lumia 520 doesn't use these defaults: its DPP file has a type 3 algorithm (see [Values of a Lumia 520](#values-of-a-lumia-520)). Check on a real phone, with `wp81powertool -v -q lightSensor` (sample and [IOCTL 0x2204B8](#ioctl-0x2204b8--ioctl_sensor_oem_calibration_query)):  
+CH0 = 20, CH1 = 38, gain 96X, integration time 100 ms → ratio = 38 / 58 = 0.655 → second triplet (limit 0.68): 4.2785 × 20 − 1.9548 × 38 = 11.29 → × Param[0] 39.775 / 96 / 1 = **4.678 lux** (the uncalibrated value returned by the IOCTL) → × LuxCc 0.7921 = **3.706 lux** (the reported sample, 3706 mLux).  
+This confirms the formula for type 3 (triplets from index 2, Param[0] as correction factor, Param[1] not used in this case) and the channel order (CH0 = visible + IR, CH1 = IR).
+
 ### Proximity
 
 `EnableSensorMeasurements` (0x402690) programs PS_LED, PS_N_PULSES, PS_MEAS_RATE and PS_CONTR from the parameters. The hardware repeat rate is chosen so that *persistence + 1* samples fit in the requested interval: PS_MEAS_RATE = interval × 100 / 150 / (persistence + 1), rounded down to 10/50/70/100/200/500/1000/2000 ms. The thresholds are first set to low = 1, high = 0 so that the first sample always raises an interrupt.
@@ -232,6 +236,41 @@ On a new crosstalk: near-to-far = crosstalk + DynThrMarginToCrosstalk, far-to-ne
 | 2D | | LedCurrent (mA), must be an exact table value |
 | 2E-2F | | Margin used at calibration ?: with dynamic thresholds, initial crosstalk = NearToFarThreshold − this value, unless a `DynThrCrosstalk` is stored in the registry |
 | 30-33 | | ? |
+
+#### Values of a Lumia 520
+
+Files copied from `C:\DPP\Nokia\Sensors\` of a Lumia 520 (dated 2013-03-05). The same folder also contains `ALS_AVAGO_QPDST900.bin` (72 bytes), `PRX_AVAGO_QPDST900.bin` (48 bytes) and `ACC_KIONIX_KXTNK1000.bin` (48 bytes).
+
+`ALS_LITEON_LTR554ALS02.bin`:  
+| Bytes | Raw | Field | Value |
+|-------|-----|-------|-------|
+| 24-27 | 2C C8 4A 3F | LuxCc | 0.7921 |
+| 28-2B | 00 00 80 3F | VisibleCc | 1.0 |
+| 2C-2F | 00 00 80 3F | IrCc | 1.0 |
+| 30-31 | 00 00 | VisibleDarkCurrent | 0 |
+| 32-33 | 00 00 | IrDarkCurrent | 0 |
+| 34-35 | 03 00 | LuxAlgoType | 3 (Lite-On 2) |
+| 36-37 | 0B 00 | LuxAlgoNumParams | 11 (2 + 3 triplets) |
+| 38-3F | | Param[0], Param[1] | 39.775 (correction factor), 2.95 (?) |
+| 40-4B | | Param[2…4] | ratio < 0.45: 1.7743 × CH0 + 1.1059 × CH1 |
+| 4C-57 | | Param[5…7] | ratio < 0.68: 4.2785 × CH0 − 1.9548 × CH1 |
+| 58-63 | | Param[8…10] | ratio < 0.97: 0.5926 × CH0 + 0.1185 × CH1 |
+| 64-77 | 00 … | Param[11…15] | unused |
+
+`PRX_LITEON_LTR554ALS02.bin`:  
+| Bytes | Raw | Field | Value |
+|-------|-----|-------|-------|
+| 24-25 | A3 01 | NearToFarThreshold | 419 |
+| 26-27 | D5 01 | FarToNearThreshold | 469 |
+| 28-29 | 10 00 | GainCoeff | 16 |
+| 2A | 05 | LedPulseCount | 5 |
+| 2B | 3C | LedPulseFrequency | 60 kHz |
+| 2C | 64 | LedDutyCycle | 100 % |
+| 2D | 64 | LedCurrent | 100 mA |
+| 2E-2F | FA 00 | Margin ? | 250 (initial crosstalk with dynamic thresholds: 419 − 250 = 169) |
+| 30-33 | 32 00 00 00 | ? | 50 (= FarToNear − NearToFar: hysteresis ?) |
+
+So the proximity thresholds actually used are 469 (far → near) / 419 (near → far), not the registry defaults 1000 / 800.
 
 ---
 
