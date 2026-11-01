@@ -49,7 +49,7 @@ Other registry keys read (and, for the first five and `MotionClarity`, watched w
 | `HKLM\Software\OEM\Nokia\lpm` | `Mode` | |
 | `HKLM\SOFTWARE\OEM\Nokia\Touch\Improved` | `Enabled` | "Improved touch" setting of the touch screen (glove / high sensitivity mode ?). The key is created (`Enabled` = 1 if missing) and watched by the touch driver [synapticstouch.sys](./synapticstouch.md#hklmsoftwareoemnokiatouch), which writes the value to the controller on each change. Not watched by oempanel.sys: read and written by `_sub_418700` (0x418700) only, see [Key lights and improved touch](#key-lights-and-improved-touch) |
 | `HKLM\Software\Microsoft\ManufacturingOS` | `ManufacturingMode` | Read by `RegReadAlcRegistries` (not watched). If the value can be read, Assertive Display is disabled and a flag records whether it is non-zero |
-| `HKLM\System\ControlSet001\services\Sensors\ALS\TestInterface`, `…\Sensors\PS\TestInterface` | `Enable`, `Value` | Written by `IOCTL_SET_REGISTRY_VALUE2`. Test override watched by the light/proximity sensor driver [ltr554als02.sys](./ltr554als02.md): `Enable` ≠ 0 replaces the ALS samples by `Value` (milli-lux) / the proximity samples by `Value` ≠ 0 = detected |
+| `HKLM\System\ControlSet001\services\Sensors\ALS\TestInterface`, `…\Sensors\PS\TestInterface` | `Enable`, `Value` | Written by `IOCTL_SET_REGISTRY_VALUE2`. Test override watched by the light/proximity sensor drivers [ltr554als02.sys](./ltr554als02.md) and [qpdst900.sys](./qpdst900.md): `Enable` ≠ 0 replaces the ALS samples by `Value` (milli-lux) / the proximity samples by `Value` ≠ 0 = detected |
 | `HKLM\Software\OEM\Nokia\Display` ? | `AidRegistryExist`, `AidRegistry1_1` … `AidRegistry3_9` | ? |
 
 There's no ETW provider: the driver only prints with `DbgPrint` (assertions are printed as `e_DISP_CRASH 1;Assert…` by `Nokia_Panel_Drv_Assert` 0x418C3C).
@@ -313,7 +313,7 @@ NTSTATUS returned by `HandleNokiaIoCtlRequest`:
 | 0x83212058 | 0x816 | IOCTL_RESET_REFRESH_AVG | 0 | 0 | 0x30 | |
 | 0x8321205C | 0x817 | IOCTL_GET_FPS | 0 | 4 | — | Frames per 100 s, e.g. `71 17 00 00` = 6001 |
 | 0x83212060 | 0x818 | IOCTL_LIGHT_STATUS_QUERY | 0 | 72 | 0x1D | `LightAdaptationStatusQuery` (lux, auto, proximity, brightness 0–255, nits, SRE, HBM, key LEDs…) |
-| 0x83212064 | 0x819 | IOCTL_SET_REGISTRY_VALUE2 | 12 | 0 | — | Writes the ALS/PS `TestInterface` values (test override of [ltr554als02.sys](./ltr554als02.md)) |
+| 0x83212064 | 0x819 | IOCTL_SET_REGISTRY_VALUE2 | 12 | 0 | — | Writes the ALS/PS `TestInterface` values (test override of [ltr554als02.sys](./ltr554als02.md) and [qpdst900.sys](./qpdst900.md)) |
 | 0x83212068 | 0x81A | IOCTL_SET_REGISTRY_VALUE | 8 | 0 | — | `00-03` key index 0–0xB, `04-07` value (see below) |
 | 0x8321206C | 0x81B | IOCTL_UNKNOWN_4C | 2 | 0 | 0x81000004 | |
 | 0x83212070 | 0x81C | IOCTL_UNKNOWN_4B | 2 | 0 | 0x81000004 | |

@@ -65,8 +65,8 @@ Driver: the Windows driver that loads on the node, when it's documented in [driv
 | `\_SB.TPM0` | MSFT0101 | | TPM 2.0 (PPI and memory-clear `_DSM`), see [qcscm8930.sys](../drivers/qcscm8930.md#acpi-memory-resources) |
 | `\_SB.SCM0` | QCOM0E90 | [qcscm8930.sys](../drivers/qcscm8930.md#acpi-memory-resources) | Secure channel manager (`GCFG`) |
 | `\_SB.SDC1`, `SDC3` | QCOM7002 | | SD controllers (eMMC, SD card) |
-| `\_SB.ACHW`, `TICO`, `MBHC`, `MBGP` | QCOM0741, 0742, 0746, 2149 | | Audio |
-| `\_SB.UFN1` | QCOM01C0 | | USB function controller |
+| `\_SB.ACHW`, `TICO`, `MBHC`, `MBGP` | QCOM0741, 0742, 0746, 2149 | [qcsitarcodec8930.sys](../drivers/qcsitarcodec8930.md), [qctablaint8930.sys](../drivers/qctablaint8930.md), [qcmbhc8930.sys](../drivers/qcmbhc8930.md), [qcmbhcgpio8930.sys](../drivers/qcmbhcgpio8930.md) | Audio |
+| `\_SB.UFN1` | QCOM01C0 | [qcusbfnfilter8930.sys](../drivers/qcusbfnfilter8930.md) (filter) ? | USB function controller |
 | `\_SB.QDIG` | QCOM0F80 | [qcdiagrouter8930.sys](../drivers/qcdiagrouter8930.md) ? | DIAG router |
 | `\_SB.QDCI` | QCOM0F81 | [qcdiagcsi8930.sys](../drivers/qcdiagcsi8930.md) ? | DIAG consumer interface |
 | `\_SB.QCDB` | QCOM1204 | | |
@@ -98,7 +98,7 @@ Driver: the Windows driver that loads on the node, when it's documented in [driv
 
 | Node | `_HID` | Driver | Comment |
 |------|--------|--------|---------|
-| `\_SB.ACC1` | KXTNK | | Kionix accelerometer, I²C 0x1E on `\_SB.IC12` (`ROTM` rotation matrix) |
+| `\_SB.ACC1` | KXTNK | [acckxtnk1000.sys](../drivers/acckxtnk1000.md) | Kionix accelerometer, I²C 0x1E on `\_SB.IC12` (`ROTM` rotation matrix) |
 | `\_SB.ALS1`, `\_SB.PRX1` | QPDS_T900_ALS, QPDS_T900_PRX | | Light / proximity sensor, I²C 0x39 on `\_SB.IC12`; present only if register 0x92 reads 0x29 |
 | `\_SB.ALS2`, `\_SB.PRX2` | LTR_554ALS_02_ALS, LTR_554ALS_02_PRX | | LiteOn LTR-554 light / proximity sensor, I²C 0x23 on `\_SB.IC12` |
 | `\_SB.NDLD` | DATA_LOGGER | [NokiaDataLoggerDriver.sys](../drivers/nokiadataloggerdriver.md) | Battery data logger (voltage, current, temperature, charge %); no `_CRS` |

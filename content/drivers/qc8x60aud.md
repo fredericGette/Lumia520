@@ -5,7 +5,7 @@ It is a WDM PortCls adapter (`PcInitializeAdapterDriver` / `PcAddAdapterDevice`)
 Next to the PortCls IRP path, it exposes three private device interfaces with their own IOCTLs (see [Interfaces](#interfaces)).  
 PDB path `E:\build_e\subtask\E05A4CC0_98\output\audio\fre\qc8x60aud.pdb`. Pool tags `QAU0`…`QAU5`, `MSVD`, `PcCr`, `1GER`, `IPCA`.
 
-ACPI device `\_SB.QCRT` (`_HID` `QCOM0744`), with `_DEP` on `\_SB.Q6AD` (QCOM0750, Q6 audio), `\_SB.AHWI` (QCOM0743), `\_SB.MBGP` (QCOM2149, GPIO headset detection, [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md)), `\_SB.TICO` (QCOM0742) and `\_SB.ACHW` (QCOM0741, audio codec hardware, [qcsitarcodec8930.sys](./qcsitarcodec8930.md)).
+ACPI device `\_SB.QCRT` (`_HID` `QCOM0744`), with `_DEP` on `\_SB.Q6AD` (QCOM0750, Q6 audio), `\_SB.AHWI` (QCOM0743), `\_SB.MBGP` (QCOM2149, GPIO headset detection, [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md)), `\_SB.TICO` (QCOM0742, codec interrupts, [qctablaint8930.sys](./qctablaint8930.md)) and `\_SB.ACHW` (QCOM0741, audio codec hardware, [qcsitarcodec8930.sys](./qcsitarcodec8930.md)).
 
 There's no named `\Device\` object and no symbolic link created by the driver: PortCls creates the device object, and the driver registers device interfaces on it.  
 

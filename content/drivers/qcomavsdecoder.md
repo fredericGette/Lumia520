@@ -88,7 +88,7 @@ Data ranges of the input pin (`KSDATARANGE_AUDIO`, major format `KSDATAFORMAT_TY
 | `{00000162-0000-0010-8000-00aa00389b71}` | WMA Pro (`WAVE_FORMAT_WMAUDIO3`) | 2 | 16–24 | 8000–96000 | 0x0162 | 6 |
 | `{00000163-0000-0010-8000-00aa00389b71}` | WMA Lossless | 2 | 16–24 | 8000–96000 | 0x0163 | 6 |
 | `{00007631-0000-0010-8000-00aa00389b71}` | ? | 2 | 16–24 | 8000 | 0x7631 | 0xA |
-| `{00007371-0000-0010-8000-00aa00389b71}` | AMR-WB ? | 2 | 16–24 | 8000–16000 | 0x7371 | 0xE |
+| `{00007371-0000-0010-8000-00aa00389b71}` | QCELP / EVRC (`.qcp`): the media type of [QcelpSource.dll](../libraries/qcelpsource.md) | 2 | 16–24 | 8000–16000 | 0x7371 | 0xE |
 | `{e06d802c-db46-11cf-b4d1-00805f6cbbea}` | Dolby AC3 (`MEDIASUBTYPE_DOLBY_AC3`) | 2 | 16 | 32000–48000 | none: the intersection returns `STATUS_NO_MATCH` (0xC0000272) | 0x1A (`WAVE_FORMAT_EXTENSIBLE` with the AC3 SubFormat) |
 | `{00007361-0000-0010-8000-00aa00389b71}` | AMR-NB (`WAVE_FORMAT_AMR_NB`) | 2 | 8–16 | 8000–16000 | 0x7361, forced to mono 8000 Hz 16 bits, extra data `FPAC`… | 0xA |
 | `{73716370-767a-494d-b478-f29d25dc9037}` | QCELP ? (`pcqs`) | 1 | 16 | 8000 | 0xFFFE (`WAVE_FORMAT_EXTENSIBLE`, same SubFormat) | 0 (not set) |

@@ -20,8 +20,8 @@ GUID of the ETW provider (WPP):
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| DMA adapter, `DmaRequestLine` 2 | HAL / DMA extension | Engine input: command lists and data in (`dword_406BA0`) |
-| DMA adapter, `DmaRequestLine` 3 | HAL / DMA extension | Engine output: data out and register read-back (`dword_406B80`) |
+| DMA adapter, `DmaRequestLine` 2 | HAL / [QCHalExtQcAdm3Dma.dll](../libraries/qchalextqcadm3dma.md) (ADM, CRCI = request line − minimum ?) | Engine input: command lists and data in (`dword_406BA0`) |
+| DMA adapter, `DmaRequestLine` 3 | HAL / [QCHalExtQcAdm3Dma.dll](../libraries/qchalextqcadm3dma.md) | Engine output: data out and register read-back (`dword_406B80`) |
 
 ### WDF configuration
 
@@ -88,6 +88,7 @@ F-states of `\_SB.QQCE` in the PEP configuration of the DSDT (component 0):
 | DeviceAddress | 0x18500000 + 0x8000 | 0x18500000 + 0x8000 |
 
 Each transfer: `ConfigureAdapterChannel` (functions 2, 0 and 1: command list address, `{2 or 3, 0x8000}`, `3`), then `MapTransferEx` with a completion routine that sets the event (0x401C0C input, 0x401C28 output), then a wait of **300 ms** (`KeWaitForSingleObject`, timeout -3000000) and `FlushAdapterBuffersEx`.  
+[QCHalExtQcAdm3Dma.dll](../libraries/qchalextqcadm3dma.md#configurechannel-sub_4013f8-0x4013f8): function 2 makes the ADM run the driver's command list as is; functions 0 (burst length of the CRCI) and 1 (destination swap bits) only apply to the box commands the extension builds when no command list is given, so they have no effect here.  
 If a wait times out, `byte_40612E` is cleared **permanently**: every later operation fails (result 1) until reboot.
 
 The command lists (`sub_401C44`) are made of 16-byte entries: flags, source physical address, destination address, length. A transfer is split at 4 KB page boundaries. At most 25 entries (`dword_406B50` < 0x19).  

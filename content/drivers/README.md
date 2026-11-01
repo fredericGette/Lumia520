@@ -64,16 +64,20 @@
 [qcsmsm8930.sys](./qcsmsm8930.md)  
 [qcssm8930.sys](./qcssm8930.md)  
 [qcsysdef8930.sys](./qcsysdef8930.md)  
+[qctablaint8930.sys](./qctablaint8930.md)  
+[qcusbfnfilter8930.sys](./qcusbfnfilter8930.md)  
 [qcuart8930.sys](./qcuart8930.md)  
 [qcwcn8930.sys](./qcwcn8930.md)  
 
 ## Nokia
+[acckxtnk1000.sys](./acckxtnk1000.md)  
 [hwnvibradime.sys](./hwnvibradime.md)  
 [ltr554als02.sys](./ltr554als02.md)  
 [nokiadataloggerdriver.sys](./nokiadataloggerdriver.md)  
 [nokiaenergydriver.sys](./nokiaenergydriver.md)  
 [nokiathermsensordriver.sys](./nokiathermsensordriver.md)  
 [oempanel.sys](./oempanel.md)  
+[qpdst900.sys](./qpdst900.md)  
 [synapticstouch.sys](./synapticstouch.md)  
 
 ## Microsoft

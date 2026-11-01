@@ -1,7 +1,7 @@
 ## Qcremoteat8930.sys
 
 Qualcomm Remote AT driver (QMI AT service bridge).  
-It lets a user-mode client answer AT commands that the modem forwards to the application processor. The driver registers a fixed list of AT commands with the modem (QMI AT `REG_AT_CMD_FWD`), receives each forwarded command (QMI AT `FWD_AT_CMD_IND`) through [qcqmux8930.sys](./qcqmux8930.md), returns it to the client with `ReadFile`, and sends the client's answer back to the modem (QMI AT `FWD_RESP_AT_CMD`) when the client calls `WriteFile`. There are no IOCTLs.  
+It lets a user-mode client ([qcremoteatsrvc8930.dll](../libraries/qcremoteatsrvc8930.md), service `RemoteAtSrvc`, which opens `\\.\REMOTEAT\REMOTEATDevice`) answer AT commands that the modem forwards to the application processor. The driver registers a fixed list of AT commands with the modem (QMI AT `REG_AT_CMD_FWD`), receives each forwarded command (QMI AT `FWD_AT_CMD_IND`) through [qcqmux8930.sys](./qcqmux8930.md), returns it to the client with `ReadFile`, and sends the client's answer back to the modem (QMI AT `FWD_RESP_AT_CMD`) when the client calls `WriteFile`. There are no IOCTLs.  
 The PDB path is `P:\RemoteAT\rel\8.2.1.1\arm\Release\qcremoteat8930.pdb`, source files `device.c` and `remoteatqmux.c`.
 
 ACPI node on the Lumia 520 (DSDT): `\_SB.RMAT` (`_HID` `QCOM2155`, no `_UID`, no `_CRS`, no `_DEP`, no method) ?. The driver doesn't use any ACPI method or hardware resource.
@@ -74,9 +74,9 @@ Outputbuffer (built by sub_401A48 from the QMI AT indication 0x0021, see [below]
 | 04-07 | ? | Operation flags (TLV 0x01). In QMI AT: 0x01 no argument, 0x02 `=`, 0x04 `?`, 0x08 arguments ? |
 | 08-1D | e.g. `+CFUN` | Command name, zero terminated (TLV 0x01) |
 | 1E-1F | ? | Number of tokens (TLV 0x10) |
-| 20-FB | ? | Kernel pointers to the tokens in the driver's receive buffer. Meaningless in user mode (kernel address leak) |
-| FC-107 | ? | 3 dwords of the sub-TLV 0x18 of TLV 0x11 (state info: S3/S4/S5 ?) |
-| 108-10B | ? | Dword of the sub-TLV 0x19 of TLV 0x11 (CMEE ?) |
+| 20-FB | ? | Kernel pointers to the tokens in the driver's receive buffer. Meaningless in user mode (kernel address leak). [qcremoteatsrvc8930.dll](../libraries/qcremoteatsrvc8930.md#command-request) expects other fields at D4, DC, E0 and EC (`+CMEE` mode and framing characters); they stay 0 here |
+| FC-107 | ? | 3 dwords of the sub-TLV 0x18 of TLV 0x11. [qcremoteatsrvc8930.dll](../libraries/qcremoteatsrvc8930.md#command-request) reads the first one as the `+CMEC` keypad setting (0 = `+CKPD` refused); the other two (display, indicator ?) aren't used |
+| 108-10B | ? | Dword of the sub-TLV 0x19 of TLV 0x11. Read by [qcremoteatsrvc8930.dll](../libraries/qcremoteatsrvc8930.md#command-request) as the `+CMEC` touch screen setting (0 = `+CTSA` refused) |
 | 10C | 01 | 1 when the sub-TLV 0x19 is present |
 | 10D-10F | 00 00 00 | Padding |
 | 110-13B | ? | Tokens, zero terminated, one after the other (44 bytes in total) |
@@ -94,7 +94,7 @@ Inputbuffer:
 |-------|-------|---------|
 | 00-03 | ? | Command handle, from the `ReadFile` output |
 | 04-10F | ? | Not used |
-| 110-113 | e.g. `01 00 00 00` | Result. Only the low byte is sent. In QMI AT: 0 = error, 1 = OK, 2 = other ? |
+| 110-113 | e.g. `01 00 00 00` | Result. Only the low byte is sent. In QMI AT: 0 = error, 1 = OK, 2 = other ? ([qcremoteatsrvc8930.dll](../libraries/qcremoteatsrvc8930.md#answer) only sends 0 and 1) |
 | 114-1DB | e.g. `+CFUN: 1` | Response text, zero terminated (200 bytes in a 476-byte buffer) |
 
 The handler sends [FWD_RESP_AT_CMD](#qmi-message-0x0022--at-command-response) and always completes with `STATUS_SUCCESS`, `Information` = 0. The result of the modem is not returned.  
@@ -139,6 +139,8 @@ Sent by sub_40239C (QMI_AT_REG_AT_CMD_FWD_REQ). 69 bytes in total: TLV 0x01, 59 
 | `+CMAR` | Master reset |
 | `+CRSL` | Ringer sound level |
 | `+CSS` | Screen size |
+
+The commands are executed by [qcremoteatsrvc8930.dll](../libraries/qcremoteatsrvc8930.md): `+CFUN` reboots the phone, `+CKPD` and `+CTSA` inject button and touch events, `+CSS` returns the screen size, `+CMAR` and `+CRSL` are only acknowledged.
 
 #### QMI message 0x0021 — forwarded AT command
 

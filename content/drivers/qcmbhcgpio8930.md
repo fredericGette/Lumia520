@@ -22,7 +22,7 @@ It communicates with the following devices:
 | Device | Driver | Comment |
 |--------|--------|---------|
 | interface `{88EEFAB5-35A8-42FF-80DB-00D97137608D}` | [qcslimbus8930.sys](./qcslimbus8930.md) (`\_SB.SLM1`, QCOM0190) | Codec register read/write, codec logical address, and a bus vote. See [IOCTL 0x85B52xxx](#ioctl-0x85b52000--0x85b52400--0x85b52404--0x85b5240c--0x85b52410--slimbus) |
-| interface `{C383F1A1-0E73-47D9-A5B2-214CEC4EE713}` | WCD codec interrupt handler (`\_SB.TICO` ?) | Register / enable / disable / clear the codec interrupts. See [IOCTL 0x5001200C…0x5001201C](#ioctl-0x5001200c--0x50012010--0x50012014--0x50012018--0x5001201c--codec-interrupts) |
+| interface `{C383F1A1-0E73-47D9-A5B2-214CEC4EE713}` | WCD codec interrupt handler [qctablaint8930.sys](./qctablaint8930.md) (`\_SB.TICO`, QCOM0742) | Register / enable / disable / clear the codec interrupts. See [IOCTL 0x5001200C…0x5001201C](#ioctl-0x5001200c--0x50012010--0x50012014--0x50012018--0x5001201c--codec-interrupts) |
 | interface `{3FE58EBD-6A7D-4760-A01F-66369C501AB0}` | [qcsitarcodec8930.sys](./qcsitarcodec8930.md) (`\_SB.ACHW`) | Audio "resource manager" (`rm_audio_sr_ioctl`). See [IOCTL 0x50012048](#ioctl-0x50012048--rm_audio_sr_ioctl) |
 | interface `{4EE2204F-14FF-4139-9853-0DA54D6849D5}` | [qcacdb8930.sys](./qcacdb8930.md) | ACDB. Opened for each read only to get the `acdb_ioctl` entry point ([IOCTL 0x50022400](#ioctl-0x50022400)), then closed |
 | ACPI node of the device | acpi.sys | `IOCTL_ACPI_EVAL_METHOD` (0x32C004) of `BFSZ` and `GPNF`, sent to the device's own I/O target. See [ACPI](#acpi-bfsz-and-gpnf) |
@@ -229,7 +229,7 @@ Reads are retried up to 5 times (10 ms apart), writes up to 5 times (10 ms apart
 
 ### IOCTL 0x5001200C / 0x50012010 / 0x50012014 / 0x50012018 / 0x5001201C — codec interrupts
 
-These IOCTLs are sent by Qcmbhcgpio8930.sys to the WCD interrupt handler (interface `{C383F1A1-0E73-47D9-A5B2-214CEC4EE713}`), through `sub_403AE8`. Same codes and buffers as for [qcmbhc8930.sys](./qcmbhc8930.md#ioctl-0x5001200c--0x50012010--0x50012014--0x50012018--0x5001201c--codec-interrupts).
+These IOCTLs are sent by Qcmbhcgpio8930.sys to the WCD interrupt handler [qctablaint8930.sys](./qctablaint8930.md#ioctl-0x5001200c--register-for-interrupts) (interface `{C383F1A1-0E73-47D9-A5B2-214CEC4EE713}`), through `sub_403AE8`. Same codes and buffers as for [qcmbhc8930.sys](./qcmbhc8930.md#ioctl-0x5001200c--0x50012010--0x50012014--0x50012018--0x5001201c--codec-interrupts).
 
 | Property | Value |
 |----------|-------|
@@ -249,7 +249,7 @@ These IOCTLs are sent by Qcmbhcgpio8930.sys to the WCD interrupt handler (interf
 Inputbuffer (0x5001200C):  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | 01 00 00 00 | Client id ? |
+| 00-03 | 01 00 00 00 | Client id: 1 = MBHC interrupts (see [qctablaint8930.sys](./qctablaint8930.md#clients)) |
 | 04-07 | ? | Kernel address of the interrupt callback `sub_4063D4` |
 
 Outputbuffer (0x5001200C): `00-03` = handle (0 = failure). Inputbuffer of the others: `00-03` = handle, `04-07` = interrupt mask (0x50012014 / 0x50012018; −1 = all).

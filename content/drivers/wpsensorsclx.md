@@ -2,7 +2,7 @@
 
 Windows Phone **sensor class extension** (`SensorsClx`), PDB `wpsensorsclx.pdb`.  
 It's a KMDF class library: it registers itself with `WdfRegisterClassLibrary` and the sensor drivers bind to it with `WdfVersionBindClass("SensorsClx")` (see [ltr554als02.sys](./ltr554als02.md)). The client driver only talks to the chip. Everything else is done by SensorsClx: PnP/power callbacks, the device interface, the I/O queues, the subscribers (one per opened handle), the notification modes and thresholds, the polling thread, the idle settings and the device security.  
-On the Lumia 520 its clients are the accelerometer `\_SB.ACC1` (`KXTNK`, Kionix) and the ALS/proximity sensors `\_SB.ALS1`/`\_SB.PRX1` (`QPDS_T900`) or `\_SB.ALS2`/`\_SB.PRX2` ([ltr554als02.sys](./ltr554als02.md)). See the Nokia SSDT ([ssdt.dsl](../acpi/ssdt.dsl)).  
+On the Lumia 520 its clients are the accelerometer `\_SB.ACC1` (`KXTNK`, Kionix, [acckxtnk1000.sys](./acckxtnk1000.md)) and the ALS/proximity sensors `\_SB.ALS1`/`\_SB.PRX1` (`QPDS_T900`, [qpdst900.sys](./qpdst900.md)) or `\_SB.ALS2`/`\_SB.PRX2` ([ltr554als02.sys](./ltr554als02.md)). See the Nokia SSDT ([ssdt.dsl](../acpi/ssdt.dsl)).  
 It also has accelerometer code (calibration file `C:\DPP\Sensors\Accelerometer.bin`, see [Accelerometer](#accelerometer)) and gyroscope code (DC offset filter). There's no gyroscope on the Lumia 520.
 
 Device name : `\Device\WPSensorClassExt<n>` (control device, see below)  
@@ -49,7 +49,7 @@ Power setting: `PoRegisterPowerSettingCallback` on `{E1233993-EAA4-470F-9DE7-A35
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| Client drivers | [ltr554als02.sys](./ltr554als02.md), KXTNK accelerometer driver ?, QPDS_T900 driver ? | Called through the callbacks of their registration packet (see [Client interface](#client-interface)) |
+| Client drivers | [acckxtnk1000.sys](./acckxtnk1000.md), [ltr554als02.sys](./ltr554als02.md), [qpdst900.sys](./qpdst900.md) | Called through the callbacks of their registration packet (see [Client interface](#client-interface)) |
 | Own ACPI PDO (`WdfDeviceGetIoTarget`) | [acpi.sys](./acpi.md) | `IOCTL_ACPI_EVAL_METHOD_EX` (0x32C018) to evaluate `SCLX` and `PRIM` |
 | Own sensor device (`WdfIoTargetOpen` on its own `DEVICE_OBJECT`) | wpsensorsclx.sys → client driver | Accelerometer only: [IOCTL 0x22031C](#ioctl-0x22031c) |
 
@@ -130,7 +130,7 @@ Sample (output of a read, or of `SensorClxSampleReady`):
 |-------|-------|---------|
 | 00-03 | | Size |
 | 08-0F | | `KeQueryInterruptTime` (100 ns) |
-| 10-13 | | Sensor type (proximity/ALS). Accelerometer: 0, or 6 ? |
+| 10-13 | | Sensor type (proximity/ALS). Accelerometer: 0 ([acckxtnk1000.sys](./acckxtnk1000.md)), or 6 ? |
 | 18-… | | Data. Accelerometer: X, Y, Z (floats, g) at 18, 1C, 20. ALS: milli-lux (DWORD). Proximity: 1 = detected, 0 = not detected |
 
 ### Device setup
@@ -469,7 +469,7 @@ Inputbuffer:
 |-------|-------|---------|
 | 00-03 | 01 00 00 00 / 02 00 00 00 | Mode chosen from the subscribers (see [IOCTL 0x220028](#ioctl-0x220028)) |
 
-Sent asynchronously (`AccelerometerSetVariable`, 0x1000D5A8). The result is ignored.
+Sent asynchronously (`AccelerometerSetVariable`, 0x1000D5A8). The result is ignored: [acckxtnk1000.sys](./acckxtnk1000.md) has no case for this code and returns `STATUS_NOT_IMPLEMENTED`.
 
 ---
 

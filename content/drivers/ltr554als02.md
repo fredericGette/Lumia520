@@ -5,7 +5,7 @@ It's a client of the Microsoft sensor class extension `SensorsClx` ([wpsensorscl
 The same chip is described by **two ACPI devices**, `\_SB.ALS2` (`LTR_554ALS_02_ALS`) and `\_SB.PRX2` (`LTR_554ALS_02_PRX`), so the driver is loaded twice. The ACPI method `MODE` tells each instance what it is. Both instances share one global context (one I²C target, one register shadow, one wait lock, one ALS polling thread): the first `DriverEntry` initializes it, the second waits for it (`InitSharedContext`, 0x4058FC).  
 The ALS is polled by a system thread (the chip interrupt is only used for the proximity). The lux value is computed from the 2 photodiode channels with a Lite-On ratio table and reported in milli-lux. The proximity is reported as DETECTED / NOT DETECTED, optionally with "dynamic thresholds" that follow the crosstalk of the cover glass.  
 Calibration is read from `C:\DPP\Nokia\Sensors\ALS_LITEON_LTR554ALS02.bin` and `C:\DPP\Nokia\Sensors\PRX_LITEON_LTR554ALS02.bin` (see [DPP calibration files](#dpp-calibration-files)).  
-It's the alternative of the `QPDS_T900` sensor (`\_SB.ALS1` / `\_SB.PRX1`, address 0x39) on the same I²C bus: see [qcgsbi8930.sys](./qcgsbi8930.md) and [acpiex.sys](./acpiex.md).
+It's the alternative of the `QPDS_T900` sensor ([qpdst900.sys](./qpdst900.md), `\_SB.ALS1` / `\_SB.PRX1`, address 0x39) on the same I²C bus: see [qcgsbi8930.sys](./qcgsbi8930.md) and [acpiex.sys](./acpiex.md).
 
 There's no device name and no symbolic link created by the driver itself (they are managed by `SensorsClx`). Applications open the sensor through the device interface that SensorsClx creates for the sensor type:  
 ALS instance: `{97F115C8-599A-4153-8894-D2D12899918A}`  
@@ -239,7 +239,7 @@ On a new crosstalk: near-to-far = crosstalk + DynThrMarginToCrosstalk, far-to-ne
 
 #### Values of a Lumia 520
 
-Files copied from `C:\DPP\Nokia\Sensors\` of a Lumia 520 (dated 2013-03-05). The same folder also contains `ALS_AVAGO_QPDST900.bin` (72 bytes), `PRX_AVAGO_QPDST900.bin` (48 bytes) and `ACC_KIONIX_KXTNK1000.bin` (48 bytes).
+Files copied from `C:\DPP\Nokia\Sensors\` of a Lumia 520 (dated 2013-03-05). The same folder also contains `ALS_AVAGO_QPDST900.bin` (72 bytes), `PRX_AVAGO_QPDST900.bin` (48 bytes) (see [qpdst900.sys](./qpdst900.md#values-of-a-lumia-520)) and `ACC_KIONIX_KXTNK1000.bin` (48 bytes, see [acckxtnk1000.sys](./acckxtnk1000.md#values-of-a-lumia-520)).
 
 `ALS_LITEON_LTR554ALS02.bin`:  
 | Bytes | Raw | Field | Value |

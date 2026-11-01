@@ -46,12 +46,12 @@ GPIO connections on `\_SB.GIO0` in the DSDT/SSDT (decoded from the raw `_CRS` bu
 | 42 | `\_SB.ACHW` (`QCOM0741`) | `GpioIo` Exclusive, PullDown | Audio codec hardware ([qcsitarcodec8930.sys](./qcsitarcodec8930.md#gpio)) |
 | 43 | `\_SB.MBGP` (`QCOM2149`) | `GpioInt` Edge, ActiveBoth, Shared, Wake, PullNone, debounce 500 ms + 2 × `GpioIo` | [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md#acpi-bfsz-and-gpnf): jack detection interrupt, the 2 `GpioIo` are read as the jack detect and ANC detect ? inputs |
 | 43, 51 | `\_SB.MBHC` (`QCOM0746`) | `GpioIo` Exclusive, PullDown | ? |
-| 46, 67 | `\_SB.ACC1` (`KXTNK`, SSDT) | `GpioInt` Edge, ActiveLow, Exclusive, PullDown | Accelerometer |
-| 49 | `\_SB.ALS1`, `ALS2`, `PRX1`, `PRX2` (SSDT) | `GpioInt` Edge, ActiveLow, Shared, PullUp | [ltr554als02.sys](./ltr554als02.md) |
+| 46, 67 | `\_SB.ACC1` (`KXTNK`, SSDT) | `GpioInt` Edge, ActiveLow, Exclusive, PullDown | Accelerometer ([acckxtnk1000.sys](./acckxtnk1000.md); it creates a single interrupt object, so GPIO 46 ? is used, and only to count interrupts during the self test) |
+| 49 | `\_SB.ALS1`, `ALS2`, `PRX1`, `PRX2` (SSDT) | `GpioInt` Edge, ActiveLow, Shared, PullUp | [ltr554als02.sys](./ltr554als02.md) (`ALS2`/`PRX2`), [qpdst900.sys](./qpdst900.md) (`ALS1`/`PRX1`) |
 | 51 | `\_SB.MBGP` | `GpioIo` Exclusive, PullDown | Not listed in `GPNF`: unused by [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md#acpi-bfsz-and-gpnf) |
 | 52 | `\_SB.TCH1` | `GpioIo` Exclusive, PullNone | [SynapticsTouch.sys](./synapticstouch.md) reset line |
 | 58 | `\_SB.DISP`, `MON0` (child of the display adapter) | `GpioIo` Shared, PullUp | `DSI_PANEL_RESET`, [oempanel.sys](./oempanel.md) / [qcdxkm8930.sys](./qcdxkm8930.md) |
-| 62 | `\_SB.TICO` (`QCOM0742`) | `GpioInt` Edge, ActiveHigh, Exclusive, PullUp | Audio ? |
+| 62 | `\_SB.TICO` (`QCOM0742`) | `GpioInt` Edge, ActiveHigh, Exclusive, PullUp | Audio codec interrupt line, [qctablaint8930.sys](./qctablaint8930.md) |
 | 76, 107 | `\_SB.CAMP` (`QCOM0775`) | `GpioIo` Exclusive, PullNone | [qccamplatform8930.sys](./qccamplatform8930.md) |
 | 91 | `\_SB.NEDD` (`NOKI0B00`, SSDT) | `GpioInt` Edge, ActiveHigh, Shared, Wake, PullNone, debounce 200 ms | [NokiaEnergyDriver.sys](./nokiaenergydriver.md) |
 | 94 | `\_SB.SDC3` (`QCOM7002`) | `GpioInt` Edge, ActiveBoth, Shared, Wake, PullDown, debounce 300 ms + `GpioIo` | SD card detect ? |

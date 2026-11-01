@@ -1,3 +1,4 @@
 [Alarms.exe](./alarms.md)  
 [Alarms_NoUI.exe](./alarms_noui.md)  
 [DateTimeCPL.exe](./datetimecpl.md)  
+[QcShutdownSvc8930.exe](./qcshutdownsvc8930.md)  

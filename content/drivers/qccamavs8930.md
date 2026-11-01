@@ -18,7 +18,7 @@ The driver doesn't use its `Parameters` key. All the values are read with `ZwOpe
 | `HKLM\System\CurrentControlSet\Services\qccamavs\Tracing` | CoreDbgEnable | ? | Read at ISP creation (`sub_41A978`) into `byte_5F5830`: when set, the messages of the camera core (`sub_425638`, "(%s) - %s") are formatted even at DISPATCH_LEVEL and written as ETW events |
 | `HKLM\Software\Microsoft\ManufacturingOS` | ManufacturingMode | ? | 1 = MMOS. Required by the diagnostic methods ("MMOS is not enabled!" → `STATUS_NOT_SUPPORTED` 0xC00000BB). When it's 1, the multipass snapshot is disabled ("Disabled Multipass for PT") |
 | `HKLM\Software\Qualcomm\Camera\` | DumpFramesMask | ? | Read in `CaptureFilter::AcquireFilterResources` (`sub_407C80`), filter `+0x98`. Frame dump mask (debug) ? |
-| `HKLM\Software\OEM\Nokia\Camera` | ExifModelName | ? | Model name for the EXIF data (`NokiaElfsPlugIn`, `sub_473C88`). Fallback: `PhoneModelName` |
+| `HKLM\Software\OEM\Nokia\Camera` | ExifModelName | ? | Model name for the EXIF data (`NokiaElfsPlugIn`, `sub_473C88`). Fallback: `PhoneModelName`. Also read by [QCJpegEncoderMFT.dll](../libraries/qcjpegencodermft.md#registry) for the EXIF model |
 | `HKLM\SYSTEM\Platform\DeviceTargetingInfo` | PhoneModelName | ? | Fallback of `ExifModelName` |
 
 Capabilities of the back camera (`HKLM\Software\OEM\Nokia\Camera\RFC\…`, `sub_5FE578`) and of the front camera (`…\FFC\…`, `sub_60E4B0`), stored in the filter (`+0x580`…):  

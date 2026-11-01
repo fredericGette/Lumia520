@@ -22,7 +22,7 @@ Registry key `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\qcdiagrouter`
 With TCP the phone is the **client**: it creates an `AF_INET`/`SOCK_STREAM`/`IPPROTO_TCP` connection socket, binds it to `0.0.0.0:0` and connects to `ServerName:TCPPort`. If the connection fails, it retries every 5 seconds without limit. QPST/QXDM must be listening on the PC.
 
 Interface Class GUID:  
-`{5ff73d59-fab7-456e-884e-d5386cd5f581}`
+`{5ff73d59-fab7-456e-884e-d5386cd5f581}` (also waited for by [QcShutdownSvc8930.exe](../applications/qcshutdownsvc8930.md#service) with `CM_Register_Notification`)
 
 GUID of the ETW provider (WPP control GUID):  
 `{9cba380d-42ba-45db-94f0-ac310885ce4e}`
@@ -93,7 +93,7 @@ Other commands go to every port whose registration table (received on its DIAG_C
 
 ### Local DIAG clients
 
-An application or driver can act as a DIAG service on the application processor:
+An application or driver can act as a DIAG service on the application processor (e.g. [QcShutdownSvc8930.exe](../applications/qcshutdownsvc8930.md#diag-client), which registers the command `0x29`):
 1. Open `\\.\DiagRouter` (or `\Device\DiagRouter`).
 2. [IOCTL 0x80082400](#ioctl-0x80082400): give an event.
 3. [IOCTL 0x80082404](#ioctl-0x80082404): register the command codes to receive.
@@ -106,7 +106,8 @@ Closing the handle removes the registrations of this handle.
 
 ### IOCTL 0x80082400
 
-This IOCTL is processed by Qcdiagrouter8930.sys
+This IOCTL is processed by Qcdiagrouter8930.sys  
+It's sent by [QcShutdownSvc8930.exe](../applications/qcshutdownsvc8930.md#ioctls-sent)
 
 | Property | Value |
 |----------|-------|
@@ -136,7 +137,8 @@ NTSTATUS:
 
 ### IOCTL 0x80082404
 
-This IOCTL is processed by Qcdiagrouter8930.sys
+This IOCTL is processed by Qcdiagrouter8930.sys  
+It's sent by [QcShutdownSvc8930.exe](../applications/qcshutdownsvc8930.md#ioctls-sent)
 
 | Property | Value |
 |----------|-------|
@@ -191,7 +193,8 @@ OutputBufferLength must be exactly 2. Purpose unknown (unique client id ?).
 
 ### IOCTL 0x8008240C
 
-This IOCTL is processed by Qcdiagrouter8930.sys
+This IOCTL is processed by Qcdiagrouter8930.sys  
+It's sent by [QcShutdownSvc8930.exe](../applications/qcshutdownsvc8930.md#ioctls-sent)
 
 | Property | Value |
 |----------|-------|
@@ -212,7 +215,8 @@ If byte 0 of the input buffer is `0x93`, the buffer is sent unchanged to `\Devic
 
 ### IOCTL 0x80082410
 
-This IOCTL is processed by Qcdiagrouter8930.sys
+This IOCTL is processed by Qcdiagrouter8930.sys  
+It's sent by [QcShutdownSvc8930.exe](../applications/qcshutdownsvc8930.md#ioctls-sent)
 
 | Property | Value |
 |----------|-------|

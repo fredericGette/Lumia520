@@ -1,7 +1,7 @@
 ## Qcmbhc8930.sys
 
 Qualcomm MBHC (Multi-Button Headset Control) driver: headset jack detection and headset button detection done by the WCD93xx audio codec.  
-It runs the MBHC state machine of the codec (states `START`, `NO_PLUG`, `CHECK_PLUG`, `AV_PLUG`, `INVALID_PLUG`, `NBTN_PRESSED`, `BTN_PRESSED`): it detects plug insertion/removal, tells a headphone from a headset with a microphone, detects a US/EU (CTIA/OMTP) plug mismatch, and polls the headset buttons. It reads/writes the codec registers directly over the **SLIMbus**, receives the codec interrupts through a WCD interrupt-handler driver, reads its thresholds from the calibration database [qcacdb8930.sys](./qcacdb8930.md), and drives 3 GPIOs through the GPIO resource hub.  
+It runs the MBHC state machine of the codec (states `START`, `NO_PLUG`, `CHECK_PLUG`, `AV_PLUG`, `INVALID_PLUG`, `NBTN_PRESSED`, `BTN_PRESSED`): it detects plug insertion/removal, tells a headphone from a headset with a microphone, detects a US/EU (CTIA/OMTP) plug mismatch, and polls the headset buttons. It reads/writes the codec registers directly over the **SLIMbus**, receives the codec interrupts through the WCD interrupt-handler driver [qctablaint8930.sys](./qctablaint8930.md), reads its thresholds from the calibration database [qcacdb8930.sys](./qcacdb8930.md), and drives 3 GPIOs through the GPIO resource hub.  
 It has no IOCTL interface of its own beyond one IOCTL that returns a kernel entry point `mbhc_ioctl`. The audio driver [qc8x60aud.sys](./qc8x60aud.md) uses that entry point when its registry value `GpioBasedHeadsetDetection` = 0 (otherwise it uses the GPIO-based driver of `\_SB.MBGP`, [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md)). Jack and button events are reported to the client through a callback.  
 It is a KMDF driver. PDB path `P:\audio\rel\8.3.1\arm\Release\qcmbhc8930.pdb`. The log messages contain `Legacy mbhc_init …, 08/02 0930`. Pool tags `abmq`, `cbmq`, `ebmq`, `gbmq`, `hbmq`, WDF memory tags `Abmq`…`Lbmq`.
 
@@ -22,7 +22,7 @@ It communicates with the following devices:
 | Device | Driver | Comment |
 |--------|--------|---------|
 | interface `{88EEFAB5-35A8-42FF-80DB-00D97137608D}` | [qcslimbus8930.sys](./qcslimbus8930.md) (`\_SB.SLM1`, QCOM0190) | Codec register read/write and codec logical address. Opened at the first IOCTL (`EA_KMDF_mbhc_slimbus_start`). See [IOCTL 0x85B52000 / 0x85B52400 / 0x85B52404](#ioctl-0x85b52000--0x85b52400--0x85b52404--slimbus) |
-| interface `{C383F1A1-0E73-47D9-A5B2-214CEC4EE713}` | WCD codec interrupt handler (`\_SB.TICO` ?) | Register / enable / disable / clear the codec interrupts. See [IOCTL 0x5001200C…0x5001201C](#ioctl-0x5001200c--0x50012010--0x50012014--0x50012018--0x5001201c--codec-interrupts) |
+| interface `{C383F1A1-0E73-47D9-A5B2-214CEC4EE713}` | WCD codec interrupt handler [qctablaint8930.sys](./qctablaint8930.md) (`\_SB.TICO`, QCOM0742) | Register / enable / disable / clear the codec interrupts. See [IOCTL 0x5001200C…0x5001201C](#ioctl-0x5001200c--0x50012010--0x50012014--0x50012018--0x5001201c--codec-interrupts) |
 | interface `{3FE58EBD-6A7D-4760-A01F-66369C501AB0}` | [qcsitarcodec8930.sys](./qcsitarcodec8930.md) (`\_SB.ACHW`) | Same interface as the ADIE codec of [qc8x60aud.sys](./qc8x60aud.md). Used as the audio "resource manager" (`rm_audio_sr_ioctl`). See [IOCTL 0x50012048](#ioctl-0x50012048--rm_audio_sr_ioctl) |
 | interface `{4EE2204F-14FF-4139-9853-0DA54D6849D5}` | [qcacdb8930.sys](./qcacdb8930.md) | ACDB. Opened for each read only to get the `acdb_ioctl` entry point ([IOCTL 0x50022400](#ioctl-0x50022400)), then closed |
 | `\Device\RESOURCE_HUB\<connection id>` | GPIO controller ([qcgpio.sys](./qcgpio.md)) | The 3 GpioIo resources. `IOCTL_GPIO_WRITE_PINS` / `IOCTL_GPIO_READ_PINS`. See [GPIO](#gpio) |
@@ -209,7 +209,7 @@ Reads and writes are retried up to 5 times, 10 ms apart. A successful write is f
 
 ### IOCTL 0x5001200C / 0x50012010 / 0x50012014 / 0x50012018 / 0x5001201C — codec interrupts
 
-These IOCTLs are sent by Qcmbhc8930.sys to the WCD interrupt handler (interface `{C383F1A1-0E73-47D9-A5B2-214CEC4EE713}`), through `SendIOCTLToDevice` (`sub_403CFC`).
+These IOCTLs are sent by Qcmbhc8930.sys to the WCD interrupt handler [qctablaint8930.sys](./qctablaint8930.md#ioctl-0x5001200c--register-for-interrupts) (interface `{C383F1A1-0E73-47D9-A5B2-214CEC4EE713}`), through `SendIOCTLToDevice` (`sub_403CFC`).
 
 | Property | Value |
 |----------|-------|
@@ -229,13 +229,13 @@ These IOCTLs are sent by Qcmbhc8930.sys to the WCD interrupt handler (interface 
 Inputbuffer (0x5001200C):  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | 01 00 00 00 | Client id ? |
+| 00-03 | 01 00 00 00 | Client id: 1 = MBHC interrupts (see [qctablaint8930.sys](./qctablaint8930.md#clients)) |
 | 04-07 | ? | Kernel address of the interrupt callback `mbhc_codec_interrupt_handler_callback` (`sub_4078E8`) |
 
 Outputbuffer (0x5001200C):  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | ? | Handle (0 = failure) |
+| 00-03 | ? | Handle = kernel address of the client slot in [qctablaint8930.sys](./qctablaint8930.md#ioctl-0x5001200c--register-for-interrupts) (0 = failure) |
 
 Inputbuffer (0x50012014 / 0x50012018):  
 | Bytes | Value | Comment |

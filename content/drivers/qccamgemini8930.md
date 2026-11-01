@@ -3,7 +3,7 @@
 Camera JPEG Encoder Driver ("GeminiKMD").  
 It's the driver of the Gemini hardware JPEG encoder of the MSM8960/MSM8930 camera subsystem. It's a KMDF driver of the Nokia camera stack (same build as [qccamavs8930.sys](./qccamavs8930.md) and [qccamflash8930.sys](./qccamflash8930.md)) built around the Qualcomm Gemini DAL (`core\src\gemini_dal.c`, `gemini_device.c`, `scqueue.c`, `ea\src\gemini_platform.c`, `ea_8960\src\gemini_mmpm.c`).  
 It's opened from user mode through a symbolic link: the client gives the encoder its configuration (input/output format, quantization and Huffman tables, rotation), its YCbCr input and JPEG output buffers (user-mode memory, locked and mapped into the SMMU with qcvcm8930.sys), and two events signalled by the interrupt DPC ("JpegDone", "InputReadDone").  
-The client isn't identified (user-mode camera pipeline ?).  
+The client is the hardware engine of the JPEG encoder MFT [QCJpegEncoderMFT.dll](../libraries/qcjpegencodermft.md#gemini-driver) (open, reset, input / output / operation / encode configuration, events, one input and one output buffer, encode, get result, close for each image).  
 PDB path: `e:\build_e\trwnwp045\workspace\Camera_to_8227\output\camera\Driver\fre\qccamgemini8930.pdb`.
 
 There's no named device object.  
@@ -132,6 +132,8 @@ Inputbuffer:
 | 00-03 | ? | Handle of the "JpegDone" event, mandatory |
 | 04-07 | ? | Handle of the "InputReadDone" event, optional (0) |
 
+[QCJpegEncoderMFT.dll](../libraries/qcjpegencodermft.md#gemini-driver) passes the named event "SharedGeminiEvent" (manual reset) as JpegDone and 0 as InputReadDone, and waits up to 1 s for it after the encode command.
+
 The handles are referenced with `ObReferenceObjectByHandle(EVENT_MODIFY_STATE, ExEventObjectType, UserMode)`; a previously registered event is dereferenced first.  
 Returns `STATUS_INVALID_PARAMETER` (0xC000000D) when there's no input buffer or the first handle is 0. The size of the input buffer isn't checked.
 
@@ -235,7 +237,7 @@ Several commands contain pointers (byte 04) to other structures. These are user-
 | 2 | 0x232407 | Stop ? | 4 | ULONG. Operation mode 1: 0 → register 0x0C = 3, 1 → register 0x0C = 0. Other modes: only 0. Then register 0x24 = 1, state = idle |
 | 3 | 0x23240B | Encode ("GEMINI_CMD_ID_ENCODE") | 8 | Byte 0: numberOfFramesToEncode, byte 1 and bytes 04-07: ? (frame skip pattern ?). Result 32 when busy. Starts the core (register 0x08), activates PoFx, then mode 1: register 0x0C = 1, else fetch engine start (0x94 = 3) |
 | 4 | 0x23240F | Continue ("GEMINI_CMD_ID_CONTINUE") | 8 | Same input as [command 10](#command-10-input-buffer-enqueue). The Y address must be the one of the last enqueued input buffer: it's replaced by its device address. Then the fetch engine is loaded with the buffer and started |
-| 5 | 0x232413 | Operation configuration | 8 | 00-03 useMode (0 or 1), 04-07 rotation (0-3 = 0°/90°/180°/270° ?). Rotation needs mode 0 (result 20) |
+| 5 | 0x232413 | Operation configuration | 8 | 00-03 useMode (0 or 1), 04-07 rotation (0-3 = 0°/90°/180°/270° ?). Rotation needs mode 0 (result 20). [QCJpegEncoderMFT.dll](../libraries/qcjpegencodermft.md#gemini-driver) sends mode 0 and 0 for 0°, 3 for 90°, 2 for 180°, 1 for 270° (so the rotation is counter-clockwise ?) |
 | 6 | 0x232417 | Input configuration | 16 | See [command 6](#command-6-input-configuration) |
 | 7 | 0x23241B | Output configuration | 2 | 00 we_burst_length (1 or 2), 01 byte ordering (0-7) |
 | 8 | 0x23241F | Encode configuration | 64 | See [command 8](#command-8-encode-configuration) |
@@ -252,7 +254,7 @@ Several commands contain pointers (byte 04) to other structures. These are user-
 Inputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | 00 00 00 00 | inputFormat: 0, 1 or 2 (4:2:0 / 4:2:2 ?) |
+| 00-03 | 00 00 00 00 | inputFormat: 0, 1 or 2 (4:2:0 / 4:2:2 ?). [QCJpegEncoderMFT.dll](../libraries/qcjpegencodermft.md#gemini-driver) always sends 1, with NV12 (4:2:0) frames |
 | 04 | 00 | input_cbcr_order (0 or 1) |
 | 05 | 01 | fe_burst_length (1 or 2) |
 | 06 | 00 | byte_ordering (0-7) |
@@ -274,6 +276,8 @@ Inputbuffer (sub_402B28):
 | 20 | 00 / 01 | 1 = file size control |
 | 24-2F | ? | File size control: region size (mandatory) and 2 more parameters |
 | 38-3F | ? | When not 0, the tables are scaled by a quality factor (1-98, "nQfDefault") instead of being written as is |
+
+[QCJpegEncoderMFT.dll](../libraries/qcjpegencodermft.md#gemini-driver) sends 0x44 bytes (and a 4-byte output buffer): restart interval 0, default Huffman tables, its own 64-byte quantization tables, no file size control, 1 at 24-27, 0 at 38-3F.
 
 #### Command 10 Input buffer enqueue
 

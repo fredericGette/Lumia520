@@ -1,7 +1,7 @@
 ## Qcfmtransport8930.sys
 
 FM radio transport driver.  
-It's a thin pipe between user mode and the FM radio core of the WCNSS (RIVA): it opens the SMD channel `APPS_FM` of [qcsmd8930.sys](./qcsmd8930.md) and forwards the content of 2 IOCTLs as plain SMD reads and writes. It doesn't know anything about the FM protocol (no registers, no frequencies, no RDS parsing): the FM commands are built by the user-mode FM stack.  
+It's a thin pipe between user mode and the FM radio core of the WCNSS (RIVA): it opens the SMD channel `APPS_FM` of [qcsmd8930.sys](./qcsmd8930.md) and forwards the content of 2 IOCTLs as plain SMD reads and writes. It doesn't know anything about the FM protocol (no registers, no frequencies, no RDS parsing): the FM commands are built by the user-mode FM miniport [qcfmminiport.dll](../libraries/qcfmminiport.md), which opens `\\.\qcfmtransportdriver`.  
 Its PDO (`QWCN\QCOM2150`, ACPI node `\_SB.RIVA.FMT0`) is created by the WCN bus driver [qcwcn8930.sys](./qcwcn8930.md#child-devices). The SMD channel is only opened once the WCN device interface of qcwcn8930.sys is published (i.e. once the WCNSS is running).  
 Build path found in the binary: `P:\fm\rel\8.2.1.1\arm\Release\qcfmtransport8930.pdb`.
 
@@ -72,6 +72,7 @@ The user buffer is wrapped with `WdfMemoryCreatePreallocated` (no copy), the IOC
 ### IOCTL 0x9900264C
 
 This IOCTL is processed by Qcfmtransport8930.sys  
+It's sent by [qcfmminiport.dll](../libraries/qcfmminiport.md#transport) (`Read`, overlapped, 0x101-byte output buffer) from its read thread.  
 
 | Property | Value |
 |----------|-------|
@@ -87,7 +88,7 @@ This IOCTL is processed by Qcfmtransport8930.sys
 Outputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-.. | ? | Packet received on the SMD channel `APPS_FM` (FM HCI event ?) |
+| 00-.. | ? | Packet received on the SMD channel `APPS_FM`: an FM event, event code (1 byte), parameter length (1 byte), parameters (see [qcfmminiport.dll](../libraries/qcfmminiport.md#events)) |
 
 Sends an SMD read of `OutputBufferLength` bytes into the output buffer and pends the IOCTL until qcsmd8930.sys completes the read.  
 `BytesReturned` = `Parameters.Read.Length` of the completed SMD request.  
@@ -98,6 +99,7 @@ Returns `STATUS_DEVICE_NOT_READY` (0xC00000A3) when the SMD channel isn't open y
 ### IOCTL 0x99002650
 
 This IOCTL is processed by Qcfmtransport8930.sys  
+It's sent by [qcfmminiport.dll](../libraries/qcfmminiport.md#transport) (`Write`, overlapped) for every FM command; the answer comes back as a command complete event read with IOCTL 0x9900264C.  
 
 | Property | Value |
 |----------|-------|
@@ -113,7 +115,7 @@ This IOCTL is processed by Qcfmtransport8930.sys
 Inputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-.. | ? | Packet sent as is on the SMD channel `APPS_FM` (FM HCI command ?) |
+| 00-.. | ? | Packet sent as is on the SMD channel `APPS_FM`: an FM command, opcode (2 bytes), parameter length (1 byte), parameters (see [qcfmminiport.dll](../libraries/qcfmminiport.md#commands)) |
 
 Sends an SMD write of `InputBufferLength` bytes and pends the IOCTL until qcsmd8930.sys completes the write.  
 `BytesReturned` is always 0.  
@@ -124,6 +126,7 @@ Returns `STATUS_DEVICE_NOT_READY` (0xC00000A3) when the SMD channel isn't open y
 ### IOCTL 0x99002654
 
 This IOCTL is processed by Qcfmtransport8930.sys  
+It's sent by [qcfmminiport.dll](../libraries/qcfmminiport.md#transport) (`ssr_thread`, overlapped) and cancelled with `CancelIoEx` when the miniport is destroyed.  
 
 | Property | Value |
 |----------|-------|
@@ -196,7 +199,7 @@ This IOCTL is sent by Qcfmtransport8930.sys to [qcsmd8930.sys](./qcsmd8930.md#in
 
 ### Interface GUID
 
-Qcfmtransport8930 device interface (`WdfDeviceCreateDeviceInterface` + `WdfDeviceSetDeviceInterfaceState` in `EvtDriverDeviceAdd`), presumably used by the user-mode FM radio stack to find the driver:  
+Qcfmtransport8930 device interface (`WdfDeviceCreateDeviceInterface` + `WdfDeviceSetDeviceInterfaceState` in `EvtDriverDeviceAdd`), presumably used by the user-mode FM radio stack to find the driver ([qcfmminiport.dll](../libraries/qcfmminiport.md) opens the symbolic link instead):  
 `{BF6A982B-2096-4E02-A0F5-B052D009FA7F}`
 
 ### Other GUID

@@ -30,6 +30,7 @@ Drivers using qcslimbus8930.sys (interface `{88EEFAB5-…}`):
 | [qcmbhc8930.sys](./qcmbhc8930.md) | 0x85B52000, 0x85B52400, 0x85B52404 |
 | [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md) | 0x85B52000, 0x85B52400, 0x85B52404, 0x85B5240C, 0x85B52410 |
 | [qcsitarcodec8930.sys](./qcsitarcodec8930.md) | 0x85B52000, 0x85B52400, 0x85B52404, 0x85B5240C, 0x85B52410 |
+| [qctablaint8930.sys](./qctablaint8930.md) | 0x85B52000, 0x85B52400, 0x85B52404 |
 
 The clients of the port, channel and BAM IOCTLs (`0x85B528xx`, `0x85B52Cxx`, `0x85B534xx`) are unknown.
 
@@ -147,7 +148,7 @@ Errors: most failures → `STATUS_UNSUCCESSFUL` (0xC0000001); device being remov
 
 ### IOCTL 0x85B52000 — Get logical address
 
-This IOCTL is processed by Qcslimbus8930.sys (`sub_403C18`). Sent by [qcmbhc8930.sys](./qcmbhc8930.md#ioctl-0x85b52000--0x85b52400--0x85b52404--slimbus), [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md#ioctl-0x85b52000--0x85b52400--0x85b52404--0x85b5240c--0x85b52410--slimbus) and [qcsitarcodec8930.sys](./qcsitarcodec8930.md#slimbus).
+This IOCTL is processed by Qcslimbus8930.sys (`sub_403C18`). Sent by [qcmbhc8930.sys](./qcmbhc8930.md#ioctl-0x85b52000--0x85b52400--0x85b52404--slimbus), [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md#ioctl-0x85b52000--0x85b52400--0x85b52404--0x85b5240c--0x85b52410--slimbus), [qcsitarcodec8930.sys](./qcsitarcodec8930.md#slimbus) and [qctablaint8930.sys](./qctablaint8930.md#slimbus).
 
 | Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|-------------------|
@@ -186,7 +187,7 @@ Nothing is changed: any other value → `STATUS_UNSUCCESSFUL`.
 
 ### IOCTL 0x85B52400 / 0x85B52404 / 0x85B52408 — value elements
 
-These IOCTLs are processed by Qcslimbus8930.sys (worker thread). 0x85B52400 and 0x85B52404 are sent by [qcmbhc8930.sys](./qcmbhc8930.md#ioctl-0x85b52000--0x85b52400--0x85b52404--slimbus), [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md#ioctl-0x85b52000--0x85b52400--0x85b52404--0x85b5240c--0x85b52410--slimbus) and [qcsitarcodec8930.sys](./qcsitarcodec8930.md#slimbus) to access the codec registers.
+These IOCTLs are processed by Qcslimbus8930.sys (worker thread). 0x85B52400 and 0x85B52404 are sent by [qcmbhc8930.sys](./qcmbhc8930.md#ioctl-0x85b52000--0x85b52400--0x85b52404--slimbus), [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md#ioctl-0x85b52000--0x85b52400--0x85b52404--0x85b5240c--0x85b52410--slimbus), [qcsitarcodec8930.sys](./qcsitarcodec8930.md#slimbus) and [qctablaint8930.sys](./qctablaint8930.md#ioctl-0x85b52000--0x85b52400--0x85b52404--slimbus) to access the codec registers.
 
 | Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|-------------------|
