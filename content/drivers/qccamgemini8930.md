@@ -2,7 +2,7 @@
 
 Camera JPEG Encoder Driver ("GeminiKMD").  
 It's the driver of the Gemini hardware JPEG encoder of the MSM8960/MSM8930 camera subsystem. It's a KMDF driver of the Nokia camera stack (same build as [qccamavs8930.sys](./qccamavs8930.md) and [qccamflash8930.sys](./qccamflash8930.md)) built around the Qualcomm Gemini DAL (`core\src\gemini_dal.c`, `gemini_device.c`, `scqueue.c`, `ea\src\gemini_platform.c`, `ea_8960\src\gemini_mmpm.c`).  
-It's opened from user mode through a symbolic link: the client gives the encoder its configuration (input/output format, quantization and Huffman tables, rotation), its YCbCr input and JPEG output buffers (user-mode memory, locked and mapped into the SMMU with qcvcm8930.sys), and two events signalled by the interrupt DPC ("JpegDone", "InputReadDone").  
+It's opened from user mode through a symbolic link: the client gives the encoder its configuration (input/output format, quantization and Huffman tables, rotation), its YCbCr input and JPEG output buffers (user-mode memory, locked and mapped into the SMMU with [qcvcm8930.sys](./qcvcm8930.md)), and two events signalled by the interrupt DPC ("JpegDone", "InputReadDone").  
 The client is the hardware engine of the JPEG encoder MFT [QCJpegEncoderMFT.dll](../libraries/qcjpegencodermft.md#gemini-driver) (open, reset, input / output / operation / encode configuration, events, one input and one output buffer, encode, get result, close for each image).  
 PDB path: `e:\build_e\trwnwp045\workspace\Camera_to_8227\output\camera\Driver\fre\qccamgemini8930.pdb`.
 
@@ -25,7 +25,7 @@ GUID of the ETW provider (manifest based, only registered when `TraceEnable` = 1
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| — | qcvcm8930.sys | SMMU, by direct imports (`VcmCreate`, `VcmAssoc`, `VcmActivate`, `VcmReserve`, `VcmMapMdlToPhysmem`, `VcmBack`, `VcmGetDevAddr`, `VcmUnback`, `VcmUnMapMdlFromPhysmem`, `VcmUnreserve`, `VcmDeactivate`, `VcmDeassoc`, `VcmFree`) |
+| — | [qcvcm8930.sys](./qcvcm8930.md) | SMMU, by direct imports (`VcmCreate`, `VcmAssoc`, `VcmActivate`, `VcmReserve`, `VcmMapMdlToPhysmem`, `VcmBack`, `VcmGetDevAddr`, `VcmUnback`, `VcmUnMapMdlFromPhysmem`, `VcmUnreserve`, `VcmDeactivate`, `VcmDeassoc`, `VcmFree`) |
 
 ### Driver initialisation
 

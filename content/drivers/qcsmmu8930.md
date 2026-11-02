@@ -2,7 +2,7 @@
 
 System MMU (SMMU / IOMMU) driver.  
 It is the function driver of the ACPI node `\_SB.SMMU` (`QCOM0200`). It programs the context banks of the 9 multimedia IOMMUs of the MSM8930 (Qualcomm "MSM IOMMU v0", the same hardware as the Linux `msm_iommu` driver): VPE, MDP, rotator, JPEG, VFE, video codec and 3D GPU. It builds the ARMv7 short-descriptor page tables (1 MB sections, 64 KB large pages, 4 KB small pages) in contiguous memory, attaches them to the context banks (TTBR0/TTBR1), invalidates the TLBs and handles the translation faults.  
-It has no user-mode API: a client gets a table of 20 function pointers with [IOCTL 0xC3500004](#ioctl-0xc3500004) and calls them directly. The VCM layer qcvcm8930.sys (used by [qcdxkm8930.sys](./qcdxkm8930.md), [qccamavs8930.sys](./qccamavs8930.md), [qccamgemini8930.sys](./qccamgemini8930.md)…) is probably its client ?.  
+It has no user-mode API: a client gets a table of 20 function pointers with [IOCTL 0xC3502004](#ioctl-0xc3502004) and calls them directly. Its client is the VCM export driver [qcvcm8930.sys](./qcvcm8930.md) (used by [qcdxkm8930.sys](./qcdxkm8930.md), [qccamavs8930.sys](./qccamavs8930.md), [qccamgemini8930.sys](./qccamgemini8930.md)…), which gets the table in its `DllInitialize`.  
 The configuration (number of IOMMUs, context banks, context IDs) comes from the ACPI methods `BCDE`, `CORE`, `PTCA` and `AGPA`. Source files (from the trace strings): `Driver.cpp`, `Device.cpp`, `SmmuInit.cpp`, `PageTableLibrary.cpp`, `PageTableInterface.cpp`, `SmmuApi.cpp`, `SmmuReservationManagement.cpp`. PDB path: `P:\SMMU\rel\8.2.1\arm\Release\qcsmmu8930.pdb`.
 
 There's no device name and no symbolic link: the device is only reachable through its [device interface](#interface-guid).  
@@ -16,7 +16,7 @@ Registry key `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\qcsmmu` (the 
 |----------------|-------|---------|
 | PowerManaged | ? | REG_DWORD. 1 = register the device with the power framework (PoFx, see [Power management](#power-management)). Missing or any other value = no PoFx, and the clock register 0x04000080 is forced on during the initialisation instead |
 
-GUID of the ETW provider (manifest-based, `EtwRegister`):  
+GUID of the ETW provider (manifest-based, `EtwRegister`; the same GUID is registered by [qcvcm8930.sys](./qcvcm8930.md)):  
 `{1a64bee1-de91-4a1e-bafc-c461666f1daa}`
 
 It communicates with the following devices:  
@@ -133,7 +133,7 @@ The callbacks only acknowledge the power framework (`PoFxCompleteIdleCondition`,
 
 ### Function table
 
-Returned by [IOCTL 0xC3500004](#ioctl-0xc3500004) (`sub_407CFC`). Signatures reconstructed from the code (names are tentative, they follow the qcvcm8930 exports `VcmCreate`, `VcmReserve`, `VcmBack`, `VcmAssoc`, `VcmActivate`…):  
+Returned by [IOCTL 0xC3502004](#ioctl-0xc3502004) (`sub_407CFC`). Signatures reconstructed from the code (names are tentative, they follow the [qcvcm8930](./qcvcm8930.md#exported-functions) exports `VcmCreate`, `VcmReserve`, `VcmBack`, `VcmAssoc`, `VcmActivate`…):  
 | Position | Address | Function signature | Comment |
 |----------|---------|--------------------|---------|
 | 00 | — | | Not written |
@@ -192,42 +192,43 @@ Context bank (44 bytes): +0x00 context ID, +0x04 IOMMU entry, +0x08 index in the
 
 ---
 
-### IOCTL 0xC3500004
+### IOCTL 0xC3502004
 
 This IOCTL is processed by Qcsmmu8930.sys (`EvtWdfIoQueueIoDeviceControl`, 0x401734)  
 
 | Property | Value |
 |----------|-------|
 | Device | 0xC350 |
-| Function | 0x1 |
+| Function | 0x801 |
 | Access | FILE_ANY_ACCESS |
 | Method | METHOD_BUFFERED |
 
 | Name | InputBuffer size | OutputBuffer Size |
 |------|------------------|-------------------|
-| Get the SMMU function table | ≥ 4 | ≥ 4 |
+| Get the SMMU function table | ≥ 4 | — |
 
 Inputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
 | 00-03 | ? | Kernel address of the caller's function table (at least 84 bytes) |
 
-The handler writes the 20 function pointers at offsets 0x04–0x53 of the table pointed to by the InputBuffer (see [Function table](#function-table)); offset 0x00 isn't written. Nothing is written in the OutputBuffer, but it must be at least 4 bytes.  
-Completed with `STATUS_SUCCESS` and `BytesReturned` = 0. InputBuffer < 4 bytes, OutputBuffer < 4 bytes or a NULL pointer → `STATUS_UNSUCCESSFUL` (0xC0000001).
+The handler writes the 20 function pointers at offsets 0x04–0x53 of the table pointed to by the InputBuffer (see [Function table](#function-table)); offset 0x00 isn't written. The OutputBuffer isn't used (the length checked against 4 is the one returned by `WdfRequestRetrieveInputBuffer`, not `OutputBufferLength`).  
+Completed with `STATUS_SUCCESS` and `BytesReturned` = 0. InputBuffer < 4 bytes (`WdfRequestRetrieveInputBuffer` fails) or a NULL pointer → `STATUS_UNSUCCESSFUL` (0xC0000001).  
+This IOCTL is sent by [qcvcm8930.sys](./qcvcm8930.md#ioctl-0xc3502004) in its `DllInitialize`, with a 4-byte InputBuffer and no OutputBuffer.
 
 > [!NOTE]
 > The request is handled by `EvtIoDeviceControl`, not `EvtIoInternalDeviceControl`, and the pointer isn't validated: any caller able to open the device interface can make the driver write 80 bytes of kernel pointers at an arbitrary address. In practice the device can only be used by a kernel-mode client (the functions run in kernel mode).
 
 ---
 
-### IOCTL 0xC3500008
+### IOCTL 0xC3502008
 
 This IOCTL is processed by Qcsmmu8930.sys (`EvtWdfIoQueueIoDeviceControl`, 0x401734)  
 
 | Property | Value |
 |----------|-------|
 | Device | 0xC350 |
-| Function | 0x2 |
+| Function | 0x802 |
 | Access | FILE_ANY_ACCESS |
 | Method | METHOD_BUFFERED |
 

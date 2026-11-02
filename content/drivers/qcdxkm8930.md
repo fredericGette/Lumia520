@@ -3,7 +3,7 @@
 Qualcomm WDDM display miniport driver (DirectX kernel-mode driver, build `P:\direct3d_kmd\rel\8.3.1\miniport\arm\Release\qcdxkm8930.pdb`).  
 It is the "graphics adapter" of the Lumia 520: it drives the MDP display controller and the MIPI DSI panel, the Adreno 305 GPU, the 2D blitter, the rotator and the video codec core (VIDC, "VED"), and it creates the child devices of the adapter (the panel monitor and the camera AVStream device).  
 It registers with dxgkrnl through `DxgkInitialize` (DDI interface version `0x300E` = `DXGKDDI_INTERFACE_VERSION_WIN8`); KMDF is only used as a library (`WdfDriverCreate` with `WdfDriverInitNoDispatchOverride`, no WDF device).  
-The GPU/MDP/video memory goes through the SMMU driver qcvcm8930.sys (imports `Vcm*`). The panel description comes from the ACPI method `_ROM`, the panel command sequences and the backlight are delegated to [oempanel.sys](./oempanel.md), the OPM keys are read from `C:\DPP\QCOM\OPM_PUB.PROVISION` / `OPM_PRIV.PROVISION` and kept in the TrustZone trustlet `qcom.tz.winsecapp` through [qcscm8930.sys](./qcscm8930.md).
+The GPU/MDP/video memory goes through the VCM export driver [qcvcm8930.sys](./qcvcm8930.md) (imports `Vcm*`), a client layer of the SMMU driver [qcsmmu8930.sys](./qcsmmu8930.md). The panel description comes from the ACPI method `_ROM`, the panel command sequences and the backlight are delegated to [oempanel.sys](./oempanel.md), the OPM keys are read from `C:\DPP\QCOM\OPM_PUB.PROVISION` / `OPM_PRIV.PROVISION` and kept in the TrustZone trustlet `qcom.tz.winsecapp` through [qcscm8930.sys](./qcscm8930.md).
 
 There's no named `\Device\` object and no symbolic link created by the driver: the device objects belong to dxgkrnl (`\Device\Video0`…), and user mode reaches the driver only through D3DKMT calls (escapes, allocations, …).
 
@@ -47,7 +47,7 @@ It communicates with the following devices:
 | Interface `{FB4F07CD-8D4C-4413-92C2-E2C9CAED9F43}` | [qcchipinfo8930.sys](./qcchipinfo8930.md) | Chip family / id / version: [IOCTL 0x8C1F2014, 0x8C1F2008, 0x8C1F2004](#ioctl-0x8c1f2014--0x8c1f2008--0x8c1f2004) |
 | Interface `{0D4A3F63-0D08-49A1-B91C-C60576894174}` | [oempanel.sys](./oempanel.md) | Nokia panel driver. [IOCTL 0x4000](#ioctl-0x4000--panel-driver-registration): exchange of function-pointer tables |
 | Interface `{41C66D2A-A9F1-40CA-A329-AE096C03EE68}` | [qcscm8930.sys](./qcscm8930.md) | TrustZone, trustlet `qcom.tz.winsecapp`: [internal IOCTL 0xC3514004](#internal-ioctl-0xc3514004--opm-keys-in-trustzone) for the OPM keys |
-| — | qcvcm8930.sys | SMMU / virtual memory contexts, by direct imports (`VcmCreateExtended`, `VcmReserve*`, `VcmBack*`, `VcmRegisterIsr`, …) |
+| — | [qcvcm8930.sys](./qcvcm8930.md) | SMMU / virtual memory contexts, by direct imports (`VcmCreateExtended`, `VcmReserve*`, `VcmBack*`, `VcmRegisterIsr`, …) |
 | — | ksecdd.sys | `BCrypt*` (OPM: AES-CBC, hashes, random numbers) |
 | ACPI node of the adapter | [acpi.sys](./acpi.md) | Methods `_ROM`, `BLCP`, `PPCC`, `PGCT`, `PIGC`, `PGRT`, `PBRT`, `PCSC` (see [ACPI methods](#acpi-methods)) |
 
@@ -146,7 +146,7 @@ UEFI variable `UEFIDisplayInfo` (vendor `{9042A9DE-23DC-4A38-96FB-7ADED080516A}`
 
 ### Lumia 520 ACPI node
 
-From the DSDT. The adapter is `\_SB.GPU0` (`_HID` `QCOM0300`, `_CID` `ACPIQCOM0300`, `_UID` 0, `_CLS` 0x0003000000000000 = display controller). It declares `_DEP` on `\_SB.SMMU` (`QCOM0200`, qcvcm8930.sys ?), `\_SB.PEP0`, `\_SB.PMIC` and `\_SB.CIN0` ([qcchipinfo8930.sys](./qcchipinfo8930.md)). A second node `\_SB.SGPU` (`_HID` `QCOM_GPU`, `_CID` `ACPIQCOM_GPU`, nothing else) also exists.
+From the DSDT. The adapter is `\_SB.GPU0` (`_HID` `QCOM0300`, `_CID` `ACPIQCOM0300`, `_UID` 0, `_CLS` 0x0003000000000000 = display controller). It declares `_DEP` on `\_SB.SMMU` (`QCOM0200`, [qcsmmu8930.sys](./qcsmmu8930.md)), `\_SB.PEP0`, `\_SB.PMIC` and `\_SB.CIN0` ([qcchipinfo8930.sys](./qcchipinfo8930.md)). A second node `\_SB.SGPU` (`_HID` `QCOM_GPU`, `_CID` `ACPIQCOM_GPU`, nothing else) also exists.
 
 `_CRS`, with the name that `RESI` gives to each resource (same order: `RESI` = `Package { 2, 0, {"RESOURCE", name, owner}… }`):  
 | # | `RESI` name (owner) | Resource |
@@ -257,7 +257,7 @@ Finally it calls `InterfaceReference` once. With it, the display driver and the 
 ### Escapes
 
 `DxgkDdiEscape` (`sub_4A95C4`), `DXGKARG_ESCAPE`:
-* with a context (`hContext`): forwarded to the escape function of the context's engine (engine block `+0x34`, i.e. adapter `+0x1C4` + 0x258 × engine). The video UMD [qcvidum8930.dll](../libraries/qcvidum8930.md#gpu-contexts-and-escapes) sends its decoder / encoder escapes this way (header `0x501`, codes `0x2001`…`0x2203`), on its context of the VIDEO engine.
+* with a context (`hContext`): forwarded to the escape function of the context's engine (engine block `+0x34`, i.e. adapter `+0x1C4` + 0x258 × engine). The video UMD [qcvidum8930.dll](../libraries/qcvidum8930.md#gpu-contexts-and-escapes) sends its decoder / encoder escapes this way (header `0x501`, codes `0x2001`…`0x2203`), on its context of the VIDEO engine, see [VIDEO engine escapes and commands](#video-engine-escapes-and-commands).
 * without context: the private data must be ≥ 64 bytes and its dword at `+0x0C` (escape code) must be `0x2xxxxxxx`; handled by `sub_4B682C`:
 
 | Code | Size | Comment |
@@ -267,6 +267,38 @@ Finally it calls `InterfaceReference` once. With it, the display driver and the 
 | other | | Result `1` |
 
 The result is written in the dword at `+0x14` of the private data (0 = success, 1 = invalid parameter, 2 = failure); the escape itself always returns `STATUS_SUCCESS`.
+
+### VIDEO engine escapes and commands
+
+The escapes of a VIDEO context go to `sub_4178F8`, which checks that the context belongs to the engine, then tries two tables of {handler, code, required size (0 = any)}. The code is at `+0x04` of the private data (header {0x501, code, size, session}), the session at `+0x0C`, the result at `+0x10`:
+
+| Code | Size | Handler | Comment |
+|------|------|---------|---------|
+| 0x2001 | 0x1C | `sub_41BEF8` | Context escape (table `off_472B88`, `sub_41A020`): open the video context |
+| 0x2002 | 0x18 | `sub_41C094` | Context escape: close the video context |
+| 0x2100 | 0x34 | `sub_4BCC14` | Session escape (table `off_472B40`, `sub_41A13C`): open a decoder session |
+| 0x2200 | 0x98 | `sub_4BCC14` | Open an encoder session, see below |
+| 0x2201 | any | `sub_41C394` | Encoder set property (id at `+0x18`): 1 → firmware message 0x20000005 (32 bytes), 4 → 0x20000004 (32 bytes), 6 → 0x20000008 (36 bytes), 2, 7, … ("VED_SetPropertyEncoder") |
+| 0x2202 | any | `sub_41C184` | Encoder get property: only id 3 (40 bytes) → message 0x20000006 ("VED_GetPropertyEncoder") |
+| 0x2203 | 0x230 | `sub_41C0E4` | Read the next event of the session (`sub_41833C`) |
+| 0x2003 | 0x98 | `sub_4BD258` | Copies a string (≤ 128 characters) from `+0x18` into the session (`+0x138`) and, if `+0x14` isn't 0, sends message 0x2000000D (4 bytes) |
+
+For the session escapes other than open, the session (`+0x0C`) must be in the list of the engine. Open (`sub_4BCC14`): at most 256 sessions (engine `+0x16C`); a 0x1B8-byte session (pool tag `qDXn`) is allocated and attached to the firmware (`sub_4BAE0C`). For 0x2200 the codec is taken from the GUID at `+0x18` (`sub_4BBC9C`), the event handle at `+0x84` is referenced (`ObReferenceObjectByHandle`, `ExEventObjectType`, user mode) to signal the UMD, and the parameters of the [open escape](../libraries/qcvidum8930.md#encoder-devices) (size, stride, format, frame rate, type, level, RC mode, slices, GOP, QP, bitrates…) are copied into a 124-byte message 0x20000003 sent to the firmware (`sub_4181A4`). The session pointer is returned at `+0x0C` and `+0x10` is set to 1.
+
+The command buffers of a session are parsed by `sub_419E1C` (called by `sub_41A37C`), with a table chosen by the session type (byte `+0x40`: 1 = decoder):
+
+| Session | Code | Size | Handler | Comment |
+|---------|------|------|---------|---------|
+| Decoder (`off_4652CC`) | 0x1100 | 0xA8 | `sub_4BD2DC` | Start ("Start Decoder Device") |
+| | 0x1101 | any | `sub_41B16C` | Decode a frame |
+| | 0x1102 | 0x20 | `sub_4BD900` | Stop / close |
+| Encoder (`off_472BA0`) | 0x1200 | 0x20 | `sub_4BD2DC` | Start (same handler as 0x1100) |
+| | 0x1201 | 0x80 | `sub_41B61C` | `VED_EncodeFrame` |
+| | 0x1202 | 0x98 | `sub_41B9C4` | `VED_EncEOS` |
+| | 0x1203 | 0x20 | `sub_41BCEC` | `VED_EncFlush` |
+| | 0x1204 | 0x20 | `sub_4BD900` | Stop / close (same handler as 0x1102) |
+
+The senders are [qcvidum8930.dll](../libraries/qcvidum8930.md#gpu-contexts-and-escapes) and, above it, the encoder MFT [qcvidencmfth2638930.dll](../libraries/qcvidencmfth2638930.md#decoderextension-commands). The firmware side (the messages 0x200000xx and the events read by 0x2203) wasn't analysed.
 
 ### Panel driver interface
 

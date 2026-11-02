@@ -18,3 +18,5 @@
 [QCJpegEncoderMFT.dll](./qcjpegencodermft.md)  
 [qcremoteatsrvc8930.dll](./qcremoteatsrvc8930.md)  
 [InputInjection.dll](./inputinjection.md)  
+[qcviddecmft8930.dll](./qcviddecmft8930.md)  
+[qcvidencmfth2638930.dll](./qcvidencmfth2638930.md)  

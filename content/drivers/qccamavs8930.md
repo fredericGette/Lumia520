@@ -2,7 +2,7 @@
 
 Qualcomm Camera AVStream Mini Driver.  
 It's the camera driver of the phone: a KS/AVStream minidriver (`ks.sys`) that exposes one capture filter per camera sensor ("Back Sensor", "Front Sensor") and contains the whole Qualcomm camera stack in kernel mode: the ISP / VFE service, the 3A algorithms ("ELFS": AEC, AWB, AF, ASD, AFD, DIS, HJR, luma adaptation), the chromatix tuning data, the multipass snapshot (dark frame, ideal raw, BM3D) and the Nokia additions (`NokiaElfsPlugIn`, `NokiaMultiframeLogic`, Nokia custom properties, camera diagnostics).  
-The device is a child of the display adapter: it's enumerated by [qcdxkm8930.sys](./qcdxkm8930.md#child-devices) (`VEN_QCOM&DEV__AVSTREAM`, ACPI node `\_SB.GPU0.AVS0`), and it gets the DirectX allocations of the adapter through a query interface. The camera sensors, the flash and the VFE are separate drivers reached through device interfaces, the post-processing engine (VPE) and the Nokia "ESP" driver too. The SMMU mappings go through qcvcm8930.sys (direct imports `VcmCreate`, `VcmReserve`, `VcmBack`, `VcmMapMdlToPhysmem`, `VcmGetDevAddr`, …).  
+The device is a child of the display adapter: it's enumerated by [qcdxkm8930.sys](./qcdxkm8930.md#child-devices) (`VEN_QCOM&DEV__AVSTREAM`, ACPI node `\_SB.GPU0.AVS0`), and it gets the DirectX allocations of the adapter through a query interface. The camera sensors, the flash and the VFE are separate drivers reached through device interfaces, the post-processing engine (VPE) and the Nokia "ESP" driver too. The SMMU mappings go through [qcvcm8930.sys](./qcvcm8930.md) (direct imports `VcmCreate`, `VcmReserve`, `VcmBack`, `VcmMapMdlToPhysmem`, `VcmGetDevAddr`, …).  
 The camera code base is shared with other Nokia phones: the back filter class is `CaptureFilter13MP` and the front filter class is `CaptureFilter_MT9M114_720P_YUV` (Aptina MT9M114). The Lumia 520 has no front camera, so only the back filter is expected to be created.  
 PDB path: `e:\build_e\trwnwp045\workspace\Camera_to_8227\output\camera\Driver\fre\qccamavs8930.pdb`.
 
@@ -48,7 +48,7 @@ It communicates with the following devices:
 | Interface `{3e9c0fdb-cef9-4c4a-8e85-36e4a82eb80f}` | [qccamvfe8930.sys](./qccamvfe8930.md) | VFE (Video Front End: ISP) driver. Same IOCTLs, commands listed in [VFE commands](./qccamvfe8930.md#vfe-commands) |
 | Interface `{95f66217-6158-4f46-a8c6-dfd0bfcf94f1}` | ? | VPE (Video Pre-processing Engine: scaling, crop, rotation). See [VPE IOCTLs](#ioctl-0x900-0x950-0x9a0--vpe) |
 | Interface `{e5fde9d7-7a0e-4048-81bb-a77caf7b349f}` | ? | Nokia "ESP" driver. See [ESP IOCTLs](#ioctl-0x222410-0x222414-0x222424--esp) |
-| — | qcvcm8930.sys | SMMU, by direct imports |
+| — | [qcvcm8930.sys](./qcvcm8930.md) | SMMU, by direct imports |
 | — | ks.sys | AVStream class driver |
 
 The ACPI node `\_SB.GPU0.AVS0` declares `_DEP` on `\_SB.VPE` and `\_SB.VFE0` (see [qcdxkm8930.sys](./qcdxkm8930.md)). The flash interface is exposed by [qccamflash8930.sys](./qccamflash8930.md) and the sensor interfaces by [qccamsensor8930.sys](./qccamsensor8930.md) (back) and [qccamfrontsensor8930.sys](./qccamfrontsensor8930.md) (front), and the VFE interface by [qccamvfe8930.sys](./qccamvfe8930.md); the VPE and ESP drivers are not identified yet.

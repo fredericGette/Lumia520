@@ -115,7 +115,7 @@ Both pointers must be non-null, else `E_INVALIDARG`. `sub_10002404` allocates th
 | 0x580 | 4 | Number of entries of the list at `+0x584` |
 | 0x584 | 4 | [Encoder](#encoder-devices) GUIDs enabled by adapter information `+0x90` (bit 0 `{129F7B40…}`, bit 1 `{CBB1A2A4…}`, bit 3 `{B7BC9768…}`) |
 | 0x588 | 4 | Number of entries at `+0x58C` |
-| 0x58C | 8 | Buffer types enabled by adapter information `+0x94`: bit 0 → 159, bit 1 → 160 (`D3DDDIFMT_DXVA_RESERVED9` / `10`, encoder buffers ?) |
+| 0x58C | 8 | Buffer types enabled by adapter information `+0x94`: bit 0 → 159, bit 1 → 160 (`D3DDDIFMT_DXVA_RESERVED9` / `10`): the two encoder input formats, 159 = TILE_4X2 (`{B27227A5…}`), 160 = NV12_16M2KA (`{FB8D8600…}`), see [Encoder devices](#encoder-devices) |
 | 0x594 | 4 | Adapter information `+0x84` byte 0 |
 | 0x598 | 4 | Adapter information `+0x84` bits 8–11 |
 
@@ -168,13 +168,15 @@ The decoder GUIDs (`.rdata`), the configuration each one returns (`GETDECODECONF
 | `{86695F12-340E-4F04-9FD3-9253DD327460}` | `DXVA2_ModeMPEG2and1_VLD` | `+0x290` | same as MPEG-2 |
 | `{6F3EC719-3735-42CC-8063-65CC3CB36616}` | `DXVA2_ModeMPEG1_VLD` (not in the GUID list) | `+0x290` | same as MPEG-2 |
 | `{EFD64D74-C9E8-41D7-A5E9-E9B0E39FA319}` | `DXVA2_ModeMPEG4pt2_VLD_Simple` | `+0x2F4` | 0x9D0 bytes, `sub_1001CF7C` |
-| `{ED418A9F-010D-4EDA-9AE3-9A65358D8D2E}` | `DXVA2_ModeMPEG4pt2_VLD_AdvSimple_NoGMC` | `+0x358` | same as MPEG-4 Simple |
-| `{BBC56996-08F7-4ACD-A623-D95808ADF8DA}` | ? (in the MPEG-4 part 2 group of the flags) | none (`E_FAIL`) | none |
-| `{129F7B40-5C5B-48E5-8178-48C0CEA05A90}` | Private: [encoder](#encoder-devices) type 1–5 (H.264 ?) | `+0x3BC` | 0x5F8 bytes, `sub_100277B8` |
-| `{CBB1A2A4-4EA1-491E-ADC9-70B373B76036}` | Private: encoder type 6–7 (MPEG-4 ?) | `+0x420` | same |
-| `{B7BC9768-6665-4926-88A4-1751BC8515FB}` | Private: encoder type 8 (H.263 ?) | `+0x484` | same |
+| `{ED418A9F-010D-4EDA-9AE3-9A65358D8D2E}` | `DXVA2_ModeMPEG4pt2_VLD_AdvSimple_NoGMC` | `+0x358` | same as MPEG-4 Simple. The one used by [qcviddecmft8930.dll](./qcviddecmft8930.md#decoder-creation-sub_10016254) |
+| `{BBC56996-08F7-4ACD-A623-D95808ADF8DA}` | `DXVA2_ModeMPEG4pt2_VLD_AdvSimple_GMC` (name from `dxva2api.h`; [qcviddecmft8930.dll](./qcviddecmft8930.md#decoder-creation-sub_10016254) recognises it but doesn't use it) | none (`E_FAIL`) | none |
+| `{129F7B40-5C5B-48E5-8178-48C0CEA05A90}` | Private: [encoder](#encoder-devices) type 1–5 (H.264; also chosen for VC-1 by the encoder MFT code) | `+0x3BC` | 0x5F8 bytes, `sub_100277B8` |
+| `{CBB1A2A4-4EA1-491E-ADC9-70B373B76036}` | Private: encoder type 6–7 (MPEG-4) | `+0x420` | same |
+| `{B7BC9768-6665-4926-88A4-1751BC8515FB}` | Private: encoder type 8 (H.263, opened by [qcvidencmfth2638930.dll](./qcvidencmfth2638930.md)) | `+0x484` | same |
 
 The configurations (`sub_100072DC`) are 11 copies of one template, then patched: `guidConfigBitstreamEncryption`, `guidConfigMBcontrolEncryption`, `guidConfigResidDiffEncryption` = `DXVA_NoEncrypt` `{1B81BED0-A0C7-11D3-B984-00C04F2E73C5}`, `ConfigBitstreamRaw` 2, `ConfigResidDiffAccelerator` 1, `ConfigHostInverseScan` 1, `ConfigMinRenderTargetBuffCount` 16. Entries 1–6 get `ConfigBitstreamRaw` 1 and `ConfigHostInverseScan` 0; entries 1–4 `ConfigMinRenderTargetBuffCount` 4, entries 5–6 5; entry 2 (not returned for any GUID) `ConfigDecoderSpecific` 128.
+
+The MPEG-4 part 2 / H.263 decoder is used by the hardware MFT [qcviddecmft8930.dll](./qcviddecmft8930.md), which sends 3 buffers per picture: picture parameters (62 bytes), inverse quantisation matrices (516 bytes, the size of the `INVERSEQUANTIZATIONDATA` description above) and bitstream, on `420O` render targets.
 
 `CreateDecodeDevice` (`sub_1000EC5C`) also checks (`sub_10009460`) that `SampleWidth × SampleHeight` is at most the max decode size (caps `+0x550` × `+0x554`) for a decoder, or the max encode size (`+0x570` × `+0x574`) for an encoder; otherwise `E_FAIL`.
 
@@ -242,6 +244,7 @@ The video commands share a header (the buffers of `sub_100125C8` go into the com
 | 0x04 | 4 | Command code |
 | 0x08 | 4 | Size of the whole buffer |
 | 0x0C | 4 | Session (decoder / encoder id returned by the open command), or 0 |
+| 0x10 | 4 | Result of an escape, written by the KMD (1 = success) |
 | 0x10… | | Parameters |
 
 | Code | Size | How | Sender | Comment |
@@ -256,13 +259,13 @@ The video commands share a header (the buffers of `sub_100125C8` go into the com
 | 0x2201 | 0x20–0x28 | Escape | `sub_10024484`… | Encoder: set property (id at `+0x10`) |
 | 0x2202 | 0x20–0x28 | Escape | `sub_100242DC`… | Encoder: get property |
 | 0x2203 | 0x230 | Escape | `sub_10027E2C` | Encoder: wait for / read an output event |
-| 0x1200 | 0x20 | Command | `sub_10024194` | Encoder: start ? |
-| 0x1201 | 0x80 | Command | `sub_10026820` | Encoder: encode a frame ? |
-| 0x1202 | 0x98 | Command | `sub_10024ED4` | Encoder: ? |
-| 0x1203 | 0x20 | Command | `sub_10025008` | Encoder: ? |
-| 0x1204 | 0x20 | Command | `sub_10023F70` | Encoder: stop / flush ? (then waits on an event) |
+| 0x1200 | 0x20 | Command | `sub_10024194` | Encoder: start (`D3D_VIDENC_CMD_START_ENCODER`) |
+| 0x1201 | 0x80 | Command | `sub_10026820` | Encoder: encode a frame (`D3D_VIDENC_CMD_ENCODE_FRAME`) |
+| 0x1202 | 0x98 | Command | `sub_10024ED4` | Encoder: end of stream (`D3D_VIDENC_CMD_EOS`) |
+| 0x1203 | 0x20 | Command | `sub_10025008` | Encoder: flush (`D3D_VIDENC_CMD_FLUSH`) |
+| 0x1204 | 0x20 | Command | `sub_10023F70` | Encoder: stop (`D3D_VIDENC_CMD_STOP_ENCODER`, then waits on an event) |
 
-The meaning of these codes on the KMD side wasn't checked: the escape function of the VIDEO engine of qcdxkm8930.sys isn't documented.
+On the KMD side the escapes are dispatched by the VIDEO engine of qcdxkm8930.sys and the commands by its submit function, which turn them into messages to the video core firmware, see [VIDEO engine escapes and commands](../drivers/qcdxkm8930.md#video-engine-escapes-and-commands).
 
 ### Encoder devices
 
@@ -270,22 +273,24 @@ The three private "decoder" GUIDs create the same 0x5F8-byte object (`sub_100277
 
 | Function | Handler | Command |
 |----------|---------|---------|
-| 0 | `sub_10025850` | Open: escape 0x2200, events, thread |
-| 1 | `sub_10024194` | 0x1200 |
-| 2 | `sub_10023F70` | 0x1204 |
-| 3 | `sub_10026820` | 0x1201 |
+| 0 | `sub_10025850` | Open (`D3D_VIDENC_CMD_INIT`): escape 0x2200, events, thread |
+| 1 | `sub_10024194` | 0x1200 (`D3D_VIDENC_CMD_START_ENCODER`) |
+| 2 | `sub_10023F70` | 0x1204 (`D3D_VIDENC_CMD_STOP_ENCODER`) |
+| 3 | `sub_10026820` | 0x1201 (`D3D_VIDENC_CMD_ENCODE_FRAME`) |
 | 4 / 5 | `sub_10024BE0` / `sub_10024D60` | Get / set property 5 (0x24 bytes) |
-| 6 / 7 | `sub_10025654` / `sub_10024A68` | Get / set property 3 (0x28 bytes) |
-| 8 / 9 | `sub_100254A4` / `sub_100248F8` | Get / set property 1 |
-| 10 / 11 | `sub_100252F4` / `sub_10024788` | Get / set property 2 |
-| 12 / 13 | `sub_10025144` / `sub_10024618` | Get / set property 4 |
-| 14, 15, 18 | `sub_100264A8`, `sub_10026290`, `sub_10023D84` | ? (no escape) |
-| 16 / 17 | `sub_100242DC` / `sub_10024484` | Get / set property 6 (0x24 bytes) |
-| 19 | `sub_10025008` | 0x1203 |
-| 20 | `sub_10024ED4` | 0x1202 |
+| 6 / 7 | `sub_10025654` / `sub_10024A68` | Get / set property 3 (0x28 bytes); 6 is `D3D_VIDENC_PROP_GET_BUFFER_REQ` |
+| 8 / 9 | `sub_100254A4` / `sub_100248F8` | Get / set property 1; 9 is `D3D_VIDENC_PROP_SET_AVGBITRATE` |
+| 10 / 11 | `sub_100252F4` / `sub_10024788` | Get / set property 2; 11 is `D3D_VIDENC_PROP_SET_PEAKBITRATE` |
+| 12 / 13 | `sub_10025144` / `sub_10024618` | Get / set property 4; 13 is `D3D_VIDENC_PROP_SET_GOPDISTANCE` |
+| 14, 15, 18 | `sub_100264A8`, `sub_10026290`, `sub_10023D84` | `D3D_VIDENC_PROP_SET_LOCKRES`, `D3D_VIDENC_PROP_SET_UNLOCKRES`, `D3D_VIDENC_PROP_GET_ENC_CAPS` (no escape) |
+| 16 / 17 | `sub_100242DC` / `sub_10024484` | Get / set property 6 (0x24 bytes); 17 is `D3D_VIDENC_PROP_SET_LAYER_QP` |
+| 19 | `sub_10025008` | 0x1203 (`D3D_VIDENC_CMD_FLUSH`) |
+| 20 | `sub_10024ED4` | 0x1202 (`D3D_VIDENC_CMD_EOS`) |
 | other | | `E_FAIL` |
 
-Open (`sub_10025850`): the 0x98-byte escape 0x2200 carries at `+0x18` a codec GUID chosen from the device GUID, at `+0x44` the codec type, at `+0x48` the level (from the profile / level given by the caller):
+The names of the codes come from the debug strings of the encoder MFT that sends them, see [qcvidencmfth2638930.dll](./qcvidencmfth2638930.md#decoderextension-commands).
+
+Open (`sub_10025850`): the input is the 0x78-byte [base configuration](./qcvidencmfth2638930.md#base-configuration) of the encoder MFT (only accepted in state 1 or 8, callback at `+0x4C` mandatory). The 0x98-byte escape 0x2200 carries at `+0x18` a codec GUID chosen from the device GUID, at `+0x44` the codec type, at `+0x48` the level (from the profile / level given by the caller):
 
 | Device GUID | Codec GUID sent | Type | Level values |
 |-------------|-----------------|------|--------------|
@@ -293,9 +298,59 @@ Open (`sub_10025850`): the 0x98-byte escape 0x2200 carries at `+0x18` a codec GU
 | `{CBB1A2A4…}` | `{AAD1093E-86FB-4809-AE7B-986892DD1565}` | 6 or 7 | 0x10–0x16 |
 | `{B7BC9768…}` | `{F79CE34B-24B5-4650-96A6-A49AE04F454A}` | 8 | ? |
 
-The GUIDs `{FB8D8600-25C3-435E-94C5-A4B50397EC46}` and `{B27227A5-59FB-4BFC-AF1E-42237F213DBC}` and the buffer type 159 are also used there. It then creates two events (`CreateEventW`, encoder `+0xEC`, `+0xF0`) and a thread (`CreateThread`, `sub_100281AC` → `sub_10027E2C`).
+The type is the profile (`+0x24` of the configuration): H.264 profile 0–4 → type 1–5, MPEG-4 profile 0 / 1 → type 6 / 7, H.263 profile 0 → type 8 (other values `E_FAIL`); the level comes from `+0x28` (H.264 2–16 → 1–15, MPEG-4 1–7 → 0x10–0x16, none for H.263). The whole escape:
 
-The thread waits on the two events (`WaitForMultipleObjectsEx`, infinite); on the first it sends escape 0x2203 (0x230 bytes, session at `+0x0C`) and processes the reply (`sub_100278B8`) in a loop, until the encoder state (`+0x104`) is 5–8. The destructor (`sub_100270B4`) sets the state to 8, signals the event, waits for the thread for 5 s (`WaitForSingleObject`) and closes the handles.
+| Offset | Size | From the configuration | Comment |
+|--------|------|------------------------|---------|
+| 0x00 | 12 | | Header {0x501, 0x2200, 0x98} |
+| 0x0C | 4 | | Session returned by the KMD (kept at encoder `+0x5E8`) |
+| 0x10 | 4 | | Result (KMD), must be non-zero |
+| 0x18 | 16 | device GUID | Codec GUID (table above) |
+| 0x28, 0x2C | 8 | `+0x00`, `+0x04` | Width, height |
+| 0x30 | 4 | `+0x08` | Stride |
+| 0x34 | 4 | `+0x04` | Height rounded up to 16 |
+| 0x38 | 4 | `+0x0C` | Input format: `{B27227A5-59FB-4BFC-AF1E-42237F213DBC}` (TILE_4X2) → 159, `{FB8D8600-25C3-435E-94C5-A4B50397EC46}` (NV12_16M2KA) → 160 |
+| 0x3C, 0x40 | 8 | `+0x1C`, `+0x20` | Frame rate denominator, numerator |
+| 0x44, 0x48 | 8 | `+0x24`, `+0x28` | Codec type, level (see above) |
+| 0x4C | 4 | `+0x2C` | Rate control mode 0–4 → 1–5 |
+| 0x50 | 4 | `+0x64` | Slice mode: 2 → 2, 3 → 3, otherwise 1 |
+| 0x54 | 4 | `+0x68` | Slice size (0 when the mode is 1) |
+| 0x58 | 4 | `+0x30` | GOP distance |
+| 0x5C | 4 | `+0x44` | Layer count, at most 2 (an array of `count + 1` reference entries is allocated at encoder `+0x5EC`, count at `+0x5F0`) |
+| 0x60, 0x64, 0x68 | 12 | `+0x34`, `+0x38`, `+0x3C` | QP, mean bitrate, peak bitrate |
+| 0x6C | 1 | `+0x40` | Motion dump |
+| 0x70 | 4 | `+0x54` | Quality vs speed |
+| 0x74 | 1 | `+0x58` | Low latency |
+| 0x78 | 4 | `+0x5C` | VBV buffer size |
+| 0x7C | 4 | `+0x60` | Hierarchical P layers |
+| 0x80, 0x84 | 8 | | The two events created below (the KMD references the one at `+0x84`) |
+| 0x88 | 4 | `+0x48` | UAB protection level |
+| 0x8C | 4 | `+0x6C` | Request flags (bits 0 and 1) |
+| 0x90, 0x94 | 8 | `+0x70`, `+0x74` | Aspect ratio numerator, denominator (both must be non-zero) |
+
+The callback (`+0x4C`) and its context (`+0x50`) are kept at encoder `+0xF8` / `+0xFC`. It creates two events (`CreateEventW`, encoder `+0xEC`, `+0xF0`), sends the escape, keeps the session and starts a thread (`CreateThread`, `sub_100281AC` → `sub_10027E2C`); the state becomes 2.
+
+Encode frame (`sub_10026820`, function 3): only in state 4 (started), with exactly 2 resources (input texture, output buffer). The 48-byte [encode frame](./qcvidencmfth2638930.md#encode-frame) input becomes the 0x80-byte command 0x1201: `+0x0C` session, `+0x10` / `+0x14` the two context handles of the device, `+0x20` / `+0x28` allocations of the output buffer, `+0x50` time stamp (input `+0x10`, 8 bytes), `+0x58` allocation of the input slice (input `+0x08` is the array slice), `+0x5C` input byte `+0x20`, `+0x60` QP (input `+0x24`), `+0x64` input byte `+0x28`, `+0x78` input `+0x18` (8 bytes); the reference / layer surfaces follow in the allocation list. The two cookies of the input (`+0x00` input sample, `+0x04` output buffer) are stored with the resources and returned in the bitstream event. The command is submitted with `sub_100125C8`.
+
+Lock / unlock (functions 14 / 15, `sub_100264A8`, `sub_10026290`): input {subresource, map mode} (8 bytes), output 16 bytes; map mode 1 → lock flags 17, 2 / 5 → 18, 3 → 16, 4 → 146 (the `D3D11_MAP` values READ, WRITE, READ_WRITE, WRITE_DISCARD, WRITE_NO_OVERWRITE ?), then the lock callback of the runtime (device `+0x18`); the output is {CPU address, ?, size (64-bit)}. Unlock (input 4 bytes) calls the unlock callback (device `+0x1C`) for the one allocation.
+
+Encoder caps (function 18, `sub_10023D84`): 0xB8 bytes of output copied from the [caps object](#caps-object): `+0x00`–`+0x0C` caps `+0x570`–`+0x57C` (max encode width / height, …), `+0x10` count and `+0x14` up to 8 GUIDs of 16 bytes (caps `+0x580` / `+0x584`), `+0x94` count and `+0x98` the dwords of caps `+0x588` / `+0x58C`.
+
+The thread waits on the two events (`WaitForMultipleObjectsEx`, infinite); on the first it sends escape 0x2203 (0x230 bytes, session at `+0x0C`) and processes the reply (`sub_100278B8`) in a loop, until the encoder state (`+0x104`) is 5–8. When the escape fails or the state is 5 (stopping) it calls the callback with type 6 and sets the state to 8.
+
+`sub_100278B8` turns the event of the reply (`+0x18`) into a call of the callback given at open, `VideoUMDCb` of [qcvidencmfth2638930.dll](./qcvidencmfth2638930.md#umd-callback-sub_10019bc0), with a 0x218-byte structure (type at `+0x00`, data from `+0x08`, context at `+0x210`):
+
+| Reply event | Callback type | Data |
+|-------------|---------------|------|
+| 1 | 0 sequence header | `+0x08` size (reply `+0x20`, at most 0x200 except for H.263), `+0x0C` header (reply `+0x24`); the state becomes 4 (started) |
+| 2 | 1 bitstream | `+0x08` input done (reply byte `+0x58`), `+0x0C` input cookie (found from the allocation at reply `+0x5C`), `+0x10` output done (reply byte `+0x20`), `+0x14` output cookie (allocation at reply `+0x30`), `+0x18`, `+0x1C` reply `+0x28`, `+0x2C` (offset ?, filled length), `+0x20` reply `+0x38`, `+0x24` frame type from reply `+0x34` (1, 2, 4, 8, 16), `+0x28`–`+0x3C` reply `+0x40`–`+0x54` |
+| 3 | 4 EOS done | |
+| 4 | 5 flush done | |
+| 5 | 2 error | `+0x08` `E_FAIL`, `+0x0C` reply `+0x20` (0 / 1) |
+
+Type 3 (`STOP_DONE` for the MFT) is never sent; a stop ends with type 6 from the thread.
+
+The destructor (`sub_100270B4`) sets the state to 8, signals the event, waits for the thread for 5 s (`WaitForSingleObject`) and closes the handles.
 
 ### ETW
 
