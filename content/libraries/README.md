@@ -20,3 +20,5 @@
 [InputInjection.dll](./inputinjection.md)  
 [qcviddecmft8930.dll](./qcviddecmft8930.md)  
 [qcvidencmfth2638930.dll](./qcvidencmfth2638930.md)  
+[qcvidencmfth2648930.dll](./qcvidencmfth2648930.md)  
+[qcvidencmftmpeg48930.dll](./qcvidencmftmpeg48930.md)  

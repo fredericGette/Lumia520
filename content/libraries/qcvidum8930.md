@@ -170,8 +170,8 @@ The decoder GUIDs (`.rdata`), the configuration each one returns (`GETDECODECONF
 | `{EFD64D74-C9E8-41D7-A5E9-E9B0E39FA319}` | `DXVA2_ModeMPEG4pt2_VLD_Simple` | `+0x2F4` | 0x9D0 bytes, `sub_1001CF7C` |
 | `{ED418A9F-010D-4EDA-9AE3-9A65358D8D2E}` | `DXVA2_ModeMPEG4pt2_VLD_AdvSimple_NoGMC` | `+0x358` | same as MPEG-4 Simple. The one used by [qcviddecmft8930.dll](./qcviddecmft8930.md#decoder-creation-sub_10016254) |
 | `{BBC56996-08F7-4ACD-A623-D95808ADF8DA}` | `DXVA2_ModeMPEG4pt2_VLD_AdvSimple_GMC` (name from `dxva2api.h`; [qcviddecmft8930.dll](./qcviddecmft8930.md#decoder-creation-sub_10016254) recognises it but doesn't use it) | none (`E_FAIL`) | none |
-| `{129F7B40-5C5B-48E5-8178-48C0CEA05A90}` | Private: [encoder](#encoder-devices) type 1–5 (H.264; also chosen for VC-1 by the encoder MFT code) | `+0x3BC` | 0x5F8 bytes, `sub_100277B8` |
-| `{CBB1A2A4-4EA1-491E-ADC9-70B373B76036}` | Private: encoder type 6–7 (MPEG-4) | `+0x420` | same |
+| `{129F7B40-5C5B-48E5-8178-48C0CEA05A90}` | Private: [encoder](#encoder-devices) type 1–5 (H.264, opened by [qcvidencmfth2648930.dll](./qcvidencmfth2648930.md); also chosen for VC-1 by the encoder MFT code) | `+0x3BC` | 0x5F8 bytes, `sub_100277B8` |
+| `{CBB1A2A4-4EA1-491E-ADC9-70B373B76036}` | Private: encoder type 6–7 (MPEG-4, opened by [qcvidencmftmpeg48930.dll](./qcvidencmftmpeg48930.md)) | `+0x420` | same |
 | `{B7BC9768-6665-4926-88A4-1751BC8515FB}` | Private: encoder type 8 (H.263, opened by [qcvidencmfth2638930.dll](./qcvidencmfth2638930.md)) | `+0x484` | same |
 
 The configurations (`sub_100072DC`) are 11 copies of one template, then patched: `guidConfigBitstreamEncryption`, `guidConfigMBcontrolEncryption`, `guidConfigResidDiffEncryption` = `DXVA_NoEncrypt` `{1B81BED0-A0C7-11D3-B984-00C04F2E73C5}`, `ConfigBitstreamRaw` 2, `ConfigResidDiffAccelerator` 1, `ConfigHostInverseScan` 1, `ConfigMinRenderTargetBuffCount` 16. Entries 1–6 get `ConfigBitstreamRaw` 1 and `ConfigHostInverseScan` 0; entries 1–4 `ConfigMinRenderTargetBuffCount` 4, entries 5–6 5; entry 2 (not returned for any GUID) `ConfigDecoderSpecific` 128.
@@ -295,10 +295,10 @@ Open (`sub_10025850`): the input is the 0x78-byte [base configuration](./qcviden
 | Device GUID | Codec GUID sent | Type | Level values |
 |-------------|-----------------|------|--------------|
 | `{129F7B40…}` | `{13042960-A82D-4EE9-8949-A82C408D80E2}` | 1–5 | 0–15 |
-| `{CBB1A2A4…}` | `{AAD1093E-86FB-4809-AE7B-986892DD1565}` | 6 or 7 | 0x10–0x16 |
+| `{CBB1A2A4…}` | `{AAD1093E-86FB-4809-AE7B-986892DD1565}` | 6 or 7 | 0, 0x10–0x16 |
 | `{B7BC9768…}` | `{F79CE34B-24B5-4650-96A6-A49AE04F454A}` | 8 | ? |
 
-The type is the profile (`+0x24` of the configuration): H.264 profile 0–4 → type 1–5, MPEG-4 profile 0 / 1 → type 6 / 7, H.263 profile 0 → type 8 (other values `E_FAIL`); the level comes from `+0x28` (H.264 2–16 → 1–15, MPEG-4 1–7 → 0x10–0x16, none for H.263). The whole escape:
+The type is the profile (`+0x24` of the configuration): H.264 profile 0–4 → type 1–5, MPEG-4 profile 0 / 1 → type 6 / 7, H.263 profile 0 → type 8 (other values `E_FAIL`); the level comes from `+0x28` (switches at 0x1002596C and 0x10025ABE): H.264 0 → 0, 2–16 → 1–15, any other value (1, above 16) → 0 with a trace (`sub_10001028` id 0x39), not an error; MPEG-4 0 → 0, 1–7 → 0x10–0x16, above 7 `E_FAIL`; none for H.263. Level 0 is what [qcvidencmftmpeg48930.dll](./qcvidencmftmpeg48930.md#profile) always sends; [qcdxkm8930.sys](../drivers/qcdxkm8930.md#encoder-session-setup) replaces it with a level chosen from the frame size, macroblock rate and bitrate (MPEG-4 and H.264; H.263 keeps 0). The driver's MPEG-4 codes are 0x11–0x16 = levels 1, 2, 3, 3b, 4, 5 and it treats 0x10 as 0 (Simple level 0 in the header), so the mapping 1–7 → 0x10–0x16 here is shifted by one (level *n* is sent as level *n* − 1 ?); the MPEG-4 MFT never sends a non-zero level. The whole escape:
 
 | Offset | Size | From the configuration | Comment |
 |--------|------|------------------------|---------|

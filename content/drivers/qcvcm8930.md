@@ -2,7 +2,7 @@
 
 Virtual Contiguous Memory (VCM) library: the client API of the SMMU.  
 It's a kernel-mode **export driver** (a DLL loaded by the kernel when a driver that imports it is loaded: `DllInitialize` / `DllUnload`, no `DriverEntry` work, no device object). It exports 43 `Vcm*` functions and `SmmuPrefetchTLB`, a port of the Qualcomm/Linux "VCM" API (`include/linux/vcm.h` of the MSM kernels): a client creates a VCM (a device virtual address space), associates it with one or more SMMU context banks, reserves ranges in it, and backs the reservations with physical pages (MDLs). The VCM only manages the address space (a sorted list of free/used regions); every page-table and context-bank operation is delegated to [qcsmmu8930.sys](./qcsmmu8930.md) through the function table that driver returns with [IOCTL 0xC3502004](#ioctl-0xc3502004).  
-Users (static imports): [qcdxkm8930.sys](./qcdxkm8930.md) (GPU, MDP, rotator, video codec), [qccamavs8930.sys](./qccamavs8930.md), [qccamgemini8930.sys](./qccamgemini8930.md) and qcvpe8930.sys.  
+Users (static imports): [qcdxkm8930.sys](./qcdxkm8930.md) (GPU, MDP, rotator, video codec), [qccamavs8930.sys](./qccamavs8930.md), [qccamgemini8930.sys](./qccamgemini8930.md) and [qcvpe8930.sys](./qcvpe8930.md).  
 Source files (from the trace strings): `driver.cpp`, `interface.cpp`, `Vcm.cpp`, `VcmManagement.cpp`. PDB path: `P:\SMMU\rel\8.2.1\arm\Release\qcvcm8930.pdb`.
 
 There's no device name and no symbolic link.  

@@ -110,7 +110,7 @@ The adapter has up to 8 engines (0x258-byte blocks from adapter `+0x190`). They 
 | 2 | ROTATOR | sub_4B9074 | MDP rotator |
 | 3 | VIDEO | sub_4BAB08 | Video codec core "VED" (VIDC registers `VIDC_*`, decode/encode sessions, second ETW provider) |
 
-The video core firmware is **embedded in the driver**: `sub_41CC98` copies 605428 bytes (0x93CF4) from `PAGEDATA:0x4C0000` to the firmware buffer ("Copying FW image"). The strings of this firmware appear byte-swapped by 32-bit words in IDA (e.g. `_GER_CED462H…` at 0x54C000).
+The video core firmware is **embedded in the driver**: `sub_41CC98` copies 605428 bytes (0x93CF4) from `PAGEDATA:0x4C0000` to the firmware buffer ("Copying FW image"). The strings of this firmware appear byte-swapped by 32-bit words in IDA (e.g. `_GER_CED462H…` at 0x54C000): it is big-endian OpenRISC 1000 code, see [Video firmware](#video-firmware).
 
 ### Resources
 
@@ -283,7 +283,32 @@ The escapes of a VIDEO context go to `sub_4178F8`, which checks that the context
 | 0x2203 | 0x230 | `sub_41C0E4` | Read the next event of the session (`sub_41833C`) |
 | 0x2003 | 0x98 | `sub_4BD258` | Copies a string (≤ 128 characters) from `+0x18` into the session (`+0x138`) and, if `+0x14` isn't 0, sends message 0x2000000D (4 bytes) |
 
-For the session escapes other than open, the session (`+0x0C`) must be in the list of the engine. Open (`sub_4BCC14`): at most 256 sessions (engine `+0x16C`); a 0x1B8-byte session (pool tag `qDXn`) is allocated and attached to the firmware (`sub_4BAE0C`). For 0x2200 the codec is taken from the GUID at `+0x18` (`sub_4BBC9C`), the event handle at `+0x84` is referenced (`ObReferenceObjectByHandle`, `ExEventObjectType`, user mode) to signal the UMD, and the parameters of the [open escape](../libraries/qcvidum8930.md#encoder-devices) (size, stride, format, frame rate, type, level, RC mode, slices, GOP, QP, bitrates…) are copied into a 124-byte message 0x20000003 sent to the firmware (`sub_4181A4`). The session pointer is returned at `+0x0C` and `+0x10` is set to 1.
+For the session escapes other than open, the session (`+0x0C`) must be in the list of the engine. Open (`sub_4BCC14`): at most 256 sessions (engine `+0x16C`); a 0x1B8-byte session (pool tag `qDXn`) is allocated and attached to the firmware (`sub_4BAE0C`). For 0x2200 the codec is taken from the GUID at `+0x18` (`sub_4BBC9C`), the event handle at `+0x84` is referenced (`ObReferenceObjectByHandle`, `ExEventObjectType`, user mode) to signal the UMD, and the parameters of the [open escape](../libraries/qcvidum8930.md#encoder-devices) (size, stride, format, frame rate, type, level, RC mode, slices, GOP, QP, bitrates…) are copied into a 124-byte message 0x20000003 handed to the VED layer of the driver (`sub_4181A4` → `sub_4BDD54`, see [Encoder session setup](#encoder-session-setup)), not to the firmware. The session pointer is returned at `+0x0C` and `+0x10` is set to 1.
+
+The 124-byte message 0x20000003 of an encoder open (`sub_4BCC14`, escape 0x2200) is a plain copy of the escape fields; the other dwords are 0. `sub_4BDD54` copies it to session `+0x0C`, so message offset *n* is session offset *n* + 0x0C:
+
+| Message offset | Size | Escape 0x2200 offset | Content |
+|----------------|------|----------------------|---------|
+| 0x00 | 1 | | 0 (the 0x2100 decoder open puts the session type there) |
+| 0x04, 0x08 | 8 | `+0x28`, `+0x2C` | Width, height |
+| 0x0C, 0x10 | 8 | `+0x30`, `+0x34` | Stride, height rounded up to 16 |
+| 0x14 | 4 | `+0x38` | Input format (159 / 160) |
+| 0x18, 0x1C | 8 | `+0x3C`, `+0x40` | Frame rate denominator, numerator |
+| 0x28 | 4 | `+0x18` | Codec from the GUID (`sub_4BBC9C`, kept at session `+0x18`): `{13042960…}` → 1 (H.264), `{AAD1093E…}` → 2 (MPEG-4), `{F79CE34B…}` → 0x40 (H.263), else `STATUS_INVALID_PARAMETER` |
+| 0x2C | 4 | `+0x64` | Mean bitrate |
+| 0x30 | 4 | `+0x58` | GOP distance |
+| 0x34, 0x38 | 8 | `+0x44`, `+0x48` | Codec type (1–8), level; level 0 is replaced by an automatic choice, see [Encoder session setup](#encoder-session-setup) |
+| 0x3C | 4 | `+0x4C` | Rate control mode |
+| 0x40 | 1 | `+0x6C` | Motion dump |
+| 0x44 | 4 | `+0x5C` | Layer count (also kept at session `+0x30`) |
+| 0x48, 0x4C | 8 | `+0x50`, `+0x54` | Slice mode, slice size |
+| 0x50 | 4 | `+0x60` | QP |
+| 0x64 | 4 | `+0x7C` | Hierarchical P layers |
+| 0x68 | 4 | `+0x80` | First event handle of the UMD (?) |
+| 0x6C | 4 | `+0x8C` | Request flags |
+| 0x70, 0x74 | 8 | `+0x90`, `+0x94` | Aspect ratio numerator, denominator |
+
+The peak bitrate (`+0x68`), quality vs speed (`+0x70`), low latency (`+0x74`), VBV buffer size (`+0x78`) and UAB protection level (`+0x88`) of the escape aren't sent at open.
 
 The command buffers of a session are parsed by `sub_419E1C` (called by `sub_41A37C`), with a table chosen by the session type (byte `+0x40`: 1 = decoder):
 
@@ -298,7 +323,62 @@ The command buffers of a session are parsed by `sub_419E1C` (called by `sub_41A3
 | | 0x1203 | 0x20 | `sub_41BCEC` | `VED_EncFlush` |
 | | 0x1204 | 0x20 | `sub_4BD900` | Stop / close (same handler as 0x1102) |
 
-The senders are [qcvidum8930.dll](../libraries/qcvidum8930.md#gpu-contexts-and-escapes) and, above it, the encoder MFT [qcvidencmfth2638930.dll](../libraries/qcvidencmfth2638930.md#decoderextension-commands). The firmware side (the messages 0x200000xx and the events read by 0x2203) wasn't analysed.
+The senders are [qcvidum8930.dll](../libraries/qcvidum8930.md#gpu-contexts-and-escapes) and, above it, the encoder MFTs [qcvidencmfth2638930.dll](../libraries/qcvidencmfth2638930.md#decoderextension-commands) (H.263), [qcvidencmfth2648930.dll](../libraries/qcvidencmfth2648930.md) (H.264) and [qcvidencmftmpeg48930.dll](../libraries/qcvidencmftmpeg48930.md) (MPEG-4). The messages 0x200000xx are handled by the driver itself (`sub_4181A4`), which programs the core registers; the firmware side is partly described in [Video firmware](#video-firmware), the events read by 0x2203 weren't analysed.
+
+#### Encoder session setup
+
+`sub_4181A4` routes message 0x20000003 to `sub_4BDD54`. It checks the size, codec, format and limits against the adapter caps (`sub_4BE110`), copies the 124 bytes to session `+0x0C` and, for an encoder (byte 0 = 0), calls:
+1. `sub_41CAC0`: defaults (frame rate 30/1, rate control 3 when out of 1–5, slice and layer fixes, QP bounds);
+2. `sub_4BE028`: codec type and level (below);
+3. `sub_4BE6E0`: buffer sizes;
+4. `sub_4BE614`: lists.
+
+`sub_4BE028`: a codec type of 0 becomes 3 (H.264), 7 (MPEG-4) or 8 (H.263) from the codec (session `+0x34`: 1, 2, 0x40). A **level of 0 is chosen automatically**. The frame size in macroblocks, the macroblock rate (frame size × numerator / denominator) and the mean bitrate (session `+0x38`) are compared with a table of {max bitrate, max MB/s, max MBs per frame, level}. The first row that holds all three gives the level. When no row fits, the default (the last level of the table) is kept. There is no table for H.263, so its level stays 0.
+
+| Codec, type | Table | Rows {bitrate, MB/s, MBs → level} | Default |
+|-------------|-------|------------------------------------|---------|
+| MPEG-4, 6 (Simple) | `unk_472CA8` | {64 000, 1485, 99 → 0x11}, {128 000, 5940, 396 → 0x12}, {384 000, 11880, 396 → 0x13} (Simple levels 1–3) | 0x13 |
+| MPEG-4, 7 (ASP) | `unk_472C48` | {128 000, 2970, 99 → 0x11}, {384 000, 5940, 396 → 0x12}, {768 000, 11880, 396 → 0x13}, {1 500 000, 11880, 396 → 0x14}, {3 000 000, 23760, 792 → 0x15}, {8 000 000, 48600, 1620 → 0x16} | 0x16 |
+| H.264 | `unk_472CD8` | 15 rows from {64 000, 1485, 99 → 1} to {135 000 000, 589824, 22080 → 15} (levels 1 to 5.1) | 12 |
+
+So a 640 × 480 MPEG-4 Simple session (1200 MBs, more than any Simple row) gets 0x13 (Simple level 3), whatever its rate.
+
+`sub_4231BC` then programs the core. `sub_42308C` turns the type and level into register `VIDC_PROFILE` (SFR 0x830) = (level code << 8) | profile code:
+- profile code: types 1 and 2 → 3, types 4 and 7 → 1, other types → 0;
+- level code: H.264 internal 1–15 → 10, 9 (1b), 11, 12, 13, 20, 21, 22, 30, 31, 32, 40, 41, 42, 50;
+- level code: MPEG-4 0x11–0x16 → 1, 2, 3, 7, 4, 5, the MPEG-4 `profile_and_level_indication` levels (L1, L2, L3, L3b, L4, L5);
+- level code: anything else (0, 0x10) → 0.
+
+`VIDC_HSIZE_PX` (0x818), `VIDC_MC_VSIZE_PX` (0x81C), `RC_QBOUND`, `ENC_RC_CONFIG`… follow (ETW event names `S_SFR` / `S_SHM` and the register names are in the trace calls).
+
+### Video firmware
+
+The embedded image (`PAGEDATA:0x4C0000`, 0x93CF4 bytes) is **OpenRISC 1000** (OR1K / ORBIS32) code, big-endian 32-bit words. That's why the strings look byte-swapped in the little-endian dump. It is loaded at address 0:
+- reset vector at 0x100 (two `l.nop`, then clearing r0–r31);
+- code up to 0x7D000, data at 0x8C000–0x8E000 (decoder debug strings: "Firmware Hanged", "Invaild Sequence Header", `s_mp4_parse_frame`, `VC1DEC_STG_CONTEXT_INIT_DONE`…) and 0x93000 (tables).
+
+IDA has no OR1K processor module, so it was analysed with a small script disassembler on the word-swapped image. The encoder has no debug strings.
+
+The host registers (SFR) are seen by the firmware at **0x40000000** + offset: for example `VIDC_HSIZE_PX` = 0x40000818, `VIDC_PROFILE` = 0x40000830. Other hardware blocks are at 0x40001000–0x4000E000 (0x4000C1xx is the bitstream writer).
+
+The codec handlers are function pointers. In the tables at 0x935FC and 0x93618 (indexed by a codec number of the session; 0x93618 is used when the selector of 0x2C11C is 1), entries 0–4 are decoders. Entries 5 (`0x3B93C`) and 6 (`0x49644`) are the same in both tables: these are the encoders.
+
+| Encoder | Entry | Reads `VIDC_PROFILE` | Use |
+|---------|-------|----------------------|-----|
+| H.264 (?) | `0x3B93C` → `0x3C0C0` → `0x3F8E4` | 0x3F918 | profile = bits 0–2 (3 → 2 and a flag, 4 → 1), bit 3, level = bits 8–15 |
+| MPEG-4 / H.263 | `0x49644` → `0x49C70` → `0x4BEF4` | 0x4BF28 | profile = bit 0 (context `+72`: 0 Simple, 1 ASP), level = bits 8–15 (context `+76`) |
+
+In the MPEG-4 encoder:
+- `0x480B4` writes the visual object sequence header to the bitstream writer: start code 0x1B0 (`0x4000C180` = 432), then `profile_and_level_indication`. For Simple it writes the level code (`0x4000C120`), or **0x08 (Simple Profile Level 0) when the level is 0**. For ASP it writes 0xF then the level (`0x4000C110`), giving 0xF*n*.
+- `0x48134` and `0x481A4` write the visual object (0x1B5), video object (0x100) and VOL (0x120) headers.
+- `0x4C3F0` checks the level against the session:
+  - MPEG-4: the profile must be at most 1 (else status 166) and the level at most 9 (else 167);
+  - MPEG-4 frame size in MBs (context `+56`): at most 99 for levels 0, 1, 9; 396 for 2–3; 792 for 4; 1620 for 5; 3600 for 6 (Simple only); no limit for 7 in Simple, 396 in ASP; level 8 → 167; too large → status 182;
+  - H.263 (context `+84` = 1): only levels 10, 20, 30, 40, 45, 50, 60, 70, with QCIF (10, 45), CIF (20–50), 720 × 288 (60) and 720 × 576 (70) limits; any other level → 167.
+
+  It is called from `0x4C394` only when the session status (context `+2156`) is above 150, and its result replaces that status (1–149 are errors, `0x4A3B8`). At a normal start the status is 0 and the check doesn't run (?). So the 640 × 480 Simple session above is encoded with a VOS header announcing Simple level 3 (0x03), although level 3 is limited to 396 MBs.
+
+The H.264 encoder, the decoders and the host / firmware message interface (shared memory, interrupts) weren't analysed.
 
 ### Panel driver interface
 

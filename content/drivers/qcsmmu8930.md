@@ -61,23 +61,23 @@ The global registers of the IOMMUs (offset 0xFF000 and above in the Linux `msm_i
 `_CRS`: 9 memory regions of 1 MB and 9 interrupts. The IOMMU names come from the Linux `msm8960` `devices-iommu.c` (same addresses and same context-bank counts):  
 | Resource | Physical address | Interrupt (GSI) | IOMMU id (`CORE`) | Context banks | Context IDs (`CORE`) | IOMMU |
 |----------|------------------|-----------------|-------------------|---------------|----------------------|-------|
-| 0 | 0x07400000 | 0x54 | 1 | 2 | 1, 2 | VPE ? |
-| 1 | 0x07500000 | 0x60 | 2 | 2 | 3, 4 | MDP0 ? |
-| 2 | 0x07600000 | 0x5E | 3 | 2 | 5, 6 | MDP1 ? |
-| 3 | 0x07700000 | 0x5C | 4 | 2 | 7, 8 | Rotator ? |
-| 4 | 0x07800000 | 0x64 | 5 | 2 | 9, 10 | IJPEG ? |
-| 5 | 0x07900000 | 0x56 | 6 | 2 | 11, 12 | VFE ? |
-| 6 | 0x07A00000 | 0x5A | 7 | 2 | 13, 14 | Video codec A ? |
-| 7 | 0x07B00000 | 0x58 | 8 | 1 | 15 | Video codec B ? |
-| 8 | 0x07C00000 | 0x66 | 9 | 2 | 16, 17 | GFX3D (user, priv) ? |
+| 0 | 0x07400000 | 0x54 | 1 | 2 | 3, 4 | VPE |
+| 1 | 0x07500000 | 0x60 | 2 | 2 | 5, 6 | MDP0 ? |
+| 2 | 0x07600000 | 0x5E | 3 | 2 | 7, 8 | MDP1 ? |
+| 3 | 0x07700000 | 0x5C | 4 | 2 | 9, 10 | Rotator ? |
+| 4 | 0x07800000 | 0x64 | 5 | 2 | 11, 12 | IJPEG ? |
+| 5 | 0x07900000 | 0x56 | 6 | 2 | 13, 14 | VFE ? |
+| 6 | 0x07A00000 | 0x5A | 7 | 2 | 15, 16 | Video codec A ? |
+| 7 | 0x07B00000 | 0x58 | 8 | 1 | 17 | Video codec B ? |
+| 8 | 0x07C00000 | 0x66 | 9 | 2 | 19, 20 | GFX3D (user, priv) ? |
 
-[qccamgemini8930.sys](./qccamgemini8930.md#smmu-vcm) uses contexts 11 and 12 (6th IOMMU, VFE ?).
+[qcvpe8930.sys](./qcvpe8930.md#smmu-vcm) uses contexts 3 and 4 (1st IOMMU, VPE). [qccamgemini8930.sys](./qccamgemini8930.md#smmu-vcm) uses contexts 11 and 12 (5th IOMMU, IJPEG ?: Gemini is the JPEG encoder).
 
 ACPI methods (buffers), evaluated with [IOCTL 0x32C004](#ioctl-0x32c004--ioctl_acpi_eval_method):  
 | Method | Lumia 520 value | Comment |
 |--------|-----------------|---------|
 | `BCDE` | `03 00 01 10` | Byte 0: clock workaround mode (1–3 = force 0x04000080 bits 0 and 2, 1 = clear them again at the end). Bytes 1 and 2: stored in `SMMU_CONFIG + 0x4C` / `+ 0x50`, never used. Byte 3: ≠ 0 = read `CORE` |
-| `CORE` | `09`, `01`…`09`, `02 02 02 02 02 02 02 01 02`, `01`…`11 13 14` | Number of IOMMUs *n*, then *n* IOMMU ids, then *n* context-bank counts, then one context ID per context bank (sum of the counts, 17) |
+| `CORE` | `09`, `01`…`09`, `02 02 02 02 02 02 02 01 02`, `03`…`11 13 14` | Number of IOMMUs *n*, then *n* IOMMU ids, then *n* context-bank counts, then one context ID per context bank (sum of the counts, 17) |
 | `PTCA` | `00` | Stored in `SMMU_CONFIG + 0x54`, returned by function 19 |
 | `AGPA` | `01` | Stored in `SMMU_CONFIG + 0x58`, returned by function 20 |
 

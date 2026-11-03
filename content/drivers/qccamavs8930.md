@@ -46,12 +46,12 @@ It communicates with the following devices:
 | Interface `{5e34e1c5-c5bc-4c7f-b6fc-e2443e45be67}` | [qccamsensor8930.sys](./qccamsensor8930.md) | Back camera sensor (`\_SB.CAMS`). Commands listed in [sensor control](./qccamsensor8930.md#internal-ioctl-0x2323ff0x232523--sensor-control) |
 | Interface `{f27170b8-7b88-4f4a-b505-1d065616aadc}` | [qccamfrontsensor8930.sys](./qccamfrontsensor8930.md) | Front camera sensor. Same IOCTLs and commands as the back sensor (same code base), listed in [sensor control](./qccamfrontsensor8930.md#internal-ioctl-0x2323ff0x232523--sensor-control) |
 | Interface `{3e9c0fdb-cef9-4c4a-8e85-36e4a82eb80f}` | [qccamvfe8930.sys](./qccamvfe8930.md) | VFE (Video Front End: ISP) driver. Same IOCTLs, commands listed in [VFE commands](./qccamvfe8930.md#vfe-commands) |
-| Interface `{95f66217-6158-4f46-a8c6-dfd0bfcf94f1}` | ? | VPE (Video Pre-processing Engine: scaling, crop, rotation). See [VPE IOCTLs](#ioctl-0x900-0x950-0x9a0--vpe) |
+| Interface `{95f66217-6158-4f46-a8c6-dfd0bfcf94f1}` | [qcvpe8930.sys](./qcvpe8930.md) | VPE (Video Pre-processing Engine: scaling, crop, rotation). See [VPE IOCTLs](#ioctl-0x900-0x950-0x9a0--vpe) |
 | Interface `{e5fde9d7-7a0e-4048-81bb-a77caf7b349f}` | ? | Nokia "ESP" driver. See [ESP IOCTLs](#ioctl-0x222410-0x222414-0x222424--esp) |
 | — | [qcvcm8930.sys](./qcvcm8930.md) | SMMU, by direct imports |
 | — | ks.sys | AVStream class driver |
 
-The ACPI node `\_SB.GPU0.AVS0` declares `_DEP` on `\_SB.VPE` and `\_SB.VFE0` (see [qcdxkm8930.sys](./qcdxkm8930.md)). The flash interface is exposed by [qccamflash8930.sys](./qccamflash8930.md) and the sensor interfaces by [qccamsensor8930.sys](./qccamsensor8930.md) (back) and [qccamfrontsensor8930.sys](./qccamfrontsensor8930.md) (front), and the VFE interface by [qccamvfe8930.sys](./qccamvfe8930.md); the VPE and ESP drivers are not identified yet.
+The ACPI node `\_SB.GPU0.AVS0` declares `_DEP` on `\_SB.VPE` and `\_SB.VFE0` (see [qcdxkm8930.sys](./qcdxkm8930.md)). The flash interface is exposed by [qccamflash8930.sys](./qccamflash8930.md) and the sensor interfaces by [qccamsensor8930.sys](./qccamsensor8930.md) (back) and [qccamfrontsensor8930.sys](./qccamfrontsensor8930.md) (front), the VFE interface by [qccamvfe8930.sys](./qccamvfe8930.md) and the VPE interface by [qcvpe8930.sys](./qcvpe8930.md); the ESP driver is not identified yet.
 
 ### Driver initialisation
 
@@ -164,7 +164,7 @@ The request is synchronous (`KeWaitForSingleObject` on the device's event). If t
 
 ### IOCTL 0x900, 0x950, 0x9A0 — VPE
 
-These IOCTLs are sent by Qccamavs8930.sys to the VPE driver (interface `{95f66217-6158-4f46-a8c6-dfd0bfcf94f1}`, `VpeSession`, `sub_60EAD0`).
+These IOCTLs are sent by Qccamavs8930.sys to the VPE driver [qcvpe8930.sys](./qcvpe8930.md#ioctl-0x900--vpe-buffer-commands) (interface `{95f66217-6158-4f46-a8c6-dfd0bfcf94f1}`, `VpeSession`, `sub_60EAD0`).
 
 | IOCTL | Device | Function | Access | Method |
 |-------|--------|----------|--------|--------|
@@ -183,18 +183,18 @@ The input buffer starts with a KS-like header (`KSIDENTIFIER`):
 
 | IOCTL | Set | Id | InputBuffer size | OutputBuffer Size | Function |
 |-------|-----|----|------------------|-------------------|----------|
-| 0x9A0 | `{c8a7f717-a0fe-4bf4-b44e-0a27e9fa9562}` | 1 | 24 | 48 | Get message (`VpeSession::WorkerThreadProc`, `sub_60E624`): blocks until the VPE sends a message (input buffer done, output buffer done, buffers flushed, `VPE_MSG_RESP_STOP_DONE`, …) |
+| 0x9A0 | `{c8a7f717-a0fe-4bf4-b44e-0a27e9fa9562}` | 1 | 24 | 48 | Get message (`VpeSession::WorkerThreadProc`, `sub_60E624`): first waits on the session event (`+0x1C`, set by the VPE each time it queues a message), then reads the message (input buffer done, output buffer done, buffers flushed, `VPE_MSG_RESP_STOP_DONE`, …) |
 | 0x9A0 | same | 3 | 24 | 0 | Start (`StartCore`, `sub_60ECB8`) |
 | 0x9A0 | same | 4 | 24 | 0 | Stop (`StopCore`, `sub_60EF10`) |
 | 0x9A0 | same | 7 | 28 | 0 | Flush (`FlushCore`, `sub_60F0B4`) |
-| 0x9A0 | same | 10 | 56 | 0 | Process frame (`ProcessFrame`, `sub_60F604`) |
+| 0x9A0 | same | 8 | 56 | 0 | Process frame (`ProcessFrame`, `sub_60F604`): 18-1B buffer handle, 1C-1F and 20-23 length, 28-2F timestamp ÷ 10. Calls Set zoom first when the zoom factor has changed |
 | 0x900 | `{fcd1c5aa-85b7-45e7-9426-d6c31ee30130}` | 1 | 36 | 4 | Reserve allocation (`sub_60F1C0`) |
 | 0x900 | same | 3 | 36 | 0 | Unreserve allocation (`sub_60F2D8`) |
 | 0x900 | same | 2 | 44 | 0 | Map allocation (`sub_60F3D0`) |
 | 0x900 | same | 4 | 44 | 0 | Unmap allocation (`sub_60F4E8`) |
 | 0x900 | same | 6 | 56 | 0 | Provide buffer (`sub_60F714`, from `CapturePin::EnqueueBufferToVFE` / `VPEInputBufferDone`) |
-| 0x950 | `{7307682b-adfe-40fa-b37d-be330a37d488}` | ? | 116 | 0 | Init session (`InitSession`, `sub_60F7F0`): formats `NV12` / `NV21` … |
-| 0x950 | same | ? | 44 | 0 | Set zoom (`sub_60F9CC`) |
+| 0x950 | `{7307682b-adfe-40fa-b37d-be330a37d488}` | 4 | 116 | 0 | Init session (`InitSession`, `sub_60F7F0`): formats `NV12` / `NV21` … |
+| 0x950 | same | 8 | 44 | 0 | Set zoom (`sub_60F9CC`): 18 enable, 1C-1F 1000, 20-23 zoom × 1000, 24-27 1000, 28-2B zoom × 1000 |
 | 0x950 | same | 7 | 44 | 0 | Set crop (`sub_60FAEC`) |
 | 0x950 | same | 6 | 28 | 0 | Set rotation (`sub_60FC00`) |
 
@@ -270,7 +270,7 @@ Flash ([qccamflash8930.sys](./qccamflash8930.md)) `{d2ff3f74-880f-4858-841c-fb0b
 Back sensor ([qccamsensor8930.sys](./qccamsensor8930.md)) `{5e34e1c5-c5bc-4c7f-b6fc-e2443e45be67}`  
 Front sensor ([qccamfrontsensor8930.sys](./qccamfrontsensor8930.md)) `{f27170b8-7b88-4f4a-b505-1d065616aadc}`  
 VFE ([qccamvfe8930.sys](./qccamvfe8930.md)) `{3e9c0fdb-cef9-4c4a-8e85-36e4a82eb80f}`  
-VPE `{95f66217-6158-4f46-a8c6-dfd0bfcf94f1}`  
+VPE ([qcvpe8930.sys](./qcvpe8930.md)) `{95f66217-6158-4f46-a8c6-dfd0bfcf94f1}`  
 ESP `{e5fde9d7-7a0e-4048-81bb-a77caf7b349f}`  
 
 ### Other GUID

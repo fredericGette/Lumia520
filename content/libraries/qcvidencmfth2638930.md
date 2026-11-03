@@ -1,7 +1,7 @@
 ## qcvidencmfth2638930.dll
 
 Hardware Media Foundation transform (MFT) of the MSM8930 that encodes H.263 video: "QC H263 Encode HW-MFT", build `P:\QCVidEncMFT\rel\8.2.1.1\arm\Release\qcvidencmfth2638930.pdb`.  
-`qcvidencmfth2638930.dll` is an in-process COM server (249 functions) registered as an asynchronous hardware video encoder MFT, CLSID `{670E88D4-B18A-483A-8E0F-65A027838718}`, merit 7. The code is Qualcomm's generic "VENC HWMFT" (`CQCVideoEncoderMft`, the class names are in the debug strings) shared by the H.264, VC-1, MPEG-4 and H.263 encoders; this build only registers the H.263 CLSID, so the codec type is always 3 (H.263). It doesn't encode anything itself: it takes NV12 / `420O` frames, opens a private "decoder" `{B7BC9768-6665-4926-88A4-1751BC8515FB}` on a Direct3D 11 video device and drives it with `ID3D11VideoContext::DecoderExtension` commands (`D3D_VIDENC_CMD_*` / `D3D_VIDENC_PROP_*`). That device is the H.263 [encoder device](./qcvidum8930.md#encoder-devices) of [qcvidum8930.dll](./qcvidum8930.md), which forwards the commands to the VIDEO engine of [qcdxkm8930.sys](../drivers/qcdxkm8930.md) and calls back this DLL ([VideoUMDCb](#umd-callback-sub_10019bc0)) with the sequence header and each encoded frame.  
+`qcvidencmfth2638930.dll` is an in-process COM server (249 functions) registered as an asynchronous hardware video encoder MFT, CLSID `{670E88D4-B18A-483A-8E0F-65A027838718}`, merit 7. The code is Qualcomm's generic "VENC HWMFT" (`CQCVideoEncoderMft`, the class names are in the debug strings) shared by the H.264 ([qcvidencmfth2648930.dll](./qcvidencmfth2648930.md), same code at the same addresses), VC-1, MPEG-4 ([qcvidencmftmpeg48930.dll](./qcvidencmftmpeg48930.md), same code) and H.263 encoders; this build only registers the H.263 CLSID, so the codec type is always 3 (H.263). It doesn't encode anything itself: it takes NV12 / `420O` frames, opens a private "decoder" `{B7BC9768-6665-4926-88A4-1751BC8515FB}` on a Direct3D 11 video device and drives it with `ID3D11VideoContext::DecoderExtension` commands (`D3D_VIDENC_CMD_*` / `D3D_VIDENC_PROP_*`). That device is the H.263 [encoder device](./qcvidum8930.md#encoder-devices) of [qcvidum8930.dll](./qcvidum8930.md), which forwards the commands to the VIDEO engine of [qcdxkm8930.sys](../drivers/qcdxkm8930.md) and calls back this DLL ([VideoUMDCb](#umd-callback-sub_10019bc0)) with the sequence header and each encoded frame.  
 Like [qcviddecmft8930.dll](./qcviddecmft8930.md#iopmvideooutput-merit-certification) it implements `IOPMVideoOutput` with the same embedded certificate chain to prove its merit. The process that loads it (the media pipeline of the apps recording H.263 video, e.g. the camera for 3GP / MMS ?) isn't known.
 
 Location on the phone: ?  
@@ -138,9 +138,9 @@ Main fields (from the constructor and the methods; most of the others are queues
 | 0x2250 | 4 | Codec type: 1 H.264, 2 VC-1, 3 H.263, 4 MPEG-4 |
 | 0x2268 | 4 | `SwVENCtoMFTCB` (`sub_1001BA08`), callback of the software encoder path (VC-1 only) |
 | 0x229C | 16 | Output subtype |
-| 0x22EC | 4 | Codec selected by the CLSID |
+| 0x22EC | 4 | Number of output subtypes at +0x229C, set with the codec type (1 for H.264 and H.263, 2 for VC-1 and MPEG-4): limit of `GetOutputAvailableType`, `MF_E_NO_MORE_TYPES` beyond |
 
-`sub_10003FBC` compares the CLSID with the four CLSIDs of the family (`{7790EE16-08E3-426D-AADA-F96774308EA1}` H.264, `{ED93D261-C7CC-46E2-AE09-3CE7AE5C4ABC}` VC-1, `{8EB787DC-D1B6-421D-88A0-22539F9F12C3}` MPEG-4, `{670E88D4…}` H.263) and sets the codec type, the output subtypes and `MFT_ENUM_HARDWARE_URL_Attribute` = `QCOM Hardware Encoder - H263` in the attributes; only `{670E88D4…}` can reach it in this DLL. The three other CLSIDs are probably those of the sibling encoder DLLs (not analysed).
+`sub_10003FBC` compares the CLSID with the four CLSIDs of the family (`{7790EE16-08E3-426D-AADA-F96774308EA1}` H.264, `{ED93D261-C7CC-46E2-AE09-3CE7AE5C4ABC}` VC-1, `{8EB787DC-D1B6-421D-88A0-22539F9F12C3}` MPEG-4, `{670E88D4…}` H.263) and sets the codec type, the output subtypes and `MFT_ENUM_HARDWARE_URL_Attribute` = `QCOM Hardware Encoder - H263` in the attributes; only `{670E88D4…}` can reach it in this DLL. `{7790EE16…}` is the CLSID of [qcvidencmfth2648930.dll](./qcvidencmfth2648930.md), `{8EB787DC…}` the one of [qcvidencmftmpeg48930.dll](./qcvidencmftmpeg48930.md); the VC-1 one is probably that of another sibling encoder DLL (not analysed).
 
 ### Attributes
 
@@ -202,14 +202,14 @@ The output type must be set first. `SetOutputType` (`ValidateOutputType`, `sub_1
 
 #### Encoder start (InitializeHardware, sub_10009128)
 
-1. `setProfile` / `setLevel` (`sub_10020C88`, `sub_10020AC4`) from the output type (only for H.264, VC-1, MPEG-4);
+1. `setProfile` / `setLevel` (`sub_10020C88`, `sub_10020AC4`) from the output type (`setProfile` only for H.264, VC-1, MPEG-4, `setLevel` only for H.264);
 2. `MF_LOW_LATENCY` from the attributes (copied to the base config);
 3. without a D3D manager (+0x19F4, +0x1764 null): `MFCreateDXGIDeviceManager`, `D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, 0, 0, NULL, 0, D3D11_SDK_VERSION, …)`, `ResetDevice`, `OnSetD3DManager`;
 4. the encoder GUID from the subtype (`H264`, `WVC1`, `WMV3` → `{129F7B40…}`, `M4S2` / `MP4V` → `{CBB1A2A4…}`, `H263` → `{B7BC9768…}`; else "No cap exists for the VideoFormat"), `ValidateEncProfileConfig` (`sub_10016064`);
 5. `ID3D11VideoDevice::CreateVideoDecoder({guid, width, height, 106}, D3D11_VIDEO_DECODER_CONFIG all 0)`;
 6. default bitrate when needed (720p / 1080p / FWVGA from the registry), peak bitrate corrected to at least the mean bitrate;
 7. `DecoderExtension` 0 (`D3D_VIDENC_CMD_INIT`) with the 0x78-byte [base configuration](#base-configuration) as input;
-8. `DecoderExtension` 1 (`D3D_VIDENC_CMD_START_ENCODER`), then `WaitForSingleObject(m_hStartRespEvent, 5000)` for the [sequence header callback](#umd-callback-sub_10019bc0) ("Timeout(5 sec) for sequence header from START COMMAND"). For H.264 / MPEG-4 the header is put on the output type as `MF_MT_MPEG_SEQUENCE_HEADER` (`SetBlob`); for H.263 there is none and `OnOutputTypeChanged` (`sub_10020FE0`) is called instead.
+8. `DecoderExtension` 1 (`D3D_VIDENC_CMD_START_ENCODER`), then `WaitForSingleObject(m_hStartRespEvent, 5000)` for the [sequence header callback](#umd-callback-sub_10019bc0) ("Timeout(5 sec) for sequence header from START COMMAND"). For H.264 the header is put on the output type as `MF_MT_MPEG_SEQUENCE_HEADER` (`SetBlob`); for H.263 and MPEG-4 `OnOutputTypeChanged` (`sub_10020FE0`) is called instead: it sets `MF_MT_MPEG4_SAMPLE_DESCRIPTION`, for H.263 a fixed 0x75-byte `stsd` with an `s263` entry and a `d263` box (vendor `Qcom`, template `unk_1003F108`) patched with the width and height, for MPEG-4 an `mp4v` entry with the VOL header (see [qcvidencmftmpeg48930.dll](./qcvidencmftmpeg48930.md)#sequence-header-and-sample-description).
 
 `AllocateResources` (`sub_100161B4`) asks the buffer requirements (`DecoderExtension` 6 `D3D_VIDENC_PROP_GET_BUFFER_REQ`, 16 bytes of output) and creates the output buffers (`ID3D11Device::CreateBuffer`) and, when the input frames have to be copied, the input textures (`CreateTexture2D`, `AllocateInputResources` `sub_10016DCC`); `AllocateSystemOutputBuffer` (`sub_10016A88`) creates the system memory buffers (`MFCreateMemoryBuffer`) returned to the client in tracked samples (`MFCreateTrackedSample`).
 
@@ -228,8 +228,8 @@ When a command returns `DXGI_ERROR_DEVICE_REMOVED` (0x887A0005), or the encoder 
 | 0x24, 0x28 | 8 | Profile, level (`setProfile` / `setLevel`; profile 0 for H.263) |
 | 0x2C | 4 | Rate control mode (`CODECAPI_AVEncCommonRateControlMode`, mapped through a table) |
 | 0x30 | 4 | GOP distance |
-| 0x34 | 4 | QP (default 24) |
-| 0x38, 0x3C | 8 | Mean bitrate (default 1 536 000 for H.263, 8 388 608 for H.264), peak bitrate |
+| 0x34 | 4 | QP (default 8 for H.263, 24 for H.264) |
+| 0x38, 0x3C | 8 | Mean bitrate (default 1 536 000 for H.263, 8 000 000 for H.264: table `unk_1003F1F0` for 640 × 480 / 1280 × 720), peak bitrate |
 | 0x40 | 1 | `EnableMotionDump` |
 | 0x44 | 4 | Layer count, at most 2 (temporal layers ?) |
 | 0x48 | 4 | UAB protection level |
@@ -240,7 +240,7 @@ When a command returns `DXGI_ERROR_DEVICE_REMOVED` (0x887A0005), or the encoder 
 | 0x5C | 4 | VBV buffer size |
 | 0x60 | 4 | Hierarchical P layers |
 | 0x64, 0x68 | 8 | Slice mode (default 1 = `D3D_VIDENC_MSLICE_DISABLE` ?), slice size (`VEncSliceMode`, `VEncSliceSize`) |
-| 0x6C | 4 | Request flags (bit 0 set for H.264; bits 0 and 1 are passed to the KMD) |
+| 0x6C | 4 | Request flags (bit 0: NAL unit mode, "`CODECAPI_VideoEncNalUnits`", set by default for H.264, see [qcvidencmfth2648930.dll](./qcvidencmfth2648930.md#icodecapi); bits 0 and 1 are passed to the KMD) |
 | 0x70, 0x74 | 8 | Pixel aspect ratio numerator, denominator (must be non-zero) |
 
 ### DecoderExtension commands
@@ -364,10 +364,10 @@ WPP provider `{CEA35F95-03DB-4F70-A5C2-25E3ACA61E2A}` (`RegisterTraceGuidsW` in 
 | GUID | Use |
 |------|-----|
 | `{670E88D4-B18A-483A-8E0F-65A027838718}` | CLSID of the MFT |
-| `{7790EE16-08E3-426D-AADA-F96774308EA1}`, `{ED93D261-C7CC-46E2-AE09-3CE7AE5C4ABC}`, `{8EB787DC-D1B6-421D-88A0-22539F9F12C3}` | CLSIDs of the H.264, VC-1 and MPEG-4 encoders of the same family (not registered here) |
+| `{7790EE16-08E3-426D-AADA-F96774308EA1}`, `{ED93D261-C7CC-46E2-AE09-3CE7AE5C4ABC}`, `{8EB787DC-D1B6-421D-88A0-22539F9F12C3}` | CLSIDs of the H.264 ([qcvidencmfth2648930.dll](./qcvidencmfth2648930.md)), VC-1 and MPEG-4 ([qcvidencmftmpeg48930.dll](./qcvidencmftmpeg48930.md)) encoders of the same family (not registered here) |
 | `{F79EAC7D-E545-4387-BDEE-D647D7BDE42A}` | `MFT_CATEGORY_VIDEO_ENCODER` |
 | `{B7BC9768-6665-4926-88A4-1751BC8515FB}` | H.263 encoder device of [qcvidum8930.dll](./qcvidum8930.md#encoder-devices) |
-| `{129F7B40-5C5B-48E5-8178-48C0CEA05A90}`, `{CBB1A2A4-4EA1-491E-ADC9-70B373B76036}` | H.264 and MPEG-4 encoder devices (other codec types) |
+| `{129F7B40-5C5B-48E5-8178-48C0CEA05A90}`, `{CBB1A2A4-4EA1-491E-ADC9-70B373B76036}` | H.264 (opened by [qcvidencmfth2648930.dll](./qcvidencmfth2648930.md)) and MPEG-4 (opened by [qcvidencmftmpeg48930.dll](./qcvidencmftmpeg48930.md)) encoder devices (other codec types) |
 | `{FB8D8600-25C3-435E-94C5-A4B50397EC46}` | Input format NV12_16M2KA (linear NV12), [base configuration](#base-configuration) +0x0C; buffer type 160 in qcvidum8930.dll |
 | `{B27227A5-59FB-4BFC-AF1E-42237F213DBC}` | Input format TILE_4X2 (tiled, decoder-bound textures); buffer type 159 |
 | `{4F374491-8F5F-4445-9DBA-95588F6B58B4}` | `OPM_GET_CODEC_INFO` |

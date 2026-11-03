@@ -68,6 +68,7 @@
 [qcusbfnfilter8930.sys](./qcusbfnfilter8930.md)  
 [qcuart8930.sys](./qcuart8930.md)  
 [qcvcm8930.sys](./qcvcm8930.md)  
+[qcvpe8930.sys](./qcvpe8930.md)  
 [qcwcn8930.sys](./qcwcn8930.md)  
 
 ## Nokia
