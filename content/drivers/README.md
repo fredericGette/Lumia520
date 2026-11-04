@@ -94,6 +94,8 @@
 [crashdmp.sys](./crashdmp.md)  
 [dxgkrnl.sys](./dxgkrnl.md)  
 [dxgmms1.sys](./dxgmms1.md)  
+[genericusbfnclass.sys](./genericusbfnclass.md)  
+[genericusbfnclassipoverusb.sys](./genericusbfnclassipoverusb.md)  
 [monitor.sys](./monitor.md)  
 [msgpiowinphone.sys](./msgpiowinphone.md)  
 [wmilib.sys](./wmilib.md)  
