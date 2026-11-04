@@ -12,7 +12,7 @@ Registries of the driver:
 Registry key `\Registry\Machine\System\CurrentControlSet\Control\CrashControl`:  
 | Registry value | value | comment |
 |----------------|-------|---------|
-| CrashDumpEnabled | 0 | ULong. Type of the online dump taken by Windows (see below). Mandatory: if it can't be read, the device creation fails. The online dump callbacks are registered only for 1, 2 and 3 |
+| CrashDumpEnabled | 0 | ULong. Type of the online dump taken by Windows (see below). Mandatory: if it can't be read, the device creation fails. The online dump callbacks are registered only for 1, 2 and 3. The online dump itself is written by [crashdmp.sys](./crashdmp.md) |
 | WpDisablePrebootCrashDump | 0 | ULong (Boolean). Disables the preboot crash dump |
 | EnableOfflineDumps | 0 | ULong. 0 = no preboot dump. 2 = also process the reset data of the SBL (see [Abnormal reset report](#abnormal-reset-report)) |
 | WpDisableDebuggerCheck | 0 | ULong (Boolean). By default the preboot dump is not enabled when a kernel debugger is attached (`KdDebuggerNotPresent`) |

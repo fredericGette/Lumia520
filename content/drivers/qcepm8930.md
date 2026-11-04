@@ -23,7 +23,7 @@ Registered in `DriverEntry` (`McGenEventRegister`, sub_4010F4). There's only one
 It communicates with the following devices (found with `IoRegisterPlugPlayNotification` on their interface class; the symbolic link name is saved and opened later with `WdfIoTargetOpen` by name):  
 | Interface class GUID | Driver | Comment |
 |----------------------|--------|---------|
-| `{10542F20-9718-452A-897A-45785468E57A}` | ADC driver ? (not documented yet) | `IOCTL_ADC_GET_CHANNEL` (0x8ADC2000) / `IOCTL_ADC_READ` (0x8ADC2004), channel `VBATT`. Same interface as [NokiaEnergyDriver.sys](./nokiaenergydriver.md#adc-channels), [qcpep8930.sys](./qcpep8930.md), [qcbattmngr8930.sys](./qcbattmngr8930.md). Context `+0x10` |
+| `{10542F20-9718-452A-897A-45785468E57A}` | [qcxoadc8930.sys](./qcxoadc8930.md) | `IOCTL_ADC_GET_CHANNEL` (0x8ADC2000) / `IOCTL_ADC_READ` (0x8ADC2004), channel `VBATT`. Same interface as [NokiaEnergyDriver.sys](./nokiaenergydriver.md#adc-channels), [qcpep8930.sys](./qcpep8930.md), [qcbattmngr8930.sys](./qcbattmngr8930.md). Context `+0x10` |
 | `{75EC568A-D2EA-48FE-AE3D-395A7B45E65F}` (`\??\QCOM_EPM_ADC`) | [qcepmadc8930.sys](./qcepmadc8930.md) | Battery current, IOCTL `0x9ADC2400` (device type `0x9ADC`, EPM ADC read over QMI). Context `+0x00` |
 
 Both targets are opened with `DesiredAccess` 0x1F0000 (`STANDARD_RIGHTS_ALL`), `FILE_OPEN`, `FILE_NON_DIRECTORY_FILE` (sub_40129C). sub_40129C returns `STATUS_INVALID_PARAMETER` (0xC000000D) when the symbolic link of the interface isn't known yet.
@@ -142,7 +142,7 @@ Steps:
 
 ### IOCTL 0x8ADC2000 — IOCTL_ADC_GET_CHANNEL
 
-This IOCTL is sent by Qcepm8930.sys to the ADC driver (interface `{10542F20-…}`)
+This IOCTL is sent by Qcepm8930.sys to [qcxoadc8930.sys](./qcxoadc8930.md) (interface `{10542F20-…}`)
 
 | Property | Value |
 |----------|-------|
@@ -170,7 +170,7 @@ Outputbuffer:
 
 ### IOCTL 0x8ADC2004 — IOCTL_ADC_READ
 
-This IOCTL is sent by Qcepm8930.sys to the ADC driver (interface `{10542F20-…}`)
+This IOCTL is sent by Qcepm8930.sys to [qcxoadc8930.sys](./qcxoadc8930.md) (interface `{10542F20-…}`)
 
 | Property | Value |
 |----------|-------|

@@ -177,6 +177,7 @@ Not implemented: after the size validation (`ValidatePmicTestRequest`, 0x410890)
 ### IOCTL 0x8002xxxx — ADC / BTM / CCADC
 
 This IOCTL is processed by Qcpmic8930.sys  
+The ADC, BTM and sequencer IOCTLs (all except CCADC and `0x80021030`) are sent by [qcxoadc8930.sys](./qcxoadc8930.md#pmic-ioctls) through interface 1 `{50EC8626-…}`.  
 Function table: `g_PmAdcFuncTable` (61 entries per PMIC), only for models 1 and 3.
 
 | IOCTL | Fn | Name | In | Out | Input (after PMIC index) | Output |
@@ -302,6 +303,7 @@ On a Lumia 520 (PM8038), `IOCTL_PM_KEYPAD_GET_POWER_KEY` fails with `STATUS_UNSU
 ### IOCTL 0x8005xxxx — MPP (multi-purpose pins)
 
 This IOCTL is processed by Qcpmic8930.sys  
+`IOCTL_PM_MPP_CONFIG_ANALOG_INPUT` and `IOCTL_PM_MPP_CONFIG_I_SINK` are also sent by [qcxoadc8930.sys](./qcxoadc8930.md#pmic-ioctls) (ADC channels routed through an MPP).  
 Function table: `g_PmMppFuncTable` (24 entries per PMIC), only for models 1–3.
 
 | IOCTL | Fn | Name | In | Out | Handled | Input (after PMIC index) | Output |
@@ -825,7 +827,7 @@ Present only in the name table; sending them returns `STATUS_INVALID_DEVICE_REQU
 The driver creates 22 device interfaces on the same device, in this order (`RegisterDeviceInterfaces`, 0x407F44), presumably one per PMIC block. Only those used by [qcbms8930.sys](./qcbms8930.md), [oempanel.sys](./oempanel.md), [NokiaEnergyDriver.sys](./nokiaenergydriver.md) and [qcpep8930.sys](./qcpep8930.md#pmic-requests) are identified:  
 | # | GUID | Comment |
 |---|------|---------|
-| 1 | `{50EC8626-F080-48E2-9076-025BBB44A1A0}` | ? |
+| 1 | `{50EC8626-F080-48E2-9076-025BBB44A1A0}` | ADC / XOADC / BTM (`0x8002`) and MPP (`0x8005`). Used by [qcxoadc8930.sys](./qcxoadc8930.md#pmic-ioctls) |
 | 2 | `{F1EFB001-D615-4EEF-8B1E-E8C13C8DB12A}` | ? |
 | 3 | `{D17B2593-7189-4E1E-91F1-00798E07B8AB}` | Used by qcbms8930 for the BMS (`0x8019`) and CCADC (`0x8002`) IOCTLs |
 | 4 | `{5186FCEA-68FC-420A-9400-601A6D0CA988}` | PMIC GPIO (`0x8003`). Used by [qcpep8930.sys](./qcpep8930.md#pmic-requests) for the `PMICGPIO` resources, and by [qcpmicgpio8930.sys](./qcpmicgpio8930.md) for the GPIO **and MPP** (`0x8005`) IOCTLs |

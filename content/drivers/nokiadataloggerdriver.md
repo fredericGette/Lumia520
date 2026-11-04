@@ -2,7 +2,7 @@
 
 Nokia battery data logger (KMDF, `NokiaDataLoggerDriver.pdb`; the device context type is `NOKIA_DATA_LOGGER_DRIVER_DEVICE_CONTEXT`).  
 When started by a user-mode client, it samples periodically the battery voltage, the battery temperature, the battery current and the state of charge, and stores them with a timestamp in a ring buffer of 256 records that the client reads with an IOCTL.  
-The values come from three peers: the ADC driver (channels `BATT_THERM` and `VBATT`), [qcbms8930.sys](./qcbms8930.md) (`IOCTL_BMS_GET_BATTERY_CURRENT`) and the battery device of [battc.sys](./battc.md) / [NokiaEnergyDriver.sys](./nokiaenergydriver.md) (`IOCTL_BATTERY_QUERY_*`).  
+The values come from three peers: the ADC driver [qcxoadc8930.sys](./qcxoadc8930.md) (channels `BATT_THERM` and `VBATT`), [qcbms8930.sys](./qcbms8930.md) (`IOCTL_BMS_GET_BATTERY_CURRENT`) and the battery device of [battc.sys](./battc.md) / [NokiaEnergyDriver.sys](./nokiaenergydriver.md) (`IOCTL_BATTERY_QUERY_*`).  
 It has no hardware resource, reads no registry value and has no ETW provider: the only traces are `DbgPrint` calls (`NokiaDataLogger.sys: ...`).
 
 On the Lumia 520 the device is `\_SB.NDLD` (`_HID` `DATA_LOGGER`, no `_UID`, no `_CRS`), defined in the Nokia SSDT (see [ACPI tables](../acpi/README.md)).
@@ -22,7 +22,7 @@ None (`DbgPrint` only).
 It communicates with the following devices. The three interfaces are found with `IoRegisterPlugPlayNotification` (`EventCategoryDeviceInterfaceChange`, `PNPNOTIFY_DEVICE_INTERFACE_INCLUDE_EXISTING_INTERFACES`, callback `sub_40158C`) and opened by name with `WdfIoTargetOpen` (`STANDARD_RIGHTS_ALL`, `FILE_OPEN`, `FILE_NON_DIRECTORY_FILE`) on `GUID_DEVICE_INTERFACE_ARRIVAL`:  
 | Interface class GUID | Driver | Comment |
 |----------------------|--------|---------|
-| `{10542F20-9718-452A-897A-45785468E57A}` | ADC driver ? (not documented yet) | `IOCTL_ADC_GET_CHANNEL` (0x8ADC2000) / `IOCTL_ADC_READ` (0x8ADC2004), channels `BATT_THERM` and `VBATT`. Context `+0x08` |
+| `{10542F20-9718-452A-897A-45785468E57A}` | [qcxoadc8930.sys](./qcxoadc8930.md) | `IOCTL_ADC_GET_CHANNEL` (0x8ADC2000) / `IOCTL_ADC_READ` (0x8ADC2004), channels `BATT_THERM` and `VBATT`. Context `+0x08` |
 | `{23B7D0DD-101F-4EFE-A4D4-BED70E754419}` | [qcbms8930.sys](./qcbms8930.md) | `IOCTL_BMS_GET_BATTERY_CURRENT` (0x80180FA4). Context `+0x10` |
 | `{72631E54-78A4-11D0-BCF7-00AA00B7B32A}` `GUID_DEVICE_BATTERY` | [battc.sys](./battc.md) on the [NokiaEnergyDriver.sys](./nokiaenergydriver.md) device, through the upper filter [battfltr.sys](./battfltr.md) | `IOCTL_BATTERY_QUERY_TAG` / `QUERY_INFORMATION` / `QUERY_STATUS`. Context `+0x18` |
 

@@ -1,7 +1,7 @@
 ## Monitor.sys
 
 Microsoft generic monitor class function driver (KMDF, `monitor.pdb`).  
-It is loaded on the monitor child device that the display stack (dxgkrnl, on top of `qcdxkm8930.sys`) creates for the panel. It owns the **brightness** of an internal panel: it reads the list of supported levels, applies a requested percentage (clamped by thermal throttling), and reports every change to the user-mode power manager through the ALPC port `\PowerMonitorPort`. It also exposes the standard `WmiMonitor*` WMI classes (EDID, display parameters, brightness) by forwarding internal IOCTLs to the monitor PDO.  
+It is loaded on the monitor child device that the display stack ([dxgkrnl.sys](./dxgkrnl.md), on top of `qcdxkm8930.sys`) creates for the panel. It owns the **brightness** of an internal panel: it reads the list of supported levels, applies a requested percentage (clamped by thermal throttling), and reports every change to the user-mode power manager through the ALPC port `\PowerMonitorPort`. It also exposes the standard `WmiMonitor*` WMI classes (EDID, display parameters, brightness) by forwarding internal IOCTLs to the monitor PDO.  
 It links against `watchdog.sys` (`VpInitialize`). It does not touch any hardware register itself: brightness goes either through the display miniport's brightness interface or through the ACPI methods `_BCL`/`_BCM`/`_BQC` of the device.
 
 Symbolic link : `\DosDevices\LCD`  
@@ -27,8 +27,8 @@ GUID of the ETW provider:
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| Monitor PDO (lower device) | dxgkrnl.sys ? | Internal IOCTLs `0x232407`…`0x23242B` (adapter info, EDID and WMI data), see [IOCTLs sent](#internal-ioctl-0x232407--get-monitor-adapter-info) |
-| Lower device, query-interface `GUID_DEVINTERFACE_BRIGHTNESS` | [qcdxkm8930.sys](./qcdxkm8930.md#query-interfaces) (display miniport, `DxgkDdiQueryInterface` through dxgkrnl) | Brightness interface version 1 (`sub_49E4C4` in qcdxkm8930): GetPossibleBrightness `sub_49DE00` / SetBrightness `sub_49E07C` / GetBrightness `sub_49DFFC`. Only exposed when the panel has a backlight |
+| Monitor PDO (lower device) | [dxgkrnl.sys](./dxgkrnl.md#internal-ioctls-of-the-monitor-pdo) | Internal IOCTLs `0x232407`…`0x23242B` (adapter info, EDID and WMI data), see [IOCTLs sent](#internal-ioctl-0x232407--get-monitor-adapter-info) |
+| Lower device, query-interface `GUID_DEVINTERFACE_BRIGHTNESS` | [qcdxkm8930.sys](./qcdxkm8930.md#query-interfaces) (display miniport, `DxgkDdiQueryInterface` through [dxgkrnl](./dxgkrnl.md#brightness)) | Brightness interface version 1 (`sub_49E4C4` in qcdxkm8930): GetPossibleBrightness `sub_49DE00` / SetBrightness `sub_49E07C` / GetBrightness `sub_49DFFC`. Only exposed when the panel has a backlight |
 | ACPI node of the device | [acpi.sys](./acpi.md) | Fallback brightness through `IOCTL_ACPI_EVAL_METHOD` (`_BCL`, `_BCM`, `_BQC`); notifications through `GUID_ACPI_INTERFACE_STANDARD2` |
 | `\PowerMonitorPort` (ALPC) | user-mode power manager (UMPO ?) | Brightness messages, see [ALPC messages](#alpc-messages-to-powermonitorport) |
 | — | thermal manager ? | Consumer of `GUID_THERMAL_COOLING_INTERFACE` |
@@ -255,7 +255,8 @@ Forwarded unchanged (send-and-forget) to the lower driver when the requestor is 
 
 ### internal IOCTL 0x23242F — set monitor power state ?
 
-This IOCTL is processed by Monitor.sys
+This IOCTL is processed by Monitor.sys  
+This IOCTL is sent by [dxgkrnl.sys](./dxgkrnl.md#internal-ioctl-0x23242f--set-monitor-power-state) to the top of the monitor stack, when it receives `IOCTL_VIDEO_SET_OUTPUT_DEVICE_POWER_STATE` (0x23200F) on `\Device\VideoN`; the value is a `VIDEO_POWER_STATE`. When forwarded, dxgkrnl's monitor PDO sets the device power of the child.
 
 | Property | Value |
 |----------|-------|
@@ -304,7 +305,7 @@ Handled only when a brightness interface or ACPI brightness is present, otherwis
 
 ### internal IOCTL 0x232407 — get monitor adapter info
 
-This IOCTL is sent by Monitor.sys to the monitor PDO
+This IOCTL is sent by Monitor.sys to the monitor PDO ([dxgkrnl.sys](./dxgkrnl.md#internal-ioctl-0x232407--get-monitor-adapter-info))
 
 | Property | Value |
 |----------|-------|
@@ -320,9 +321,10 @@ This IOCTL is sent by Monitor.sys to the monitor PDO
 Outputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-07 | ? | ? |
+| 00-03 | ? | `DXGADAPTER` pointer of the adapter (dxgkrnl) |
+| 04-07 | ? | Child UID (VidPn target id) of the monitor |
 | 08-0B | ? | `D3DKMDT_VIDEO_OUTPUT_TECHNOLOGY` (0x80000000 = internal) |
-| 0C-0F | ? | Initial state, same meaning as internal IOCTL `0x23242F` |
+| 0C-0F | ? | Initial state, same meaning as internal IOCTL `0x23242F` (last output power state set by dxgkrnl) |
 
 Sent at `EvtDriverDeviceAdd` and again at `EvtDeviceSelfManagedIoInit`. `STATUS_NOT_SUPPORTED` = no adapter info.
 
@@ -330,7 +332,7 @@ Sent at `EvtDriverDeviceAdd` and again at `EvtDeviceSelfManagedIoInit`. `STATUS_
 
 ### internal IOCTL 0x23240F, 0x23241B, 0x23241F, 0x232423, 0x232427, 0x23242B — monitor WMI data
 
-These IOCTLs are sent by Monitor.sys to the monitor PDO (`WmiCallPhysicalDevice` 0x120C8), to fill a WMI data block.
+These IOCTLs are sent by Monitor.sys to the monitor PDO (`WmiCallPhysicalDevice` 0x120C8), to fill a WMI data block. They are processed by [dxgkrnl.sys](./dxgkrnl.md#internal-ioctls-of-the-monitor-pdo) from the EDID of the monitor (`0xC01D0001` when there is no EDID).
 
 | Name | Function | Device name | InputBuffer size | OutputBuffer Size |
 |------|----------|-------------|------------------|-------------------|

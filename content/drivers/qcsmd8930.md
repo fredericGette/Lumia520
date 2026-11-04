@@ -139,7 +139,7 @@ Channels opened by the other drivers (from their binaries):
 | APPS_FM | [qcfmtransport8930.sys](./qcfmtransport8930.md) |
 | APPS_RIVA_BT_CMD | [qcbluetooth8930.sys](./qcbluetooth8930.md) |
 | APPS_RIVA_BT_ACL | [qcbluetooth8930.sys](./qcbluetooth8930.md) |
-| WLAN_CTRL | qcwlan8930.sys |
+| WLAN_CTRL | [qcwlan8930.sys](./qcwlan8930.md#smd-channel) (WDI control messages of the Wi-Fi firmware). Edge 6, flags 0x11, FIFO size 0x1000, opened with [internal IOCTL 0x22003](#internal-ioctl-0x22003) |
 | DATA40_CNTL | [qcrmnetbridge8930.sys](./qcrmnetbridge8930.md) (USB RmNet QMI control). Edge 0, packet mode, FIFO size from the registry value `SmdFifoSize` |
 
 Channel events (`SmdPortEventHandler`, 0x403BCC, the `notify` callback given to `smdl_open`). The names are those of the SMD Lite `smdl_event_type` and are tentative:  
@@ -185,7 +185,7 @@ Query-interface `{07631ee5-21bd-455b-bd1f-f41b43f3a9bc}` (`WdfDeviceAddQueryInte
 ### internal IOCTL 0x22003
 
 This IOCTL is processed by Qcsmd8930.sys (`EvtWdfIoQueueIoInternalDeviceControl`, 0x402AF0)  
-Sent by [qcbluetooth8930.sys](./qcbluetooth8930.md#internal-ioctl-0x22003), [qcdiagrouter8930.sys](./qcdiagrouter8930.md), [qcqmux8930.sys](./qcqmux8930.md#internal-ioctl-0x22003), [qcmbrg8930.sys](./qcmbrg8930.md#internal-ioctl-0x22003), [qcrmnetbridge8930.sys](./qcrmnetbridge8930.md#internal-ioctl-0x22003) (`DATA40_CNTL`), [qcq6ad8930.sys](./qcq6ad8930.md#internal-ioctl-0x22003) (`apr_apps2`), [qcssm8930.sys](./qcssm8930.md#internal-ioctl-0x22003) (`SSM_RTR`) and the other SMD clients.
+Sent by [qcbluetooth8930.sys](./qcbluetooth8930.md#internal-ioctl-0x22003), [qcdiagrouter8930.sys](./qcdiagrouter8930.md), [qcqmux8930.sys](./qcqmux8930.md#internal-ioctl-0x22003), [qcmbrg8930.sys](./qcmbrg8930.md#internal-ioctl-0x22003), [qcrmnetbridge8930.sys](./qcrmnetbridge8930.md#internal-ioctl-0x22003) (`DATA40_CNTL`), [qcq6ad8930.sys](./qcq6ad8930.md#internal-ioctl-0x22003) (`apr_apps2`), [qcssm8930.sys](./qcssm8930.md#internal-ioctl-0x22003) (`SSM_RTR`), [qcwlan8930.sys](./qcwlan8930.md#internal-ioctl-0x22003) (`WLAN_CTRL`) and the other SMD clients.
 
 | Property | Value |
 |----------|-------|
@@ -228,6 +228,7 @@ Returns:
 ### internal IOCTL 0x22007
 
 This IOCTL is processed by Qcsmd8930.sys  
+Sent by [qcwlan8930.sys](./qcwlan8930.md#internal-ioctl-0x22007) (`WLAN_CTRL`) and the other SMD clients.  
 
 | Property | Value |
 |----------|-------|

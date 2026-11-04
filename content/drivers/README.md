@@ -70,6 +70,8 @@
 [qcvcm8930.sys](./qcvcm8930.md)  
 [qcvpe8930.sys](./qcvpe8930.md)  
 [qcwcn8930.sys](./qcwcn8930.md)  
+[qcwlan8930.sys](./qcwlan8930.md)  
+[qcxoadc8930.sys](./qcxoadc8930.md)  
 
 ## Nokia
 [acckxtnk1000.sys](./acckxtnk1000.md)  
@@ -89,9 +91,14 @@
 [acpitime.sys](./acpitime.md)  
 [battc.sys](./battc.md)  
 [battfltr.sys](./battfltr.md)  
+[crashdmp.sys](./crashdmp.md)  
+[dxgkrnl.sys](./dxgkrnl.md)  
+[dxgmms1.sys](./dxgmms1.md)  
 [monitor.sys](./monitor.md)  
 [msgpiowinphone.sys](./msgpiowinphone.md)  
 [wmilib.sys](./wmilib.md)  
 [wpcrdmp.sys](./wpcrdmp.md)  
 [wppower.sys](./wppower.md)  
 [wpsensorsclx.sys](./wpsensorsclx.md)  
+[dumpfve.sys](./dumpfve.md)  
+[dumpsd.sys](./dumpsd.md)  

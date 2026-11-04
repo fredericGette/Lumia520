@@ -1,7 +1,7 @@
 ## NokiaThermSensorDriver.sys
 
 Nokia battery thermal sensor (KMDF, `NokiaThermSensorDriver.pdb`; the device context types are `FDO_DATA` and `READ_REQUEST_CONTEXT`).  
-It provides the temperature of a thermal zone with the standard `IOCTL_THERMAL_READ_TEMPERATURE`, read from the ADC channel `BATT_THERM2` of the ADC driver. Read requests can wait for the temperature to leave a window: they are kept in a manual queue and checked again every 60 s and when their timeout expires.  
+It provides the temperature of a thermal zone with the standard `IOCTL_THERMAL_READ_TEMPERATURE`, read from the ADC channel `BATT_THERM2` of the ADC driver [qcxoadc8930.sys](./qcxoadc8930.md). Read requests can wait for the temperature to leave a window: they are kept in a manual queue and checked again every 60 s and when their timeout expires.  
 It also has two private IOCTLs: one returns the ADC reading as text, the other forces a fake temperature ("hot testing"). Every other IOCTL is forwarded to the lower device.  
 It reads no registry value and has no ETW provider: the only traces are `DbgPrintEx` calls (`NokiaThermSensorDriver: ...`).
 
@@ -22,7 +22,7 @@ None (`DbgPrintEx` only).
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| Interface `{10542F20-9718-452A-897A-45785468E57A}` | ADC driver ? (not documented yet) | `IOCTL_ADC_GET_CHANNEL` (0x8ADC2000) / `IOCTL_ADC_READ` (0x8ADC2004), channel `BATT_THERM2`. Context `+0x10` |
+| Interface `{10542F20-9718-452A-897A-45785468E57A}` | [qcxoadc8930.sys](./qcxoadc8930.md) | `IOCTL_ADC_GET_CHANNEL` (0x8ADC2000) / `IOCTL_ADC_READ` (0x8ADC2004), channel `BATT_THERM2`. Context `+0x10` |
 | Lower device (`WdfDeviceGetIoTarget`) | acpi.sys ? | Receives every other IOCTL and every internal IOCTL, forwarded unchanged |
 
 The ADC interface is found with `IoRegisterPlugPlayNotification` (`EventCategoryDeviceInterfaceChange`, `PNPNOTIFY_DEVICE_INTERFACE_INCLUDE_EXISTING_INTERFACES`, callback `sub_40154C`) in `EvtDevicePrepareHardware` (0x40148C), and opened by name with `WdfIoTargetOpen` (`STANDARD_RIGHTS_ALL`, `FILE_OPEN`, `FILE_NON_DIRECTORY_FILE`) on `GUID_DEVICE_INTERFACE_ARRIVAL`. A second arrival is ignored ("Interface %d was already opened"). The notification is never unregistered and the target never closed.

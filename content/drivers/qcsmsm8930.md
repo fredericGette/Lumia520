@@ -35,6 +35,7 @@ Drivers using `\Device\SMSM`:
 | Driver | IOCTL |
 |--------|-------|
 | [qcsmd8930.sys](./qcsmd8930.md) | [IOCTL 0x32000](#ioctl-0x32000) (`SMSM_APPS_STATE`, set `SMSM_SMD_LOOPBACK`) |
+| [qcwlan8930.sys](./qcwlan8930.md) | [IOCTL 0x32000](#ioctl-0x32000) (`SMSM_APPS_STATE`, set/clear `SMSM_WLAN_TX_ENABLE` 0x400 and `SMSM_WLAN_TX_RINGS_EMPTY` 0x200). See [SMSM](./qcwlan8930.md#smsm) |
 | [qcwcn8930.sys](./qcwcn8930.md) | [internal IOCTL 0x32008](#internal-ioctl-0x32008), [IOCTL 0x3200C](#ioctl-0x3200c), [internal IOCTL 0x32010](#internal-ioctl-0x32010) |
 | [qcbamdmux8930.sys](./qcbamdmux8930.md) | [IOCTL 0x32000](#ioctl-0x32000) (`SMSM_APPS_STATE`, set/clear `SMSM_A2_POWER_CONTROL` 0x2 and `SMSM_A2_POWER_CONTROL_ACK` 0x800), [IOCTL 0x3200C](#ioctl-0x3200c) (wait for `SMSM_A2_POWER_CONTROL` in `SMSM_MODEM_STATE`). See [A2 power handshake](./qcbamdmux8930.md#a2-power-handshake) |
 
@@ -148,7 +149,7 @@ The state callback (`sub_401BC8`, `cb(Context, RPE_STATE *State, ULONG *NewState
 
 ### IOCTL 0x32000
 
-This IOCTL is processed by Qcsmsm8930.sys (`sub_402BD0`). Sent by [qcsmd8930.sys](./qcsmd8930.md#ioctl-0x32000) and [qcbamdmux8930.sys](./qcbamdmux8930.md#ioctl-0x32000).
+This IOCTL is processed by Qcsmsm8930.sys (`sub_402BD0`). Sent by [qcsmd8930.sys](./qcsmd8930.md#ioctl-0x32000), [qcbamdmux8930.sys](./qcbamdmux8930.md#ioctl-0x32000) and [qcwlan8930.sys](./qcwlan8930.md#ioctl-0x32000).
 
 | Property | Value |
 |----------|-------|

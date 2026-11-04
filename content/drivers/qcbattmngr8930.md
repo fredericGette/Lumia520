@@ -82,7 +82,7 @@ It communicates with the following devices:
 | Interface `{9A8FF884-5882-4B62-9E0F-172ACE2A9EC0}` | [qcpmic8930.sys](./qcpmic8930.md) (interface 5) | `IOCTL_PM_IRQ_GET_INTERRUPTS_STATUS` (`0x80070FA8`). Charger 2, gauges 3 and 5 |
 | Interface `{EF512E80-3E93-45D7-AF9D-D375D53596B8}` | [qcpmic8930.sys](./qcpmic8930.md) (interface 10, MPP) | Charger 1: only awaited, nothing is sent to it |
 | Interface `{23B7D0DD-101F-4EFE-A4D4-BED70E754419}` | [qcbms8930.sys](./qcbms8930.md) | `IOCTL_BMS_*` (`0x8018`). Charger 2, gauges 3 and 5 |
-| Interface `{10542F20-9718-452A-897A-45785468E57A}` | ADC driver ? (not documented yet) | `IOCTL_ADC_GET_CHANNEL` / `IOCTL_ADC_READ` (`0x8ADC`). Gauges 3, 4, 5 |
+| Interface `{10542F20-9718-452A-897A-45785468E57A}` | [qcxoadc8930.sys](./qcxoadc8930.md) | `IOCTL_ADC_GET_CHANNEL` / `IOCTL_ADC_READ` (`0x8ADC`). Gauges 3, 4, 5 |
 | Interface `{3469F855-D4E1-4AD4-AA07-56BFE57E3BC3}` | ? (third-party charger) | `IOCTL_PM_3P_CHG_*` (`0x8016`). Chargers 1 and 3 |
 | Interface `{00E1078B-CD2B-4E06-AB3A-DACD8AC7FEEB}` | ? (third-party gauge) | `IOCTL_PM_3P_GAUGE_GET_BATT_PERC` (`0x80090FA0`). Gauges 1 and 2 |
 
@@ -221,7 +221,7 @@ Sent to [qcbms8930.sys](./qcbms8930.md) `{23B7D0DD-…}`:
 | 0x80180FB8 | IOCTL_BMS_FORCE_OCV | 0 | 0 | |
 | 0x80180FBC | IOCTL_BMS_SET_XOADC_CAL_VAL | 8 | 0 | `V0P625`, `V1P25` |
 
-Sent to the ADC driver `{10542F20-…}`:  
+Sent to the ADC driver [qcxoadc8930.sys](./qcxoadc8930.md) `{10542F20-…}`:  
 | IOCTL | Name | InputBuffer size | OutputBuffer Size | Values |
 |-------|------|------------------|-------------------|--------|
 | 0x8ADC2000 | IOCTL_ADC_GET_CHANNEL | strlen + 1 (gauge 4: 6 or 11) | 8 | `VBATT`, `BATT_THERM`, `BATT_ID`, `PMIC_THERM`, `V0P625`, `V1P25` (`.rdata:0x409748`) |

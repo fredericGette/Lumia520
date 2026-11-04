@@ -70,7 +70,7 @@ Driver: the Windows driver that loads on the node, when it's documented in [driv
 | `\_SB.QDIG` | QCOM0F80 | [qcdiagrouter8930.sys](../drivers/qcdiagrouter8930.md) ? | DIAG router |
 | `\_SB.QDCI` | QCOM0F81 | [qcdiagcsi8930.sys](../drivers/qcdiagcsi8930.md) ? | DIAG consumer interface |
 | `\_SB.QCDB` | QCOM1204 | | |
-| `\_SB.ADC1` | QCOM0C00 | | PMIC ADC (channel list `CHAN`) |
+| `\_SB.ADC1` | QCOM0C00 | [qcxoadc8930.sys](../drivers/qcxoadc8930.md) | PMIC ADC (channel list `CHAN`) |
 | `\_SB.BAM0`, `BAM1`, `BAM2` | QCOM0910 | | BAM DMA engines, see [qcbamdmux8930.sys](../drivers/qcbamdmux8930.md#lumia-520-acpi-nodes) |
 | `\_SB.HAL1`, `HAL2`, `HAL3`, `HAL5` | QCOM1001, 1002, 1003, 1005 | | |
 | `\_SB.QMUX` | QCOM0FA0 | [qcqmux8930.sys](../drivers/qcqmux8930.md) | QMI multiplexer |

@@ -97,7 +97,7 @@ The names of the types above 13 depend on the `d3dumddi.h` version and are not c
 
 ### Adapter information (sub_10001660)
 
-Calls `pfnQueryAdapterInfoCb(hAdapter, {pPrivateDriverData = adapter + 0x28, PrivateDriverDataSize = 1424})`: dxgkrnl passes the request to `DxgkDdiQueryAdapterInfo` of [qcdxkm8930.sys](../drivers/qcdxkm8930.md#ddi-functions) (`DXGKQAITYPE_UMDRIVERPRIVATE`). The buffer is zeroed and its first dword set to 1424 before the call.
+Calls `pfnQueryAdapterInfoCb(hAdapter, {pPrivateDriverData = adapter + 0x28, PrivateDriverDataSize = 1424})`: [dxgkrnl](../drivers/dxgkrnl.md) passes the request to `DxgkDdiQueryAdapterInfo` of [qcdxkm8930.sys](../drivers/qcdxkm8930.md#ddi-functions) (`DXGKQAITYPE_UMDRIVERPRIVATE`). The buffer is zeroed and its first dword set to 1424 before the call.
 
 | Offset | Size | Comment |
 |--------|------|---------|

@@ -20,7 +20,8 @@ It communicates with the following devices:
 |--------|--------|---------|
 | \Device\IPC (interface `{58354DB3-F2A3-406A-A5FD-3EA0D99DDCDB}`) | [qcipcrouter8930.sys](./qcipcrouter8930.md) | QCCI "IPC router" transport (ops table `.data:0x00408194`). [IOCTL 0x122008](#ioctl-0x122008), [IOCTL 0x122017](#ioctl-0x122017), [IOCTL 0x12201B](#ioctl-0x12201b), read/write of QMI messages |
 | \Device\QMUX (interface `{7DCB3244-C836-4A0C-A1E9-BD68D385AA2B}`) | [qcqmux8930.sys](./qcqmux8930.md) | QCCI "QMUX" transport (ops table `.data:0x004081A8`), registered 6 times with the parameters 16 to 21 (QMUX ports 0 to 5). [IOCTL 0x12418](#ioctl-0x12418), [IOCTL 0x12410](#ioctl-0x12410), [IOCTL 0x12430](#ioctl-0x12430), read/write of QMI messages |
-| ? | Bluetooth / WLAN drivers ? | Clients of the `BT` and `WLAN` device interfaces (`ReadFile`). No page in this folder references `{FDAE87E4-…}` yet (?) |
+| ? | Bluetooth driver ? | Client of the `BT` device interface (`ReadFile`) ? |
+| Interface `WLAN` | [qcwlan8930.sys](./qcwlan8930.md#lte-coexistence) | Client of the `WLAN` device interface: `IoRegisterPlugPlayNotification` on `{FDAE87E4-…}`, then a read request is always pending |
 
 There's no hardcoded physical address (no `MmMapIoSpace`) and no IOCTL is handled: the driver only accepts `ReadFile` and `WriteFile`.
 
@@ -72,7 +73,7 @@ Outputbuffer (24 bytes, copied from the context +0x1C):
 | 10-13 | 01 00 00 00 or 00 00 00 00 | 1 when the TDD TLV 0x11 is **absent** (FDD ?), 0 when it's present |
 | 14-17 | 01 00 00 00 or 00 00 00 00 | 1 when TLV 0x10 is present and the downlink frequency isn't 0 (LTE active ?) |
 
-The units are those of the QMI COEX service (MHz and Hz ?). The rest of the indication (TDD configuration, off period) is ignored.
+The units are those of the QMI COEX service. [qcwlan8930.sys](./qcwlan8930.md#lte-coexistence) compares the frequencies with MHz values (2300, 2400, 2500, 2570), so the frequencies are in MHz; it calls the offsets 0x10 and 0x14 `connected_mode` and `connected_flag` and treats `connected_flag` = 0 as "LTE off". The rest of the indication (TDD configuration, off period) is ignored.
 
 ### Write
 

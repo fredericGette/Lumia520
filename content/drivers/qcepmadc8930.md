@@ -3,7 +3,7 @@
 Qualcomm EPM ADC driver: "Reads the current and voltage EPM channels" (version resource, 1.0.3058.0000, `P:\EpmAdc\rel\8.2.1.1\arm\Release\qcepmadc8930.pdb`).  
 It's a KMDF driver with a single IOCTL, `0x9ADC2400`, that returns one voltage or current reading. The reading doesn't come from local hardware: the driver is a **QMI client** of a modem service (QMI service 0x13). The client part is the Qualcomm Common Interface library (QCCI) compiled into the driver. The messages travel over [qcipcrouter8930.sys](./qcipcrouter8930.md) (`\Device\IPC`) or [qcqmux8930.sys](./qcqmux8930.md) (`\Device\QMUX`).  
 Its only known client is the power meter driver [qcepm8930.sys](./qcepm8930.md), which reads the battery current with it.  
-This isn't the ADC driver of interface `{10542F20-…}` (`IOCTL_ADC_GET_CHANNEL` / `IOCTL_ADC_READ`, device type `0x8ADC`) used by [NokiaEnergyDriver.sys](./nokiaenergydriver.md), [qcpep8930.sys](./qcpep8930.md), [qcbattmngr8930.sys](./qcbattmngr8930.md) and [qcepm8930.sys](./qcepm8930.md); that driver is still undocumented.
+This isn't [qcxoadc8930.sys](./qcxoadc8930.md), the ADC driver of interface `{10542F20-…}` (`IOCTL_ADC_GET_CHANNEL` / `IOCTL_ADC_READ`, device type `0x8ADC`) used by [NokiaEnergyDriver.sys](./nokiaenergydriver.md), [qcpep8930.sys](./qcpep8930.md), [qcbattmngr8930.sys](./qcbattmngr8930.md) and [qcepm8930.sys](./qcepm8930.md); that driver is still undocumented.
 
 There's no named `\Device\` object (the WDF device is unnamed).  
 Symbolic link : `\??\QCOM_EPM_ADC`  

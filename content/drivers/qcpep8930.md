@@ -2,7 +2,7 @@
 
 Qualcomm Power Engine Plug-in (PEP) for MSM8930 and the thermal-zone driver.  
 It registers with the Windows power framework (`PoFxRegisterPlugin`) and implements device power management (D-states, F-states, P-states of the devices described in ACPI) and processor power management (idle states, CPU frequency). It's a port of the Qualcomm MSM firmware frameworks to Windows: NPA resources, the RPM driver (message RAM + IPC), the clock regime (`ClockDriver.c`, BIST, AVS), the sleep solver (LPR/LPRM: SWFI, power collapse, L2 retention, PXO/CXO shutdown, VDD min), the ICB bus arbiter and an SSBI PMIC driver. PMIC requests ("PPP" requests) go either to the RPM or to [qcpmic8930.sys](./qcpmic8930.md).  
-The same driver also serves the ACPI thermal zones: the TSENS on-die sensors are read directly, and the `PA_THERM` / `BATT_THERM` channels through the ADC driver.  
+The same driver also serves the ACPI thermal zones: the TSENS on-die sensors are read directly, and the `PA_THERM` / `BATT_THERM` channels through the ADC driver [qcxoadc8930.sys](./qcxoadc8930.md).  
 PDB path: `P:\PEP\rel\8.3.1\arm\Release\qcpep8930.pdb`. Pool tags `qpe*`.
 
 Hardware IDs handled by `EvtDriverDeviceAdd` (sub_4D24C4):  
@@ -73,7 +73,7 @@ It communicates with the following devices:
 | Device | Driver | Comment |
 |--------|--------|---------|
 | ACPI node of `\_SB.PEP0` | acpi.sys | `IOCTL_ACPI_EVAL_METHOD` (0x32C004) on `DVMM`, `PGEC`, `PGDC`, `PGCC`, `PGDS`, `PGPC`, `PPLG`, `NPUR`, see [ACPI](#acpi) |
-| Interface `{10542F20-9718-452A-897A-45785468E57A}` | ADC driver ? (not documented yet) | ADC channels `BATT_THERM` and `PA_THERM`, IOCTLs `IOCTL_ADC_GET_CHANNEL` (0x8ADC2000) / `IOCTL_ADC_READ` (0x8ADC2004) (same as [NokiaEnergyDriver.sys](./nokiaenergydriver.md#adc-channels)) |
+| Interface `{10542F20-9718-452A-897A-45785468E57A}` | [qcxoadc8930.sys](./qcxoadc8930.md) | ADC channels `BATT_THERM` and `PA_THERM`, IOCTLs `IOCTL_ADC_GET_CHANNEL` (0x8ADC2000) / `IOCTL_ADC_READ` (0x8ADC2004) (same as [NokiaEnergyDriver.sys](./nokiaenergydriver.md#adc-channels)) |
 | Interface `{A5B9E9A8-EE02-46DC-B9EF-562A78C3E5C9}` | [qcpmic8930.sys](./qcpmic8930.md) | VREG (`0x8006xxxx`) |
 | Interface `{5186FCEA-68FC-420A-9400-601A6D0CA988}` | [qcpmic8930.sys](./qcpmic8930.md) | PMIC GPIO (`0x8003xxxx`) |
 | Interface `{EF512E80-3E93-45D7-AF9D-D375D53596B8}` | [qcpmic8930.sys](./qcpmic8930.md) | PMIC MPP (`0x8005xxxx`) |

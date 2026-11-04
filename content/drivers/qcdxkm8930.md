@@ -5,7 +5,7 @@ It is the "graphics adapter" of the Lumia 520: it drives the MDP display control
 It registers with dxgkrnl through `DxgkInitialize` (DDI interface version `0x300E` = `DXGKDDI_INTERFACE_VERSION_WIN8`); KMDF is only used as a library (`WdfDriverCreate` with `WdfDriverInitNoDispatchOverride`, no WDF device).  
 The GPU/MDP/video memory goes through the VCM export driver [qcvcm8930.sys](./qcvcm8930.md) (imports `Vcm*`), a client layer of the SMMU driver [qcsmmu8930.sys](./qcsmmu8930.md). The panel description comes from the ACPI method `_ROM`, the panel command sequences and the backlight are delegated to [oempanel.sys](./oempanel.md), the OPM keys are read from `C:\DPP\QCOM\OPM_PUB.PROVISION` / `OPM_PRIV.PROVISION` and kept in the TrustZone trustlet `qcom.tz.winsecapp` through [qcscm8930.sys](./qcscm8930.md).
 
-There's no named `\Device\` object and no symbolic link created by the driver: the device objects belong to dxgkrnl (`\Device\Video0`…), and user mode reaches the driver only through D3DKMT calls (escapes, allocations, …).
+There's no named `\Device\` object and no symbolic link created by the driver: the device objects belong to [dxgkrnl](./dxgkrnl.md#device-objects) (`\Device\Video0`…), and user mode reaches the driver only through D3DKMT calls (escapes, allocations, …).
 
 Registries of the driver:  
 `HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\services\qcdxkm8930` ?  
@@ -32,7 +32,7 @@ Registry key `HKEY_LOCAL_MACHINE\SOFTWARE\QCOM\Drivers\DxKMD` (read by `sub_4A3D
 Other registry keys:  
 | Key | Values | Comment |
 |-----|--------|---------|
-| `HKLM\System\CurrentControlSet\Control\GraphicsDrivers\MemoryManager` | `SystemMemoryCommitLimit`, `SmallSystemMemorySize`, `MinimumSystemMemoryCommitLimit` (MB) | GPU system-memory commit limit (`sub_4ABABC`): `SystemMemoryCommitLimit` if set, otherwise max(`MinimumSystemMemoryCommitLimit` (default 64 MB), (RAM − `SmallSystemMemorySize` (default 512 MB)) / 2) |
+| `HKLM\System\CurrentControlSet\Control\GraphicsDrivers\MemoryManager` | `SystemMemoryCommitLimit`, `SmallSystemMemorySize`, `MinimumSystemMemoryCommitLimit` (MB) | GPU system-memory commit limit (`sub_4ABABC`): `SystemMemoryCommitLimit` if set, otherwise max(`MinimumSystemMemoryCommitLimit` (default 64 MB), (RAM − `SmallSystemMemorySize` (default 512 MB)) / 2). The same values are read by [dxgmms1.sys](./dxgmms1.md) for the VidMm commit limit, where `SmallSystemMemorySize` defaults to 0 |
 | `HKLM\System\CurrentControlSet\Control\ProductOptions` | `ProductSuite` | `PhoneNT` → the provisioning files are read from `\DosDevices\C:\DPP\QCOM\` (same DPP library as [qcbluetooth8930.sys](./qcbluetooth8930.md)) |
 | Adapter software key (dxgkrnl) | `HardwareInformation.ChipType`, `HardwareInformation.AdapterString` (`Adreno %i`), `HardwareInformation.DacType` (`InternalDAC`), `HardwareInformation.BiosString` (`Version %2.2i.%2.2i`) | Written by `sub_4AB1F4`. The Adreno number comes from the GPU core id: 225, 305 (`0x200131`), 320 (`0x200140`), 330 (`0x20014A`), 420 (`0x3001A4`) |
 
@@ -43,7 +43,7 @@ GUIDs of the ETW providers (`McGenEventRegister`):
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| `\Device\DxgKrnl` | dxgkrnl.sys | Loaded with `ZwLoadDriver(\Registry\Machine\System\CurrentControlSet\Services\DXGKrnl)`. [internal IOCTL 0x230047](#internal-ioctl-0x230047--ioctl_video_ddi_func_register) / [internal IOCTL 0x23003F](#internal-ioctl-0x230047--ioctl_video_ddi_func_register) |
+| `\Device\DxgKrnl` | [dxgkrnl.sys](./dxgkrnl.md) | Loaded with `ZwLoadDriver(\Registry\Machine\System\CurrentControlSet\Services\DXGKrnl)`. [internal IOCTL 0x230047](#internal-ioctl-0x230047--ioctl_video_ddi_func_register) / [internal IOCTL 0x23003F](#internal-ioctl-0x230047--ioctl_video_ddi_func_register) |
 | Interface `{FB4F07CD-8D4C-4413-92C2-E2C9CAED9F43}` | [qcchipinfo8930.sys](./qcchipinfo8930.md) | Chip family / id / version: [IOCTL 0x8C1F2014, 0x8C1F2008, 0x8C1F2004](#ioctl-0x8c1f2014--0x8c1f2008--0x8c1f2004) |
 | Interface `{0D4A3F63-0D08-49A1-B91C-C60576894174}` | [oempanel.sys](./oempanel.md) | Nokia panel driver. [IOCTL 0x4000](#ioctl-0x4000--panel-driver-registration): exchange of function-pointer tables |
 | Interface `{41C66D2A-A9F1-40CA-A329-AE096C03EE68}` | [qcscm8930.sys](./qcscm8930.md) | TrustZone, trustlet `qcom.tz.winsecapp`: [internal IOCTL 0xC3514004](#internal-ioctl-0xc3514004--opm-keys-in-trustzone) for the OPM keys |
@@ -516,7 +516,7 @@ The application ID is read at name + 0x20.
 
 ### internal IOCTL 0x230047 — IOCTL_VIDEO_DDI_FUNC_REGISTER
 
-This IOCTL is sent by Qcdxkm8930.sys to dxgkrnl.sys (`\Device\DxgKrnl`)
+This IOCTL is sent by Qcdxkm8930.sys to [dxgkrnl.sys](./dxgkrnl.md#internal-ioctl-0x22c00b-0x23003f-0x230043-0x230047-0x232063-0x23e057-0x23e05b-0x23e05f-0x23e067--devicedxgkrnl) (`\Device\DxgKrnl`)
 
 | Property | Value |
 |----------|-------|
@@ -529,7 +529,7 @@ This IOCTL is sent by Qcdxkm8930.sys to dxgkrnl.sys (`\Device\DxgKrnl`)
 |------|-------------|------------------|-------------------|
 | IOCTL_VIDEO_DDI_FUNC_REGISTER | `\Device\DxgKrnl` | 0 | 4 |
 
-Internal IOCTL sent by `DxgkInitialize` (displib, `sub_451754` → `sub_4BEB24`) when the OS version is > 6.1. If dxgkrnl answers `0xC0000010` STATUS_INVALID_DEVICE_REQUEST, or on Windows ≤ 6.1, the old code `0x23003F` (function 0xF) is used. The output is the address of the dxgkrnl initialization function, which is then called with the `DRIVER_INITIALIZATION_DATA`.
+Internal IOCTL sent by `DxgkInitialize` (displib, `sub_451754` → `sub_4BEB24`) when the OS version is > 6.1. If dxgkrnl answers `0xC0000010` STATUS_INVALID_DEVICE_REQUEST, or on Windows ≤ 6.1, the old code `0x23003F` (function 0xF) is used. The output is the address of the dxgkrnl initialization function (`DpiInitializeWin8`; `DpiInitialize` for 0x23003F), which is then called with the `DRIVER_INITIALIZATION_DATA`.
 
 ---
 

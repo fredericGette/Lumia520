@@ -2,10 +2,10 @@
 
 Nokia battery miniclass and charging-control driver (KMDF, `NokiaEnergyDriver.pdb`, source `src\ned_adc.c`; the device context type is `NED_DEVICE_CONTEXT`).  
 It is the battery **miniclass driver** of the Windows battery stack: it registers with [battc.sys](./battc.md) (`BatteryClassInitializeDevice`) and answers the `IOCTL_BATTERY_*` requests (tag, information, status, set-information, status notification). It also **runs the charger**: a worker thread selects the charging voltage/current from temperature tables in ACPI, programs the PMIC charger through [qcpmic8930.sys](./qcpmic8930.md) (`IOCTL_PM_CHG_*`, device type `0x8008`), detects the end of charge, and protects against low battery voltage with the PMIC battery alarm.  
-The state of charge comes from [qcbms8930.sys](./qcbms8930.md) (`IOCTL_BMS_*`). In return, this driver feeds qcbms8930 with the battery temperature, the PMIC temperature, the battery-ID reading and the XOADC calibration points, read from an ADC driver (device type `0x8ADC`, channel names `BATT_ID`, `BATT_THERM`, `VBATT`…).  
+The state of charge comes from [qcbms8930.sys](./qcbms8930.md) (`IOCTL_BMS_*`). In return, this driver feeds qcbms8930 with the battery temperature, the PMIC temperature, the battery-ID reading and the XOADC calibration points, read from the ADC driver [qcxoadc8930.sys](./qcxoadc8930.md) (device type `0x8ADC`, channel names `BATT_ID`, `BATT_THERM`, `VBATT`…).  
 It reads 3 GPIO lines and up to 6 interrupts from its ACPI resources, and reads its battery and charging parameters from the ACPI methods `CONF`, `CUTF`, `CHGR` and `CGHV`. It exposes the passive-cooling interface `GUID_THERMAL_COOLING_INTERFACE`, used to cut the charging current.
 
-On the Lumia 520 the device is `\_SB.NEDD` (`_HID` `NOKI0B00`, no `_UID`, no `_DEP`). It's defined in the Nokia SSDT (`NOKIA `/`MSM8930 `, OEM revision 4), not in the DSDT; see [Lumia 520 ACPI node](#lumia-520-acpi-node). The ADC channels that it reads (`VBATT`, `BATT_THERM`, `BATT_ID`, `BATT_RID`…) are defined in the `CHAN` method of `\_SB.ADC1` (`QCOM0C00`, PMIC ADC driver) in the DSDT.
+On the Lumia 520 the device is `\_SB.NEDD` (`_HID` `NOKI0B00`, no `_UID`, no `_DEP`). It's defined in the Nokia SSDT (`NOKIA `/`MSM8930 `, OEM revision 4), not in the DSDT; see [Lumia 520 ACPI node](#lumia-520-acpi-node). The ADC channels that it reads (`VBATT`, `BATT_THERM`, `BATT_ID`, `BATT_RID`…) are defined in the `CHAN` method of `\_SB.ADC1` (`QCOM0C00`, PMIC ADC driver [qcxoadc8930.sys](./qcxoadc8930.md)) in the DSDT.
 
 There's no named `\Device\` object and no symbolic link (the WDF device is unnamed). The driver creates the device interface `{00DC4DBB-BDFF-4051-8A95-754CE94CB57C}`; [battc.sys](./battc.md) also registers the standard battery interface `GUID_DEVICE_BATTERY` `{72631E54-78A4-11D0-BCF7-00AA00B7B32A}` and the power meter interface `GUID_DEVICE_POWER_METER` `{E849804E-C719-43D8-AC88-96B894C191E2}` on its PDO.
 
@@ -33,7 +33,7 @@ It communicates with the following devices. The six interfaces are found with `I
 | Interface class GUID | Driver | Comment |
 |----------------------|--------|---------|
 | `{1CF4643A-F9BF-42D3-88E8-F37EE6C0677C}` | [qcpmic8930.sys](./qcpmic8930.md) (interface 15) | Target of the charger `IOCTL_PM_CHG_*` (`0x8008xxxx`) and interrupt `IOCTL_PM_IRQ_GET_INTERRUPTS_STATUS` (`0x80070FA8`) requests |
-| `{10542F20-9718-452A-897A-45785468E57A}` | ADC driver ? (not documented yet) | ADC channels, device type `0x8ADC`, see [ADC channels](#adc-channels). [qcpep8930.sys](./qcpep8930.md#thermal-zones) uses the same interface and IOCTLs for `BATT_THERM` and `PA_THERM`, [NokiaThermSensorDriver.sys](./nokiathermsensordriver.md) for `BATT_THERM2` |
+| `{10542F20-9718-452A-897A-45785468E57A}` | [qcxoadc8930.sys](./qcxoadc8930.md) | ADC channels, device type `0x8ADC`, see [ADC channels](#adc-channels). [qcpep8930.sys](./qcpep8930.md#thermal-zones) uses the same interface and IOCTLs for `BATT_THERM` and `PA_THERM`, [NokiaThermSensorDriver.sys](./nokiathermsensordriver.md) for `BATT_THERM2` |
 | `{23B7D0DD-101F-4EFE-A4D4-BED70E754419}` | [qcbms8930.sys](./qcbms8930.md) | `IOCTL_BMS_*` (`0x8018xxxx`) |
 | `{FF22FC8B-383D-40D3-AFC0-2C37A30D060A}` | [qcpmic8930.sys](./qcpmic8930.md) (interface 19) | Battery alarm `IOCTL_PM_BATALRM_*` (`0x801Axxxx`) |
 | `{9A8FF884-5882-4B62-9E0F-172ACE2A9EC0}` | [qcpmic8930.sys](./qcpmic8930.md) (interface 5, PMIC interrupts `0x8007`) | Only awaited: no IOCTL is sent to it |
@@ -205,7 +205,7 @@ The ADC channel id is looked up once by name (`IOCTL_ADC_GET_CHANNEL`, 0x8ADC200
 | 0 | `BATT_ID` | Battery-ID reading sent in `IOCTL_BMS_SET_SYSTEM_INFO` |
 | 1 | `BATT_THERM` | Battery temperature in °C (−300 when the read fails): table entry, BATTC temperature, `IOCTL_BMS_SET_SYSTEM_INFO` |
 | 2 | `ICHG` | Not used |
-| 3 | `PMIC_THERM` | PMIC temperature (m°C ?, −300000 when the read fails) |
+| 3 | `PMIC_THERM` | PMIC temperature in m°C (ACPI `PTCF`: µV / 2 − 273160, see [qcxoadc8930.sys](./qcxoadc8930.md#lumia-520-channels)), −300000 when the read fails |
 | 4 | `VBATT` | Battery voltage in mV (BATTC status, low-voltage monitor) |
 | 5 | `VPH_PWR` | Not used |
 | 6 | `IBATT` | Not used |
@@ -296,11 +296,11 @@ Sent to [qcpmic8930.sys](./qcpmic8930.md) `{FF22FC8B-…}`:
 | 0x801A0FA0 | IOCTL_PM_BATALRM_CONFIG_CONTROL_REGISTER | 16 | 4 | 0, 4500 (upper mV ?), `CUTF[2]` + 50 (lower mV ?), 7 |
 | 0x801A0FA4 | IOCTL_PM_BATALRM_ENABLE_CONTROL_REGISTER | 16 | 4 | 0, 1, 0, enable |
 
-Sent to the ADC driver `{10542F20-…}`:  
+Sent to the ADC driver [qcxoadc8930.sys](./qcxoadc8930.md) `{10542F20-…}`:  
 | IOCTL | Name | InputBuffer size | OutputBuffer Size | Comment |
 |-------|------|------------------|-------------------|---------|
 | 0x8ADC2000 | IOCTL_ADC_GET_CHANNEL | strlen + 1 | 8 | Input: channel name (ASCII). Output: `00-03` 1 = found, `04-07` channel id |
-| 0x8ADC2004 | IOCTL_ADC_READ | 4 | 20 | Input: channel id. Output: `04-07` converted value, `10-13` raw value, rest ? |
+| 0x8ADC2004 | IOCTL_ADC_READ | 4 | 20 | Input: channel id. Output: `04-07` converted value, `10-13` raw value, `00-03` status, `08-0B` calibrated ratio, `0C-0F` µV (see [qcxoadc8930.sys](./qcxoadc8930.md#ioctl-0x8adc2004--ioctl_adc_read)) |
 | 0x8ADC2008 | ? (threshold / async read) | 16 | 24 | Sent asynchronously by `sub_401A1C` with 2 values, 1000000, 0. Only reachable from its own timer, which is never started: unused |
 
 Sent to `{9E03B1E8-…}`:  
@@ -342,7 +342,7 @@ qcpmic8930 interface 5 (PMIC interrupts, awaited only)
 qcbms8930 interface  
 `{23B7D0DD-101F-4EFE-A4D4-BED70E754419}`
 
-ADC driver interface  
+ADC interface of [qcxoadc8930.sys](./qcxoadc8930.md)  
 `{10542F20-9718-452A-897A-45785468E57A}`
 
 Unknown peer (`IOCTL 0x222404`)  
