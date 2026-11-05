@@ -130,7 +130,8 @@ Any unknown code returns `STATUS_UNSUCCESSFUL` (0xC0000001).
 
 ### IOCTL 0x80092408
 
-This IOCTL is processed by Qcssm8930.sys
+This IOCTL is processed by Qcssm8930.sys  
+This IOCTL is also sent by [nokia_sec_driver.sys](./nokia_sec_driver.md#ioctl-0x80092408) (with a 128-byte buffer, before each SSM mode change)
 
 | Property | Value |
 |----------|-------|
@@ -198,7 +199,8 @@ Returns `STATUS_UNSUCCESSFUL` if the trustlet can't be found or its answer is in
 
 ### IOCTL 0x80092414
 
-This IOCTL is processed by Qcssm8930.sys
+This IOCTL is processed by Qcssm8930.sys  
+This IOCTL is also sent by [nokia_sec_driver.sys](./nokia_sec_driver.md#ioctl-0x80092414) (message of the `PA_OTP` protected application, see its [SSM mode](./nokia_sec_driver.md#ssm-mode))
 
 | Property | Value |
 |----------|-------|
@@ -249,7 +251,8 @@ Information = 4.
 
 ### IOCTL 0x8009241C
 
-This IOCTL is processed by Qcssm8930.sys
+This IOCTL is processed by Qcssm8930.sys  
+This IOCTL is also sent by [nokia_sec_driver.sys](./nokia_sec_driver.md#ioctl-0x8009241c) (SSM mode 8)
 
 | Property | Value |
 |----------|-------|

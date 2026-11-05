@@ -44,7 +44,7 @@ It communicates with the following devices:
 | ClientSetState | `sub_401198` | See [Set state](#set-state) |
 | ClientGetState | `sub_401114` | See [Get state](#get-state) |
 
-`EvtDriverDeviceAdd` (0x406008) only calls `HwNProcessAddDevicePreDeviceCreate`, `WdfDeviceCreate` and `HwNProcessAddDevicePostDeviceCreate` with the GUID `{825E8FD3-6467-4A5B-ABFB-BB010734FF4D}` (device interface of the vibrator created by HwNClx ?).  
+`EvtDriverDeviceAdd` (0x406008) only calls `HwNProcessAddDevicePreDeviceCreate`, `WdfDeviceCreate` and `HwNProcessAddDevicePostDeviceCreate` with the GUID `{825E8FD3-6467-4A5B-ABFB-BB010734FF4D}` (device interface of the vibrator created by HwNClx ?, also passed by [hwnhaptics.sys](./hwnhaptics.md)).  
 `EvtDriverUnload` calls `HwNUnregisterClientDriver`.
 
 States (`ctx+0x04`, previous state at `ctx+0x08`):  
@@ -128,7 +128,7 @@ If the IOCTL fails while switching the motor on, the reference on the PMIC devic
 
 ### Other GUID
 
-HwNClx device interface ? (passed to `HwNProcessAddDevicePostDeviceCreate`)  
+HwNClx device interface ? (passed to `HwNProcessAddDevicePostDeviceCreate`, also by [hwnhaptics.sys](./hwnhaptics.md))  
 `{825E8FD3-6467-4A5B-ABFB-BB010734FF4D}`
 
 qcpmic8930 vibrator interface  

@@ -5,7 +5,7 @@ It is the KMDF function driver of a USB *function* (device-side) interface: it e
 The pipes and the interface GUID are not hardcoded: they are retrieved from the lower driver with [internal IOCTL 0x2AC022](#internal-ioctl-0x2ac022--ioctl_internal_usbfn_get_class_info) (`IOCTL_INTERNAL_USBFN_GET_CLASS_INFO`), i.e. from the USB function interface configuration of the class extension (registry `HKLM\SYSTEM\CurrentControlSet\Control\USBFN` ?).  
 It contains a statically linked copy of the Microsoft library `kusbfnclasslib` (`src\drivers\product\drivers\usbfn\lib\kusbfnclasslib\kusbfnclasslib.c`).  
 Built `Jan 23 2015 18:07:53`. PDB: `genericusbfnclass.pdb`.  
-The same binary (byte-identical, MD5 `add2618c05260684daabc0e0b5792cc0`) is also installed as [genericusbfnclassipoverusb.sys](./genericusbfnclassipoverusb.md) and `GenericUsbFnClassMtp.sys`, one service per USB function interface.  
+The same binary (byte-identical, MD5 `add2618c05260684daabc0e0b5792cc0`) is also installed as [genericusbfnclassipoverusb.sys](./genericusbfnclassipoverusb.md) and [genericusbfnclassmtp.sys](./genericusbfnclassmtp.md), one service per USB function interface.  
 It only imports `ntoskrnl.exe` (`RtlCopyUnicodeString`, `ExAllocatePoolWithTag`, `ExFreePoolWithTag`, `DbgPrint`, `_vsnwprintf`, `RtlGUIDFromString`) and `WDFLDR.SYS`. There's no ETW / WPP provider: all the traces are `DbgPrint` (prefix `GenericUsbFnClass`).
 
 There's no device name.  

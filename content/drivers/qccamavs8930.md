@@ -47,11 +47,11 @@ It communicates with the following devices:
 | Interface `{f27170b8-7b88-4f4a-b505-1d065616aadc}` | [qccamfrontsensor8930.sys](./qccamfrontsensor8930.md) | Front camera sensor. Same IOCTLs and commands as the back sensor (same code base), listed in [sensor control](./qccamfrontsensor8930.md#internal-ioctl-0x2323ff0x232523--sensor-control) |
 | Interface `{3e9c0fdb-cef9-4c4a-8e85-36e4a82eb80f}` | [qccamvfe8930.sys](./qccamvfe8930.md) | VFE (Video Front End: ISP) driver. Same IOCTLs, commands listed in [VFE commands](./qccamvfe8930.md#vfe-commands) |
 | Interface `{95f66217-6158-4f46-a8c6-dfd0bfcf94f1}` | [qcvpe8930.sys](./qcvpe8930.md) | VPE (Video Pre-processing Engine: scaling, crop, rotation). See [VPE IOCTLs](#ioctl-0x900-0x950-0x9a0--vpe) |
-| Interface `{e5fde9d7-7a0e-4048-81bb-a77caf7b349f}` | ? | Nokia "ESP" driver. See [ESP IOCTLs](#ioctl-0x222410-0x222414-0x222424--esp) |
+| Interface `{e5fde9d7-7a0e-4048-81bb-a77caf7b349f}` | [nokia_cam_esp.sys](./nokia_cam_esp.md) | Nokia "ESP" driver: device orientation and thermal limit. See [ESP IOCTLs](#ioctl-0x222410-0x222414-0x222424--esp) |
 | — | [qcvcm8930.sys](./qcvcm8930.md) | SMMU, by direct imports |
 | — | ks.sys | AVStream class driver |
 
-The ACPI node `\_SB.GPU0.AVS0` declares `_DEP` on `\_SB.VPE` and `\_SB.VFE0` (see [qcdxkm8930.sys](./qcdxkm8930.md)). The flash interface is exposed by [qccamflash8930.sys](./qccamflash8930.md) and the sensor interfaces by [qccamsensor8930.sys](./qccamsensor8930.md) (back) and [qccamfrontsensor8930.sys](./qccamfrontsensor8930.md) (front), the VFE interface by [qccamvfe8930.sys](./qccamvfe8930.md) and the VPE interface by [qcvpe8930.sys](./qcvpe8930.md); the ESP driver is not identified yet.
+The ACPI node `\_SB.GPU0.AVS0` declares `_DEP` on `\_SB.VPE` and `\_SB.VFE0` (see [qcdxkm8930.sys](./qcdxkm8930.md)). The flash interface is exposed by [qccamflash8930.sys](./qccamflash8930.md) and the sensor interfaces by [qccamsensor8930.sys](./qccamsensor8930.md) (back) and [qccamfrontsensor8930.sys](./qccamfrontsensor8930.md) (front), the VFE interface by [qccamvfe8930.sys](./qccamvfe8930.md) the VPE interface by [qcvpe8930.sys](./qcvpe8930.md) and the ESP interface by [nokia_cam_esp.sys](./nokia_cam_esp.md).
 
 ### Driver initialisation
 
@@ -202,20 +202,22 @@ The input buffer starts with a KS-like header (`KSIDENTIFIER`):
 
 ### IOCTL 0x222410, 0x222414, 0x222424 — ESP
 
-These IOCTLs are sent by Qccamavs8930.sys (`NokiaElfsPlugIn`, `CameraESPDriverInterface.cpp`) to the Nokia ESP driver (interface `{e5fde9d7-7a0e-4048-81bb-a77caf7b349f}`, `sub_473F30`, `sub_473FFC`). Normal IOCTLs, no input buffer. If the ESP driver isn't found ("Cannot find ESP driver"), the plug-in continues without it.
+These IOCTLs are sent by Qccamavs8930.sys (`NokiaElfsPlugIn`, `CameraESPDriverInterface.cpp`) to the Nokia ESP driver, [nokia_cam_esp.sys](./nokia_cam_esp.md) (interface `{e5fde9d7-7a0e-4048-81bb-a77caf7b349f}`, `sub_473F30`, `sub_473FFC`). Normal IOCTLs, no input buffer. If the ESP driver isn't found ("Cannot find ESP driver"), the plug-in continues without it.
 
 | IOCTL | Device | Function | Access | Method | OutputBuffer Size | Function |
 |-------|--------|----------|--------|--------|-------------------|----------|
 | 0x222410 | 0x22 | 0x904 | FILE_ANY_ACCESS | METHOD_BUFFERED | 0 | Camera power ON notification (`NokiaElfsPlugIn: Init`, `sub_46E294`) |
 | 0x222414 | 0x22 | 0x905 | FILE_ANY_ACCESS | METHOD_BUFFERED | 0 | Camera power OFF notification (`DestroyInstance`, `sub_46E100`) |
-| 0x222424 | 0x22 | 0x909 | FILE_ANY_ACCESS | METHOD_BUFFERED | 20 | Read sensor data, in `RunNokiaComponents` / `RunViewFinderStats` (`sub_471FCC`) |
+| 0x222424 | 0x22 | 0x909 | FILE_ANY_ACCESS | METHOD_BUFFERED | 20 | Read the device orientation and the thermal limit, in `RunNokiaComponents` / `RunViewFinderStats` (`sub_471FCC`) |
 
 Outputbuffer of 0x222424:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
 | 00-03 | ? | ≠ 0: data valid (plug-in `+0x18C`) |
-| 04-0F | ? | 3 values stored in the plug-in (`+0x190`, `+0x194`, `+0x198`) |
-| 10-13 | ? | Passed to the camera core (vtable `+0x454`). Light / RGBC measurement for the AWB ? |
+| 04-0F | ? | 3 floats X, Y, Z ? stored in the plug-in (`+0x190`, `+0x194`, `+0x198`) |
+| 10-13 | 64 00 00 00 | Thermal limit in percent, default 100. Passed to the camera core (vtable `+0x454`) |
+
+`NokiaElfsPlugIn::FetchRawParams` (`sub_46FEE8`) turns X and Y into a device orientation value (raw parameters `+0x120`, initially 1): |X| > |Y|: 1 if X < 0, otherwise 3. |Y| > |X|: 2 if Y < 0, otherwise 4. |X| = |Y|: "Unable to determine device orientation". Data not valid: "Orientation data not available".
 
 ---
 
@@ -271,7 +273,7 @@ Back sensor ([qccamsensor8930.sys](./qccamsensor8930.md)) `{5e34e1c5-c5bc-4c7f-b
 Front sensor ([qccamfrontsensor8930.sys](./qccamfrontsensor8930.md)) `{f27170b8-7b88-4f4a-b505-1d065616aadc}`  
 VFE ([qccamvfe8930.sys](./qccamvfe8930.md)) `{3e9c0fdb-cef9-4c4a-8e85-36e4a82eb80f}`  
 VPE ([qcvpe8930.sys](./qcvpe8930.md)) `{95f66217-6158-4f46-a8c6-dfd0bfcf94f1}`  
-ESP `{e5fde9d7-7a0e-4048-81bb-a77caf7b349f}`  
+ESP ([nokia_cam_esp.sys](./nokia_cam_esp.md)) `{e5fde9d7-7a0e-4048-81bb-a77caf7b349f}`  
 
 ### Other GUID
 

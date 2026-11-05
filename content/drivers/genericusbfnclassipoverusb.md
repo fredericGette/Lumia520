@@ -1,7 +1,7 @@
 ## Genericusbfnclassipoverusb.sys
 
 Generic USB function class driver (Microsoft, "GenericUsbFn") instance used for the *IP over USB* USB function interface.  
-The binary is byte-identical to [genericusbfnclass.sys](./genericusbfnclass.md) (and to `GenericUsbFnClassMtp.sys`): same size (36864 bytes), same MD5 `add2618c05260684daabc0e0b5792cc0`, same internal name `GenericUsbFnClass.sys`, same PDB `genericusbfnclass.pdb`, same build `Jan 23 2015 18:07:53`. It is only a copy under another file name, so that it can be installed as a separate service for another USB function interface.  
+The binary is byte-identical to [genericusbfnclass.sys](./genericusbfnclass.md) (and to [genericusbfnclassmtp.sys](./genericusbfnclassmtp.md)): same size (36864 bytes), same MD5 `add2618c05260684daabc0e0b5792cc0`, same internal name `GenericUsbFnClass.sys`, same PDB `genericusbfnclass.pdb`, same build `Jan 23 2015 18:07:53`. It is only a copy under another file name, so that it can be installed as a separate service for another USB function interface.  
 Everything documented in [genericusbfnclass.sys](./genericusbfnclass.md) applies unchanged: WDF configuration, `EvtDevicePrepareHardware`, `USBFN_CLASS_INFORMATION_PACKET`, the forwarding of the `IOCTL_GENERICUSBFN_*` requests to the lower driver as `IOCTL_INTERNAL_USBFN_*`, and the internal IOCTL 0x2AC022 `IOCTL_INTERNAL_USBFN_GET_CLASS_INFO` it sends.  
 The traces still use the prefix `GenericUsbFnClass` (`DbgPrint`), there's no ETW / WPP provider.
 
@@ -61,7 +61,7 @@ Device instance `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USBFN\IpOverUs
 | `{a8b865dd-2e3d-4094-ad97-e593a70c75d6}`,0xE | 0x00FF0000 | DriverRank |
 | `{80497100-8c73-48b9-aad9-ce387e19c56e}`,6 | 0 | ? |
 
-The device is a child (`USBFN\IpOverUsb`) enumerated by the USB function stack of the controller `ACPI\QCOM01C0\1`, one child per configured USB function interface. The INF section name `UfnBus_Child_00` suggests it is the first (index 00) child interface ?  
+The device is a child (`USBFN\IpOverUsb`) enumerated by the USB function stack of the controller `ACPI\QCOM01C0\1`, one child per configured USB function interface. The INF section name `UfnBus_Child_00` is not an interface index: [genericusbfnclassmtp.sys](./genericusbfnclassmtp.md) uses the same section, the index is in the instance ID (`00` for MTP, `01` here) ?  
 There's no parameters read by the driver in the registry (the `Parameters` key only holds the WDF values).  
 
 It communicates with the following devices:  
@@ -104,7 +104,7 @@ On the observed phone `CurrentConfiguration` = `RetailConfig` (`InterfaceList` =
 Other interfaces declared in `Control\USBFN\Interfaces` (each is a `USBFN\<name>` child handled by its own function driver):  
 | Interface | InterfaceGuid | Configuration |
 |-----------|---------------|---------------|
-| MTP | `{61fd7822-e8d4-44c4-9065-aaad0a3beff0}` | Default |
+| [MTP](./genericusbfnclassmtp.md) | `{61fd7822-e8d4-44c4-9065-aaad0a3beff0}` | Default |
 | IpOverUsb | `{30613563-7df3-4afb-80e0-e8c427c7e9bf}` | Default |
 | VidStream | `{31648E59-6FCB-4D81-9C97-D00999B0459A}` | Default, VidStream |
 | NCSd | `{7eaff726-34cc-4204-b09d-f95471b873cf}` | RetailConfig |

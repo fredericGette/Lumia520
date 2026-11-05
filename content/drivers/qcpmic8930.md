@@ -263,6 +263,8 @@ Function table: `g_PmGpioFuncTable` (36 entries per PMIC).
 | 0x80030FC0 | 1008 | IOCTL_PM_GPIO_GET_NUMBER_OF_GPIOS | 4 | 12 | yes | — | `00-03` PMIC index, `04-07` number of GPIOs, `08-0B` error |
 | 0x80030FC4 | 1009 | IOCTL_PM_GPIO_GET_GPIO_CONFIG | 12 | 2816 | yes | pointer to a GPIO number array, count | 44 bytes per GPIO (see below) |
 
+`IOCTL_PM_GPIO_CONFIG_DIGITAL_OUTPUT` is also sent by [hwnhaptics.sys](./hwnhaptics.md#ioctl-0x80030fa8--ioctl_pm_gpio_config_digital_output).
+
 `GET_GPIO_STATE` (`PmicGpioGetGpioState`, 0x409A3C): when `in[2]` ≠ 0 the state is read with the GPIO function; when it is 0 the real-time status of interrupt `192 + gpio` is read through the IRQ block instead.
 
 On a Lumia 520 (PM8038): `GET_NUMBER_OF_GPIOS` returns 12. With source ≠ 0, `GET_GPIO_STATE` returns state 0 for all 12 GPIOs; with source = 0 (interrupt real-time status) GPIOs 0, 2, 3, 7, 9 and 10 read 1. These are the same bits as `IOCTL_PM_IRQ_GET_INTERRUPTS_STATUS` block 3, type 1.
@@ -782,6 +784,8 @@ This IOCTL is processed by Qcpmic8930.sys
 | 0x801E0FA0 | 1000 | IOCTL_PM_CLK_SET_MP3_1_GPIO_DIV_REGISTER | 8 | 4 | divider | error |
 | 0x801E0FA4 | 1001 | IOCTL_PM_CLK_SET_MP3_2_GPIO_DIV_REGISTER | 8 | 4 | divider | error |
 
+These IOCTLs are sent by [hwnhaptics.sys](./hwnhaptics.md#ioctl-0x801e0fa0--0x801e0fa4--ioctl_pm_clk_set_mpx_gpio_div_register) through the interface `{DB6DE05B-0144-4F22-A9E1-67C729658533}`.
+
 ---
 
 ### Descriptors of IOCTLs not handled
@@ -830,7 +834,7 @@ The driver creates 22 device interfaces on the same device, in this order (`Regi
 | 1 | `{50EC8626-F080-48E2-9076-025BBB44A1A0}` | ADC / XOADC / BTM (`0x8002`) and MPP (`0x8005`). Used by [qcxoadc8930.sys](./qcxoadc8930.md#pmic-ioctls) |
 | 2 | `{F1EFB001-D615-4EEF-8B1E-E8C13C8DB12A}` | ? |
 | 3 | `{D17B2593-7189-4E1E-91F1-00798E07B8AB}` | Used by qcbms8930 for the BMS (`0x8019`) and CCADC (`0x8002`) IOCTLs |
-| 4 | `{5186FCEA-68FC-420A-9400-601A6D0CA988}` | PMIC GPIO (`0x8003`). Used by [qcpep8930.sys](./qcpep8930.md#pmic-requests) for the `PMICGPIO` resources, and by [qcpmicgpio8930.sys](./qcpmicgpio8930.md) for the GPIO **and MPP** (`0x8005`) IOCTLs |
+| 4 | `{5186FCEA-68FC-420A-9400-601A6D0CA988}` | PMIC GPIO (`0x8003`). Used by [qcpep8930.sys](./qcpep8930.md#pmic-requests) for the `PMICGPIO` resources, and by [qcpmicgpio8930.sys](./qcpmicgpio8930.md) for the GPIO **and MPP** (`0x8005`) IOCTLs, and by [hwnhaptics.sys](./hwnhaptics.md) for `IOCTL_PM_GPIO_CONFIG_DIGITAL_OUTPUT` |
 | 5 | `{9A8FF884-5882-4B62-9E0F-172ACE2A9EC0}` | PMIC interrupts (`0x8007`). Used by [qcpmicgpio8930.sys](./qcpmicgpio8930.md) for the IRQ IOCTLs. Also awaited by [NokiaEnergyDriver.sys](./nokiaenergydriver.md), which sends nothing to it |
 | 6 | `{A0A0CA65-C6CA-4215-B78B-5201087131BC}` | ? |
 | 7 | `{D87538A4-32C4-46D8-985E-F7CA7731BA27}` | PMIC LED (`0x800F`). Used by [qcpep8930.sys](./qcpep8930.md#pmic-requests) |
@@ -848,7 +852,7 @@ The driver creates 22 device interfaces on the same device, in this order (`Regi
 | 19 | `{FF22FC8B-383D-40D3-AFC0-2C37A30D060A}` | Used by [NokiaEnergyDriver.sys](./nokiaenergydriver.md) for the battery alarm (`0x801A`) IOCTLs |
 | 20 | `{51840099-5AD1-48EE-9176-BEA2990D2758}` | ? |
 | 21 | `{219397E7-B8D9-4DA6-AF0D-1733612E8299}` | Vibrator (`0x801D`). Used by [hwnvibradime.sys](./hwnvibradime.md) for `IOCTL_PM_VIB_CONTROL_REGISTER` |
-| 22 | `{DB6DE05B-0144-4F22-A9E1-67C729658533}` | ? |
+| 22 | `{DB6DE05B-0144-4F22-A9E1-67C729658533}` | Used by [hwnhaptics.sys](./hwnhaptics.md) for the clock (`0x801E`) IOCTLs |
 
 `UnregisterDeviceInterfaces` (0x408538) disables 21 of them: `{2F706348-47C5-4873-A66C-6B6BC6B01698}` is never disabled.
 

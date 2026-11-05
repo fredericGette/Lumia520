@@ -109,6 +109,12 @@ Commands built by the driver itself:
 | 0x3F001 | 0xFC / 1 | QSEE application lookup (`QueryApplicationId`): sub-command 0xFF03 with the name `qcom.tz.winsecapp`. The returned application ID is saved at device context +0x2C |
 | 0x3F401 | 0xFD / 1 | Send a request to the `qcom.tz.winsecapp` trustlet (application ID at +0x10, request code at +0x14) |
 
+Commands built by other drivers and sent through [internal IOCTL 0xC3514004](#internal-ioctl-0xc3514004--ioctl_internal_scm_control_class_syscall):  
+| command_id | Service / command | Sender |
+|------------|-------------------|--------|
+| 0x3F401 | 0xFD / 1 | [nokia_sec_driver.sys](./nokia_sec_driver.md#trustzone-calls) (`call_through_tz`, Nokia security services) |
+| 0x3F801 | 0xFE / 1 | [nokia_sec_driver.sys](./nokia_sec_driver.md#ioctl-0x9c41240c--software-watchdog) (`call_tz_oem_wd_reset`, OEM watchdog reset) |
+
 Request codes sent to `qcom.tz.winsecapp`:  
 | Code | Function | Comment |
 |------|----------|---------|
@@ -207,7 +213,7 @@ This IOCTL is processed by Qcscm8930.sys
 |------|------------------|-------------------|
 | IOCTL_INTERNAL_SCM_CONTROL_CLASS_SYSCALL | ≥ 16 | same as InputBuffer (same buffer) |
 
-Same buffer and processing as [IOCTL 0xC3514000](#ioctl-0xc3514000--ioctl_scm_control_class_syscall). Sent by [qcpil8930.sys](./qcpil8930.md#ioctl-0xc3514004) for the PAS commands 0x801, 0x805 and 0x806, and by [qcssm8930.sys](./qcssm8930.md#internal-ioctl-0xc3514004) for the commands 0x2C01, 0x2C02 (service 0xB) and the trustlet `TzappName` (0x3F001, 0x3F401).
+Same buffer and processing as [IOCTL 0xC3514000](#ioctl-0xc3514000--ioctl_scm_control_class_syscall). Sent by [qcpil8930.sys](./qcpil8930.md#ioctl-0xc3514004) for the PAS commands 0x801, 0x805 and 0x806, and by [qcssm8930.sys](./qcssm8930.md#internal-ioctl-0xc3514004) for the commands 0x2C01, 0x2C02 (service 0xB) and the trustlet `TzappName` (0x3F001, 0x3F401). Also sent by [nokia_sec_driver.sys](./nokia_sec_driver.md#internal-ioctl-0xc3514004), on `\Device\SysEnv`, for the commands 0x3F401 and 0x3F801.
 
 ---
 

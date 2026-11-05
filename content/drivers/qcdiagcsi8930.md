@@ -133,7 +133,8 @@ File context of a handle (`DIAGCSI_FILE_CONTEXT`, 0x223C bytes):
 
 ### IOCTL 0x80092440
 
-This IOCTL is processed by Qcdiagcsi8930.sys
+This IOCTL is processed by Qcdiagcsi8930.sys  
+This IOCTL is also sent by [nokia_sec_driver.sys](./nokia_sec_driver.md#ioctl-0x80092440)
 
 | Property | Value |
 |----------|-------|
@@ -168,7 +169,8 @@ NTSTATUS:
 
 ### IOCTL 0x80092444
 
-This IOCTL is processed by Qcdiagcsi8930.sys
+This IOCTL is processed by Qcdiagcsi8930.sys  
+This IOCTL is also sent by [nokia_sec_driver.sys](./nokia_sec_driver.md#ioctl-0x80092444) (EFS2 read of `/nv/item_files/modem/ssm_mode`, NV item 0x226)
 
 | Property | Value |
 |----------|-------|
