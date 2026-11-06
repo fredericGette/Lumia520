@@ -72,6 +72,7 @@
 [qcwcn8930.sys](./qcwcn8930.md)  
 [qcwlan8930.sys](./qcwlan8930.md)  
 [qcxoadc8930.sys](./qcxoadc8930.md)  
+[socprodtest.sys](./socprodtest.md)  
 
 ## Nokia
 [acckxtnk1000.sys](./acckxtnk1000.md)  
@@ -108,3 +109,4 @@
 [dumpsd.sys](./dumpsd.md)  
 [genericusbfnclassmtp.sys](./genericusbfnclassmtp.md)  
 [hwnhaptics.sys](./hwnhaptics.md)  
+[wpprecorder.sys](./wpprecorder.md)  

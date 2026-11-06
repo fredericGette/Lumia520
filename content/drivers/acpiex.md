@@ -16,10 +16,10 @@ I/O type : buffered. The default queue is sequential; read and write requests fa
 Registries of the driver:  
 `HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\services\acpiex`
 
-There's no parameters in the registry.
+There's no parameters in the registry read by acpiex.sys itself. [wpprecorder.sys](./wpprecorder.md#registry) reads the optional values `VerboseOn`, `LogPages`, `ForceLogsInMiniDump`, `WppRecorder_PerBufferMinBytes` and `WppRecorder_PerBufferMaxBytes` from `Parameters`, through `WppAutoLogStart`.
 
 GUID of the ETW provider:  
-`{9F068318-A1B6-4E76-8CFD-7F47886F8DE6}` (WPP control GUID `RhTraceGuid`, recorded with WppRecorder.sys / IFR)
+`{9F068318-A1B6-4E76-8CFD-7F47886F8DE6}` (WPP control GUID `RhTraceGuid`, recorded with [wpprecorder.sys](./wpprecorder.md) / IFR)
 
 It communicates with the following devices:  
 | Device | Driver | Comment |
