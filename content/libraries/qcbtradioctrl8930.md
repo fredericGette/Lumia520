@@ -2,7 +2,7 @@
 
 The Qualcomm Bluetooth radio control DLL: switches the Bluetooth radio of the MSM8930 on/off and reads its state, build `P:\Bluetooth\rel\8.2.1.1\arm\Release\qcbtradioctrl8930.pdb`.  
 It is a very small DLL (29 functions, mostly CRT): its two exports open the device interface `{B53A9DB7-1343-4C7F-B7BC-251B03DD8E34}` of [QcBluetooth8930.sys](../drivers/qcbluetooth8930.md) and send it [IOCTL 0x2A8004](../drivers/qcbluetooth8930.md#ioctl-0x2a8004) (switch on/off) or [IOCTL 0x2A8008](../drivers/qcbluetooth8930.md#ioctl-0x2a8008) (query the state). There is no global state: each call enumerates the interface, opens it, sends one IOCTL and closes it.  
-According to the [Bluetooth stack](../bluetooth/README.md) diagram it is the `supportDLL` of the BtConnectionManagerService (not analysed), which calls `BluetoothEnableRadio` and `IsBluetoothRadioEnabled`.
+According to the [Bluetooth stack](../bluetooth/README.md) diagram it is the `supportDLL` of [BtConnectionManagerService.dll](./btconnectionmanagerservice.md#radio-power), which loads the DLL named by the registry value `SupportDLL` (`HKLM\SYSTEM\CurrentControlSet\Services\BTHPORT\Parameters\Radio Support`) and calls `BluetoothEnableRadio` and `IsBluetoothRadioEnabled`.
 
 Location on the phone: `C:\Windows\System32\QcBtradioctrl8930.dll` ? (the extracted file has no notes).  
 

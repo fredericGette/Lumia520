@@ -22,3 +22,6 @@
 [qcvidencmfth2638930.dll](./qcvidencmfth2638930.md)  
 [qcvidencmfth2648930.dll](./qcvidencmfth2648930.md)  
 [qcvidencmftmpeg48930.dll](./qcvidencmftmpeg48930.md)  
+[BtConnectionManagerService.dll](./btconnectionmanagerservice.md)  
+[BtConnectionManagerClient.dll](./btconnectionmanagerclient.md)  
+[BTAGService.dll](./btagservice.md)  
