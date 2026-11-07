@@ -30,9 +30,11 @@ During the *Out Of the Box Experience* (OOBE), configure the phone as below:
 
 ## Install apps
 
+Use the _Windows Phone Application Deployment_ tool installed along Visual Studio to install the following apps:  
+
 - [WPTweaker](https://github.com/sensboston/WPTweaker)
 - [CMD.Injector_WP8](https://github.com/fadilfadz01/CMD.Injector_WP8)
-- [Field Medic](https://apps.microsoft.com/detail/9wzdncrfjb82?hl=en-GB&gl=IN) but deploy the repackaged .appx from this GitHub repository using [CMD.Injector](https://github.com/fadilfadz01/CMD.Injector_WP8) or the _Windows Phone Application Deployment_ tool installed along Visual Studio.  
+- [wp81MyInfo](https://github.com/fredericGette/wp81MyInfo) 
 
 ## Second configuration
 
@@ -47,7 +49,6 @@ In WPTweaker:
 - In *System*, select *Never* value for *Screen timeout (when charging)*.
 - Quit the app and reboot the phone.
 
-In Field Medic:  
-- Accept the *End User License Agreement*.  
-- Select *Device Status* to see the current IP and Bluetooth addresses of the phone.  
+With wp81MyInfo:  
+- Pin to start the application and use a wide tile to see the current Wifi IP and Bluetooth addresses of the phone.  
 
