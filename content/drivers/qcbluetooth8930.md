@@ -105,6 +105,26 @@ With `DownLoadNVMItems`≠0 (`read_powerClass_from_registry`, `sub_4012FC`), the
 
 When the radio is switched off (`switch_bt_off`, `sub_40724C`): the child PDO is removed, `BtOnOff`=0 is written, an **HCI_Reset** (`03 0C 00`) is sent and the driver waits for the Command Complete event `0E 04 01 03 0C 00`, then both SMD channels are closed.
 
+### HCI packet delivery
+
+The packets read from the SMD channels are not delivered directly to the `IOCTL_BTHX_READ_HCI` requests:
+1. `processEvent` (`sub_404FA8`) / `processACL` (`sub_4053BC`) are the completion routines of the SMD read requests. Each packet received is copied into a list (one list for the events, one for the ACL data), then `process_Event_and_ACL_queued_requests` (`sub_404B10`) is called, and a new SMD read is sent (`sub_405EE4`).
+2. `EvtWdfIoQueueIoDeviceControl` puts each `IOCTL_BTHX_READ_HCI` request in the Event or ACL manual queue, then also calls `process_Event_and_ACL_queued_requests`.
+3. `process_Event_and_ACL_queued_requests` delivers **one** packet per call: the oldest packet of the list completes the oldest request of the manual queue (FIFO).
+
+So a packet received while no request is pending is not lost: it stays in the list until the next `IOCTL_BTHX_READ_HCI` arrives.
+
+Exceptions:
+- When `BTDStateEnabled`≠0 and the child PDO is in D2 (idle state 3, set by `EvtWdfDeviceD0Exit` of the child), `process_Event_and_ACL_queued_requests` doesn't deliver anything: it calls `WdfDeviceIndicateWakeStatus` on the child PDO and returns `STATUS_DEVICE_NOT_READY`. The packet stays in the list. `EvtWdfDeviceD0Entry` of the child only sets the state back to 1 (D0): it doesn't deliver the pending packets. They are delivered at the next call of `process_Event_and_ACL_queued_requests`, i.e. when another packet is received from the controller or when a new `IOCTL_BTHX_READ_HCI` arrives.
+- While the driver resets the controller itself (`write_reset_cmd`, `sub_4073A8`, flag `reset_command_in_progress` of the FDO extension, used by `switch_bt_off`), the Command Complete event `0E 04 01 03 0C 00` is not queued: `processEvent` only signals the event waited by `write_reset_cmd`.
+
+> [!NOTE]
+> Consequence for an application sending HCI packets directly, below `BthMini` (with [wp81hcifilter.sys / wp81controldevice.sys](https://github.com/fredericGette/wp81btmon/tree/main/driver), when the IOCTLs of `BthMini` are cancelled by the filter): `BthMini` doesn't see any activity, so the child PDO goes to D2. Then an asynchronous event (e.g. _LE Connection Complete_, _Disconnection Complete_) received while the application already has a pending `IOCTL_BTHX_READ_HCI` request stays in the list until the application sends something to the controller. The response of the next HCI command then "pushes" the old event, and the response itself is delayed until the next packet.  
+> Workarounds: periodically send a harmless HCI command (e.g. _LE Read Advertising Channel Tx Power_ 0x2007, or _Read RSSI_ 0x1405 when connected), as done by [wp81BTLEtest](https://github.com/fredericGette/wp81BTLEtest). Or (not tested) set `BTDStateEnabled`=0 and reboot, which disables the S0 idle of the device and skips the D2 check.
+
+> [!NOTE]
+> The `IOCTL_BTHX_READ_HCI` requests sent by `BthMini` before the filter starts cancelling them stay in the manual queue, ahead of the requests of the application. This probably explains why the first event received by such an application (typically the Command Complete of its first _HCI_Reset_) is never seen: it's delivered to a request of `BthMini`.
+
 ### Power management
 
 `WdfDeviceAssignS0IdleSettings` is called in `EvtDevicePrepareHardware`:
@@ -134,7 +154,7 @@ The bus driver creates a child device _Physical Device Object (PDO)_ (`EvtDriver
 - ClassGUID : `{E0CBF06C-CD8B-4647-BB8A-263B43F0F974}` (Bluetooth)
 
 This child device forwards the IOCTL_BTHX requests (0x410403 to 0x410413) to the default queue of its parent device (`WdfRequestForwardToParentDeviceIoQueue`). All other IOCTLs are completed with `STATUS_INVALID_PARAMETER`.  
-On a transition to D3 (`EvtDeviceD0Exit`), if HCI packets are pending, a work item calls `WdfDeviceIndicateWakeStatus` on the PDO.
+On a transition to D2 (`EvtDeviceD0Exit`, `sub_4095C8`), if HCI packets are pending, a work item (`EvtWorkItemFunc_02`, `sub_409390`) waits 5 µs then calls `WdfDeviceIndicateWakeStatus` on the PDO if it is still in D2. `EvtDeviceD0Exit` sets the idle state of the PDO to 3 for D2 and 4 for D3Final; `EvtDeviceD0Entry` (`sub_409508`) sets it to 1. See [HCI packet delivery](#hci-packet-delivery).
 
 Registry of the child device:  
 `HKLM\System\CurrentControlSet\Enum\SystemBusQc\SMD_BT\4&315a27b&0&4097`
@@ -370,4 +390,4 @@ Outputbuffer (`BTHX_HCI_READ_WRITE_CONTEXT`):
 | 04 | 04 | Type: 4=Event, 2=ACL |
 | 05- | e.g. 0E 04 01 03 0C 00 | HCI packet |
 
-The request is put in the Event or ACL manual queue, and completed when a packet of this type is received from the SMD channel. Returns `STATUS_CANCELLED` when the radio is off (and `DynamicSwitch`=0), `STATUS_INVALID_PARAMETER` on wrong sizes/type.
+The request is put in the Event or ACL manual queue, and completed when a packet of this type is received from the SMD channel (see [HCI packet delivery](#hci-packet-delivery): the delivery can be delayed while the child PDO is in D2). Returns `STATUS_CANCELLED` when the radio is off (and `DynamicSwitch`=0), `STATUS_INVALID_PARAMETER` on wrong sizes/type.
