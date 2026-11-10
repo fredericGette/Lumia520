@@ -2,7 +2,7 @@
 
 The client library of the Bluetooth connection manager of Windows Phone 8.1: a COM in-process server that hides the pipe protocol of the `BTConnMgr` service behind a set of `IBt…` interfaces.  
 `BtConnectionManagerClient.dll` is a C++ DLL (94 208 bytes, 334 functions, the database has its full symbols, about half of the code is STL). It has a single COM class, `CClient`, which connects to the named pipe `\\.\Pipe\BtConnectionManager`, keeps a cache of the radio, device and profile states, and turns the messages of the service into calls on the callback interfaces of its users. It rebuilds the sockets and L2CAP channels handed over by the service, and passes them to the profile services. It also controls SCO audio: this part doesn't use the service, it sends the `IOCTL_BTH_WP8_*` directly to the audio device interface of the Bluetooth stack.  
-The server is [BtConnectionManagerService.dll](./btconnectionmanagerservice.md), which also creates this COM class for its own A2DP and PAN code. The CLSID is present in [BTAGService.dll](./btagservice.md), `BthavctpSvc.dll`, `BthOPPManager.dll` and `Bthpbapservice.dll` (the last three not analysed), with the IID of `IBtConnectionResponder`. [BTAGService.dll](./btagservice.md#sco-audio), the HFP audio gateway, is the user of the SCO functions.
+The server is [BtConnectionManagerService.dll](./btconnectionmanagerservice.md), which also creates this COM class for its own A2DP and PAN code. The CLSID is present in [BTAGService.dll](./btagservice.md), [BthavctpSvc.dll](./bthavctpsvc.md), `BthOPPManager.dll` and `Bthpbapservice.dll` (the last two not analysed), with the IID of `IBtConnectionResponder`. [BTAGService.dll](./btagservice.md#sco-audio), the HFP audio gateway, is the user of the SCO functions.
 
 Location on the phone: `C:\Windows\System32\BtConnectionManagerClient.dll` ? (the extracted file has no notes).  
 CLSID: `{101C5B9F-C6F7-41C4-815B-69AAC1ECA0A9}`.  
@@ -239,7 +239,7 @@ Received by `CClient::IncomingMessageCallback` (0x100064C0). The minimum size is
 | -9 | +4 cookie, +8 HRESULT | End of the pairing |
 | -10 to -13 | +8 address, +0x10 cookie, +0x14 size or value, +0x18 passkey | [Incoming pairing](#pairing) |
 | -14 | [New socket](#socket-message) | `ReceiveNewProfileSocketMessage` (0x100068D4) |
-| -15 | +8 address, +0x10 profile GUID, +0x20 word PSM, +0x38, +0x3C DWORDs, +0x40 channel handle, +0x44 byte, +0x48 connection cookie | `ReceiveNewProfileL2capConnectionMessage` (0x10006A64) |
+| -15 | +8 address, +0x10 profile GUID, +0x20 word PSM, +0x38 outgoing MTU, +0x3C incoming MTU, +0x40 channel handle, +0x44 byte, +0x48 connection cookie | `ReceiveNewProfileL2capConnectionMessage` (0x10006A64) |
 | -16 | +8 address, +0x10 profile GUID | `ReceiveDisconnectProfile` (0x10006B8C) |
 | -17 | +4 cookie, +8 Win32 error | Completes `ConnectProfileToDevice`, converted to HRESULT |
 | -18 | +4 event GUID, +0x18 address, +0x20 byte type, +0x21 byte connected | `ReceiveDeviceHciEvent`, see [SCO audio](#sco-audio) |
@@ -277,7 +277,7 @@ The callback interfaces are implemented by the users, so their names come from t
 | `IBtConnectionObserverCallback2` | 3 | `SignalStrengthChanged(address, rssi)` |
 | | 4 | `AdvertisingDataChanged(address, size, data)` |
 | `IBtConnectionResponderCallback` | 3 | New socket: `(SOCKET, SOCKADDR_BTH *, +0x2A6 *, byte)`, a negative result refuses it |
-| | 4 | New L2CAP channel: `(handle, address, psm, +0x38, +0x3C, byte)` |
+| | 4 | New L2CAP channel: `(handle, address, psm, outgoing MTU, incoming MTU, byte incoming)` (from [BthavctpSvc.dll](./bthavctpsvc.md#connection-manager)) |
 | | 5 | Profile disconnected: `(address)` |
 | `IBtPairingRequestCallback` | 3 | Get PIN: `(address)` |
 | | 4 | Show passkey: `(address, size, passkey)` |

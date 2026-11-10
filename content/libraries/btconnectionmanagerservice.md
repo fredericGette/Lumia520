@@ -2,7 +2,7 @@
 
 The Bluetooth connection manager of Windows Phone 8.1: the `BTConnMgr` service, hosted by `svchost.exe`, which owns the radio on/off state, the paired devices, the profile connections and the pairing.  
 `BtConnectionManagerService.dll` is a large C++ DLL (344 064 bytes, 1117 functions, the database has its full symbols). It talks down to the Microsoft Bluetooth stack with the `BthPort` IOCTLs, and offers a message protocol to its clients on the named pipe `\\.\Pipe\BtConnectionManager`. It switches the radio through the OEM `SupportDLL` of the registry, keeps the list of local profiles from the registry (`Parameters\Services\{GUID}`), starts or waits for the service of each profile, creates the listeners (RFCOMM sockets, L2CAP) and hands the connections to the clients. It also signals background tasks on Bluetooth events (RFCOMM, connection change, GATT characteristic change) through the Background Infrastructure, and has two built-in profiles: A2DP and PAN.  
-It relies on [QcBtradioctrl8930.dll](./qcbtradioctrl8930.md) as `SupportDLL` for the radio power (according to the [Bluetooth stack](../bluetooth/README.md) diagram; the value itself comes from the registry). The client side of the pipe is [BtConnectionManagerClient.dll](./btconnectionmanagerclient.md), which implements the COM class `{101C5B9F-C6F7-41C4-815B-69AAC1ECA0A9}`. That CLSID is also present in [BTAGService.dll](./btagservice.md) (the HFP audio gateway, a client), `BthavctpSvc.dll`, `BthOPPManager.dll` and `Bthpbapservice.dll` (not analysed), the probable clients.
+It relies on [QcBtradioctrl8930.dll](./qcbtradioctrl8930.md) as `SupportDLL` for the radio power (according to the [Bluetooth stack](../bluetooth/README.md) diagram; the value itself comes from the registry). The client side of the pipe is [BtConnectionManagerClient.dll](./btconnectionmanagerclient.md), which implements the COM class `{101C5B9F-C6F7-41C4-815B-69AAC1ECA0A9}`. That CLSID is also present in [BTAGService.dll](./btagservice.md) (the HFP audio gateway, a client), [BthavctpSvc.dll](./bthavctpsvc.md) (the AVCTP transport of AVRCP, a client), `BthOPPManager.dll` and `Bthpbapservice.dll` (not analysed), the probable clients.
 
 Location on the phone: `C:\Windows\System32\BtConnectionManagerService.dll` ? (the extracted file has no notes).  
 Service name: `BTConnMgr`.  
@@ -77,7 +77,7 @@ The constructor `BtService::BtService` (0x100195B4) opens `SYSTEM\CurrentControl
 
 Each object derives from `SynchronizedObject`: work is queued as events with `Synchronizer::EnqueueEvent` and run one at a time in `Dispatch`, so nearly every function exists as `xxx` + `xxxCallback`.
 
-`BtService::OnControlCallback` (0x10019BF4) handles the user control codes 0x82 (queues event 0x15 of the `Radio` object, meaning ?), 0x83 (reads `A2DPAddress`, and uses the name `A2DP`) and 0x84 (name `AVRCP`, class `AVRemoteControlTargetService`). The last two send `IOCTL_BTH_SET_LOCAL_SERVICE_INFO` (0x41104C) ?.
+`BtService::OnControlCallback` (0x10019BF4) handles the user control codes 0x82 (queues event 0x15 of the `Radio` object, meaning ?), 0x83 (reads `A2DPAddress`, and uses the name `A2DP`) and 0x84 (name `AVRCP`, class `AVRemoteControlTargetService`, whose responder is [BthavctpSvc.dll](./bthavctpsvc.md#connection-manager)). The last two send `IOCTL_BTH_SET_LOCAL_SERVICE_INFO` (0x41104C) ?.
 
 ### Objects
 
@@ -170,7 +170,7 @@ Messages from the service:
 | -11 | 0x28 | `IncomingPairing::AuthenticationRequestCallback` | +8 address, +0x10 cookie, +0x14 PIN size, +0x18 PIN (from `ConvertPasskeyToPin`) |
 | -12, -13 | ? | `IncomingPairing::AuthenticationRequestCallback` | +8 address, +0x10 cookie; -12: +0x14 value to compare; -13: just works |
 | -14 | 0x4A0 ? | `LocalService::SendSocket` (0x10037830) | [New socket](./btconnectionmanagerclient.md#socket-message) |
-| -15 | 0x50 | `LocalService::SendSocket`, `L2capAttachCallback` | New L2CAP channel: +8 address, +0x10 profile GUID, +0x20 PSM, +0x38, +0x3C DWORDs, +0x40 handle, +0x44 byte, +0x48 connection cookie |
+| -15 | 0x50 | `LocalService::SendSocket`, `L2capAttachCallback` | New L2CAP channel: +8 address, +0x10 profile GUID, +0x20 PSM, +0x38 outgoing MTU, +0x3C incoming MTU, +0x40 handle, +0x44 byte, +0x48 connection cookie |
 | -16 | 0x20 | `LocalService::Dispatch` | Profile disconnected: +8 address, +0x10 profile GUID |
 | -17 | 12 | `Client::Dispatch` (event 11) | +4 cookie, +8 Win32 error: end of `ConnectProfileToDevice` |
 | -18 | 0x28 | `BtService::Dispatch` (event 33, from `DeviceHciEvent`) | +4 event GUID, +0x18 address, +0x20 byte type, +0x21 byte connected |
@@ -222,7 +222,7 @@ At startup, `GetEnumeratedEventsStatic` restores the registered events (`BiEnume
 | ? (stored key handle) | `SlaveRoleCODMasks` (`StartEnableRadio`), `BTBusKeyName` (`FindBthPortDeviceParametersKey`), `LowDutyCyclePageScanWindow/Interval/Type`, `HighDutyCyclePageScanWindow/Interval/Type` (`LoadPageScanSettings`), `InquiryLength` (`StartInquiryIoctlIfNeeded`), `ScanModeOverride` (`DiscoveryGetCompletedCallback`), `LEGoodConnectionInterval`, `MinReadQueueBackoffInterval`, `MaxReadQueueBackoffInterval` (`Device`), `LastRadioCrashTime` (`WaitForDeadRadio`, `Ioctl::Complete`) |
 | `…\BtConnMgr\Parameters\Services\{GUID}` | [Local services](#local-services) |
 | `…\BtConnMgr\Parameters\Sqm` | `EnableSQM`; `LeDevices` subkey |
-| `…\BTConnMgr\Parameters\Devices\%04x%08x` | Per device values |
+| `…\BTConnMgr\Parameters\Devices\%04x%08x` | Per device values; the `AVRCP` subkey holds `CTCanPlayOrAddFolders`, read and written by [BthAvrcp.dll](./bthavrcp.md#registry) |
 | `SYSTEM\CurrentControlSet\Services\BTConnMgr` | `FilterInquiryAddr` |
 | `…\BTConnMgr\FilterInquiryNames` | Filter of `AllowDeviceToBeVisible` (0x10032124): only these devices are shown |
 | `…\BtConnMgr\BthPortDeviceParameters` | Copied to the BthPort `Device Parameters` key |

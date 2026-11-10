@@ -2,7 +2,7 @@
 
 The Bluetooth audio gateway of Windows Phone 8.1: the `BTAGService` service, hosted by `svchost.exe`, which implements the phone side of the Hands-Free Profile (HFP AG).  
 `BTAGService.dll` is a C++ DLL (126 976 bytes, 458 functions, the database has its full symbols). It registers with the Bluetooth connection manager as the responder of the HFP audio gateway class, and receives the RFCOMM socket of each hands-free device. It parses the AT commands of the device and answers them from the state of the phone (calls, network, signal, battery, phonebook, call history), and drives the calls through the phone API (`phoneom`). It opens and closes the SCO audio link with the SCO functions of the connection manager client, suspends A2DP streaming during calls and voice recognition, and offers a named pipe `\\.\Pipe\BTAudioGateway` to the speech / audio components. It publishes its state in a WNF state of the `BLTH` owner.  
-It uses [BtConnectionManagerClient.dll](./btconnectionmanagerclient.md) (COM class `{101C5B9F-C6F7-41C4-815B-69AAC1ECA0A9}`), which talks to [BtConnectionManagerService.dll](./btconnectionmanagerservice.md). The client of its pipe isn't known: `BTAudioGatewayClient.dll` (not analysed) is a candidate because of its name.
+It uses [BtConnectionManagerClient.dll](./btconnectionmanagerclient.md) (COM class `{101C5B9F-C6F7-41C4-815B-69AAC1ECA0A9}`), which talks to [BtConnectionManagerService.dll](./btconnectionmanagerservice.md). The client side of its pipe is [BTAudioGatewayClient.dll](./btaudiogatewayclient.md) (COM class `{EDFC5E7D-115E-4939-BFE9-59F275F2B230}`); the users of that class aren't known.
 
 Location on the phone: `C:\Windows\System32\BTAGService.dll` ? (the extracted file has no notes).  
 Service name: `BTAGService`, svchost group `WPNoNetwork`.  
@@ -46,7 +46,7 @@ Files used other than the static imports.
 | File | How | Use |
 |------|-----|-----|
 | [BtConnectionManagerClient.dll](./btconnectionmanagerclient.md) | `CoCreateInstance` `{101C5B9F-C6F7-41C4-815B-69AAC1ECA0A9}`, IID `IBtConnectionResponder`, `CLSCTX_ALL` ([Connection manager](#connection-manager)) | Incoming HFP connections, profile state, SCO audio |
-| `\\.\Pipe\BTAudioGateway` | `CreateNamedPipeW` (server, [Pipe](#pipe-btaudiogateway)) | Voice recognition and audio requests of local clients |
+| `\\.\Pipe\BTAudioGateway` | `CreateNamedPipeW` (server, [Pipe](#pipe-btaudiogateway)) | Voice recognition and audio requests of local clients ([BTAudioGatewayClient.dll](./btaudiogatewayclient.md)) |
 | `BthCommonRes.dll` | `LoadLibraryExW(LOAD_LIBRARY_AS_DATAFILE)`, `LoadStringW` (`ResourceHelperGetString`, 0x10016CF8) | Strings 101 (Cortana enabled) or 102: name of the Cortana entry of the phonebook (`GetCortanaName`, 0x10011AE8) |
 | POOM `Application` `{05058F23-20BE-11D2-8F18-0000F87A4335}` | `CoCreateInstance`, IID `IPOutlookApp3` `{A65CCAEB-6558-4656-AD3D-ECCC00D00F0D}`, `CLSCTX_INPROC_SERVER` | Contacts: caller names (`FindMatchingContactEx`) and the `AT+CPBR` phonebook; server DLL not known |
 | Call history of the User Data Model | `UdmCreateDataSession` (`CallHistoryProvider`, `GetMostRecentlyDialedPhoneNumber`) | `AT+BLDN`, phonebooks `DC`, `MC`, `RC` |
@@ -307,6 +307,8 @@ Messages sent:
 
 A start sets the WNF bit 0x800 for 5 s (or until recognition starts).
 
+The client is [BTAudioGatewayClient.dll](./btaudiogatewayclient.md#pipe-messages): type 1 comes from `IBTAGController::StartSpeechRecognition` / `StopSpeechRecognition`, type 3 from `OpenAudioChannel` / `ReleaseAudioChannel`, type 2 from the registration of the first / removal of the last `IBTAGSpeechResponderCallback`. The client also handles the types -3, -4 and -5 (observer notifications), which this service never sends.
+
 ### WNF states
 
 | Name | Owner, sequence | Data | Action |
@@ -315,9 +317,9 @@ A start sets the WNF bit 0x800 for 5 s (or until recognition starts).
 | 0x41821B2CA3BF3075 `WNF_AUD_ACTIVE_CALL_ENDPOINT` (`.text:0x100011FC`) | `AUD`, 102 | 4 bytes: 0 Default, 1 Speakerphone, 2 Handset, 3 Wired, 4 Wired+MIC, 5 SCO, 6 SCO+NREC | Subscribed, only logged |
 | 0x41821B2CA3BF4875 `WNF_AUD_CATEGORY_BACKGROUNDCAPABLEMEDIA` (`.text:0x10001178`) | `AUD`, 105 | 0x208 bytes: +4 flags, +0x108 id (string) | Subscribed, only logged |
 | 0x41C6193FA3B95C75 `WNF_RW_CA_ENABLED` (`.text:0x10001244`) | `RW`, 171 | 4 bytes | Queried (`NtQueryWnfStateData`) for the Cortana name |
-| 0x0992022FA3BC1075 | `BLTH`, 2 | 4 bytes: bits below | Published by `DispatchSetWNFStatus` (0x10008944) when the value changes |
+| 0x0992022FA3BC1075 `WNF_BLTH_BLUETOOTH_AUDIO_GATEWAY_STATUS` | `BLTH`, 2 | 4 bytes: bits below | Published by `DispatchSetWNFStatus` (0x10008944) when the value changes; read by [BthAvrcp.dll](./bthavrcp.md#wnf-states) (bits 0x004 / 0x400 block an AVRCP Play, 0x008 / 0x800 a Pause) |
 
-The first four are version 1, well-known, system scope; `WNF_RW_CA_ENABLED` is permanent. The symbolic names come from the binary; the name of the published state isn't in it. The callback is `WNFNotificationCallback` (0x1000AD70).
+The first four are version 1, well-known, system scope; `WNF_RW_CA_ENABLED` is permanent. The symbolic names come from the binary; the name of the published state comes from [BTAudioGatewayClient.dll](./btaudiogatewayclient.md#wnf-states), which subscribes to it and connects to the pipe when bit 0x001 is set. The callback is `WNFNotificationCallback` (0x1000AD70).
 
 Bits of the published state:
 

@@ -226,7 +226,7 @@ Types in the format string: `string` = `[string] wchar_t *` (FC_C_WSTRING, type 
 | 31 | `sub_10010FD4` | `Shell_SetTestScene` | `string*` | |
 | 32 | `sub_10010EA4` | `Shell_SetDebugOverlay` | `string*` | |
 | 33, 34 | `sub_10010D74`, `sub_10010C44` | `Shell_AddOverlay`, `Shell_RemoveOverlay` | `string` | |
-| 35 | `sub_10010B14` | `Shell_AdjustVolume` | `[in] long` | |
+| 35 | `sub_10010B14` | `Shell_AdjustVolume` | `[in] long` | Relative volume step; +1 / -1 from the AVRCP volume buttons of [BthAvrcp.dll](./bthavrcp.md#pass-through) |
 | 36 | `sub_100109E4` | `Shell_SetKidZoneDisplayName` | `string*` | |
 | 37 | `sub_1000BFFC` | `Shell_SetCurrentKidZoneWallpaper` | `string*` | |
 | 38, 39 | `sub_100107A4`, `sub_1001067C` | `Shell_NavigateToErrorPageOn…InKidZone` | – | |

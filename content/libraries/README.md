@@ -25,3 +25,6 @@
 [BtConnectionManagerService.dll](./btconnectionmanagerservice.md)  
 [BtConnectionManagerClient.dll](./btconnectionmanagerclient.md)  
 [BTAGService.dll](./btagservice.md)  
+[BTAudioGatewayClient.dll](./btaudiogatewayclient.md)  
+[BthavctpSvc.dll](./bthavctpsvc.md)  
+[BthAvrcp.dll](./bthavrcp.md)  
