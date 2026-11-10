@@ -7,7 +7,7 @@ With `CrashDumpEnabled` = 0 (default on the Lumia 520, see [wpcrdmp.sys](./wpcrd
 Debug messages are written in the log file `DumpStack.log.tmp` and shown on the bugcheck screen (`CrashdmpDisplayString`). Pool tag: `CDmp`.
 
 There's no device name and no symbolic link. It doesn't process any IOCTL.  
-Imports: `ntoskrnl.exe`, `HAL.dll`.
+Imports: `ntoskrnl.exe`, [HAL.dll](../libraries/hal.md).
 
 GUID of the ETW provider (`Microsoft-Windows-Crashdump`):  
 `{ecdaacfa-6fe9-477c-b5f0-85b76f8f50aa}`  

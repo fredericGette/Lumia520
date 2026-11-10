@@ -234,7 +234,7 @@ The two exports are the `CService` code of [BtConnectionManagerService.dll](./bt
 | `AT+BTRH` | Nothing (`ERROR`) |
 | `OK`, `ERROR` | Ignored |
 
-The phonebook commands check `PbapTrustLevel` in `HKLM\System\CurrentControlSet\Services\BTConnMgr\Parameters\Devices\%04x%08x\PBAP` (`ATPhonebookAccessAllowed`, 0x1000FBAC): access is refused for the values 2, 3 and 4, allowed for 0, 1, 5 and more, or when the value can't be read.
+The phonebook commands check `PbapTrustLevel` in `HKLM\System\CurrentControlSet\Services\BTConnMgr\Parameters\Devices\%04x%08x\PBAP` (`ATPhonebookAccessAllowed`, 0x1000FBAC): access is refused for the values 2, 3 and 4, allowed for 0, 1, 5 and more, or when the value can't be read. The value is written by the PBAP service [Bthpbapservice.dll](./bthpbapservice.md#authorisation) from the answer of the user: 0 unknown, 1 approved, 2 denied, 3 denied for the current connection.
 
 ### Cortana
 

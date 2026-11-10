@@ -119,7 +119,7 @@ The child PDO hardware ids are built from the child descriptor: `DISPLAY\<EDID i
 ### Initialisation
 
 `DriverEntry` (INIT):
-1. Stores the driver object, reads the code-integrity options (`ZwQuerySystemInformation(SystemCodeIntegrityInformation)`, bit 2 = test signing → `g_OSTestSigningEnabled`), `WdInitialize`.
+1. Stores the driver object, reads the code-integrity options (`ZwQuerySystemInformation(SystemCodeIntegrityInformation)`, answered by [ci.dll](../libraries/ci.md#ciqueryinformation-0x258a0); bit 2 = test signing → `g_OSTestSigningEnabled`), `WdInitialize`.
 2. `DpiInitializeGlobalState`: registry values of `GraphicsDrivers` (see above), Miracast interface notification, writes `DxgKrnlVersion`.
 3. `DXGGLOBAL::CreateGlobal` (which loads [dxgmms1.sys](./dxgmms1.md)), `CCD_BTL::CreateGlobal` (connected display configuration database), ETW registration, `DxgkDiagInit`.
 4. Creates `\Device\DxgKrnl`, then `DxgkInitialPower` (power setting callbacks `GUID_MONITOR_POWER_ON`, `GUID_LOW_POWER_EPOCH`), `MonitorInitializeGlobal` (PnP notification on `GUID_DEVINTERFACE_MONITOR_DRIVER`), `DxgDbgInit` (bug check reason callback), `DxgkSqmInit`, `TdrInit`, and the session-change callout `DxgkNotifySessionStateChange` (`SMgrRegisterSessionChangeCallout`).

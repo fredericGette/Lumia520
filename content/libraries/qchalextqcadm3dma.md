@@ -17,7 +17,7 @@ Files used other than the static imports.
 
 | File | How | Use |
 |------|-----|-----|
-| HAL (`hal.dll`) | Entry point `start`, [HAL services table](./qchalextq8x60bam.md#hal-services) | The HAL loads the extension, enumerates the CSRT for it and calls the [DMA function table](#dma-function-table) |
+| HAL ([HAL.dll](./hal.md)) | Entry point `start`, [HAL services table](./qchalextq8x60bam.md#hal-services) | The HAL loads the extension, enumerates the CSRT for it and calls the [DMA function table](#dma-function-table) |
 
 No DLL is loaded at run time, no file or registry key is used.
 
@@ -61,7 +61,7 @@ DMA controller (type 3, subtype 1):
 | 0x04 | 2 | `Type`: 3 (DMA) |
 | 0x06 | 2 | `Subtype`: 1 |
 | 0x08 | 4 | `Uid` |
-| 0x0C | 4 | Controller index: 0 or 1 (controller id 2 or 3 for the HAL) |
+| 0x0C | 4 | Controller index: 0 or 1 |
 | 0x10 | 8 | Physical address of the ADM registers (0xE8000 bytes are mapped) |
 | 0x18 | 4 | GSIV of the ADM interrupt |
 | 0x1C | 4 | Number of channels (≤ 16) |
@@ -88,7 +88,7 @@ DMA channel (type 3, subtype 0):
 |--------|------|-------|
 | 0x00 | 4 | 1 (version) |
 | 0x04 | 4 | 0x44 (size) |
-| 0x08 | 4 | Controller id: index + 2, i.e. 2 or 3. The BAM extension numbers its controllers from 3: if both extensions register a controller with id 3, they clash ? |
+| 0x08 | 4 | Controller id: index + 2, i.e. 2 or 3, overwritten by the HAL with its own sequential id (0, 1, 2… in registration order, [HalpRegisterDmaController](./hal.md#dma-controller-initialization-block)), so the ids of the two extensions don't clash. The extension reads it back after `RegisterResourceDescriptor` for the channel blocks |
 | 0x0C | 4 | Number of channels (descriptor +0x1C) |
 | 0x10 | 1 | 0: cache coherent ? |
 | 0x14 | 4 | 32: DMA address width ? |
@@ -112,7 +112,7 @@ DMA channel (type 3, subtype 0):
 |--------|------|-------|
 | 0x00 | 4 | 1 (version) |
 | 0x04 | 4 | 0x24 (size) |
-| 0x08 | 4 | Controller id |
+| 0x08 | 4 | Controller id: the one written by the HAL in the controller block |
 | 0x0C | 1 | 0: generates interrupt ? |
 | 0x10 | 0x0C | Not written (stack content) |
 | 0x1C | 4 | 0x1000: common buffer length (4 KB, holds the [command list](#programchannel-sub_4010e4-0x4010e4)) |

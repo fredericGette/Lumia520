@@ -10,7 +10,7 @@ The PDOs and filter devices themselves are unnamed (`IoCreateDevice` in `ACPIBui
 Registries of the driver:  
 `HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\services\ACPI`  
 `HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Enum\ACPI\<_HID>\<instance>` (one per ACPI device node)  
-`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Enum\ACPI_HAL\PNP0C08\0` (ACPI root device: parent of the `ACPI\…` devices, e.g. `\_SB.AGR0` of [acpipagr.sys](./acpipagr.md#lumia-520-device-node))
+`HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Enum\ACPI_HAL\PNP0C08\0` (ACPI root device, a PDO created by [HAL.dll](../libraries/hal.md#plug-and-play): parent of the `ACPI\…` devices, e.g. `\_SB.AGR0` of [acpipagr.sys](./acpipagr.md#lumia-520-device-node))
 
 Registry key `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\ACPI\Parameters` (read with `OSReadRegValue`, which uses this key when no handle is given):  
 | Registry value | value | comment |

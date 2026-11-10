@@ -2,7 +2,7 @@
 
 System definition device driver (PoFx client of the PEP).  
 A very small KMDF driver from the PEP package (PDB path: `P:\PEP\rel\8.3.1\arm\Release\qcsysdef8930.pdb`). It registers one PoFx component for its device, so that [qcpep8930.sys](./qcpep8930.md) applies the resources described for `\_SB.SDF1` in the PEP configuration (`DCFG`), and it exposes two test IOCTLs that forward requests to the PEP with `PoFxPowerControl`. One of them is an "XO shutdown" test that reports `PASS` / `FAIL` as text.  
-It doesn't touch any hardware itself (no memory or interrupt resource is used) and it only imports `ntoskrnl.exe`, `HAL.dll` (`KeStallExecutionProcessor`) and `WDFLDR.SYS`.
+It doesn't touch any hardware itself (no memory or interrupt resource is used) and it only imports `ntoskrnl.exe`, [HAL.dll](../libraries/hal.md) (`KeStallExecutionProcessor`) and `WDFLDR.SYS`.
 
 Device name : `\Device\SYSTEMDEF`  
 Symbolic link : `\DosDevices\SYSTEMDEF`  

@@ -2,7 +2,7 @@
 
 The client library of the Bluetooth connection manager of Windows Phone 8.1: a COM in-process server that hides the pipe protocol of the `BTConnMgr` service behind a set of `IBt…` interfaces.  
 `BtConnectionManagerClient.dll` is a C++ DLL (94 208 bytes, 334 functions, the database has its full symbols, about half of the code is STL). It has a single COM class, `CClient`, which connects to the named pipe `\\.\Pipe\BtConnectionManager`, keeps a cache of the radio, device and profile states, and turns the messages of the service into calls on the callback interfaces of its users. It rebuilds the sockets and L2CAP channels handed over by the service, and passes them to the profile services. It also controls SCO audio: this part doesn't use the service, it sends the `IOCTL_BTH_WP8_*` directly to the audio device interface of the Bluetooth stack.  
-The server is [BtConnectionManagerService.dll](./btconnectionmanagerservice.md), which also creates this COM class for its own A2DP and PAN code. The CLSID is present in [BTAGService.dll](./btagservice.md), [BthavctpSvc.dll](./bthavctpsvc.md), `BthOPPManager.dll` and `Bthpbapservice.dll` (the last two not analysed), with the IID of `IBtConnectionResponder`. [BTAGService.dll](./btagservice.md#sco-audio), the HFP audio gateway, is the user of the SCO functions.
+The server is [BtConnectionManagerService.dll](./btconnectionmanagerservice.md), which also creates this COM class for its own A2DP and PAN code. The CLSID is present in [BTAGService.dll](./btagservice.md), [BthavctpSvc.dll](./bthavctpsvc.md), [BthOPPManager.dll](./bthoppmanager.md) (the Object Push Profile, which uses `RegisterCallback`, `SetProfileState` and `ConnectProfileToDevice`) and [Bthpbapservice.dll](./bthpbapservice.md) (the Phone Book Access Profile server, which uses `RegisterCallback`, `UnregisterCallback`, `SetProfileState` and `Shutdown`), with the IID of `IBtConnectionResponder`. [BTAGService.dll](./btagservice.md#sco-audio), the HFP audio gateway, is the user of the SCO functions.
 
 Location on the phone: `C:\Windows\System32\BtConnectionManagerClient.dll` ? (the extracted file has no notes).  
 CLSID: `{101C5B9F-C6F7-41C4-815B-69AAC1ECA0A9}`.  
@@ -265,7 +265,7 @@ Message -14 carries a socket duplicated by the service (`WSADuplicateSocketW`):
 
 ### Callbacks
 
-The callback interfaces are implemented by the users, so their names come from the log strings. All the methods are called from the event handlers. [BTAGService.dll](./btagservice.md) gives two of their IIDs: `IBtConnectionResponderCallback` `{EB794A01-E173-4D1E-9CD4-2037CDB529E3}` and `IBtScoAudioDeviceCallback` `{D9291D8E-B135-4E9F-85CD-2356C3B878F5}`.
+The callback interfaces are implemented by the users, so their names come from the log strings. All the methods are called from the event handlers. [BTAGService.dll](./btagservice.md) gives two of their IIDs: `IBtConnectionResponderCallback` `{EB794A01-E173-4D1E-9CD4-2037CDB529E3}` and `IBtScoAudioDeviceCallback` `{D9291D8E-B135-4E9F-85CD-2356C3B878F5}`. [BthOPPManager.dll](./bthoppmanager.md#com-interfaces) gives `IBtCommandCallback` `{0EBA760C-C48D-4811-B4C4-8CE879B201B1}`.
 
 | Interface | Index | Called for |
 |-----------|-------|------------|

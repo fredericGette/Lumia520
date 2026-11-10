@@ -3,7 +3,7 @@
 HAL extension that exposes a Qualcomm BAM (Bus Access Manager, "SPS" DMA engine) as a system DMA controller to the Windows HAL, build `P:\BAM\rel\8.2.1.1\Output\arm\Release\HalExtQ8x60Bam.wp\HalExtQ8x60Bam.pdb`.  
 It's a tiny kernel-mode image (33 functions, no import at all): the HAL gives it a table of services (CSRT enumeration, resource registration, I/O space mapping) at its entry point, and the extension returns its `AddResourceGroup` function. For each CSRT resource group it's matched with, `AddResourceGroup` reads the DMA controller and DMA channel descriptors and registers them with the HAL; the HAL then drives the BAM through the 10 functions of a [DMA function table](#dma-function-table) (initialize the controller, program a channel with a scatter/gather list, handle the interrupt, cancel…). Each DMA channel is a BAM pipe in system mode whose descriptor FIFO is the common buffer allocated by the HAL.  
 It's the HAL-side counterpart of [qckmbam8930.sys](../drivers/qckmbam8930.md), which drives the BAMs of the ACPI namespace for kernel clients: the register programming is the same (reset, `BAM_CNFG_BITS`, pipe trust, pipe connect). Which BAM it drives depends on the CSRT of the firmware, which isn't in [content/acpi](../acpi/README.md); the 0x00900000 clock controller writes of the "type 2" controller suggest the BAM-DMA engine (`BAMDMA`, 0x12244000) ?. Its users are the drivers that get a system DMA adapter (`IoGetDmaAdapter`) for a request line served by this controller: unknown.  
-Sibling binary: [QCHalExtQcAdm3Dma.dll](./qchalextqcadm3dma.md), the HAL extension of the ADM3 data mover, built from the same code (same entry point and HAL services, controller ids 2 and 3).
+Sibling binary: [QCHalExtQcAdm3Dma.dll](./qchalextqcadm3dma.md), the HAL extension of the ADM3 data mover, built from the same code (same entry point and HAL services).
 
 Location on the phone: `C:\Windows\System32\QCHalExtQ8x60Bam.dll` ? (the extracted file has no notes).  
 
@@ -18,7 +18,7 @@ Files used other than the static imports.
 
 | File | How | Use |
 |------|-----|-----|
-| HAL (`hal.dll`) | Entry point `start`, [HAL services table](#hal-services) | The HAL loads the extension, enumerates the CSRT for it and calls the [DMA function table](#dma-function-table) |
+| HAL ([HAL.dll](./hal.md)) | Entry point `start`, [HAL services table](#hal-services) | The HAL loads the extension, enumerates the CSRT for it and calls the [DMA function table](#dma-function-table) |
 
 No DLL is loaded at run time, no file or registry key is used.
 
@@ -41,14 +41,14 @@ There's no export directory: the only entry is the image entry point.
 
 ### HAL services
 
-Table passed by the HAL to `start` (`dword_404A0C`). Only the entries used are known; the prototypes are those of the documented Windows HAL extension services they match.
+Table passed by the HAL to `start` (`dword_404A0C`): `HalExtensionServices` of [HAL.dll](./hal.md#hal-extension-services), where the whole table is described. Only the entries used here are listed.
 
 | Offset | Wrapper | Function | Use |
 |--------|---------|----------|-----|
 | +0x00 | `sub_401C10` | `RegisterResourceDescriptor(Handle, ResourceGroup, ResourceDescriptor, Info)` | Registers a DMA controller (with its [initialization block](#dma-controller-initialization-block)) or a DMA channel (with its [initialization block](#dma-channel-initialization-block)) |
 | +0x04 | `sub_401BE4` | `GetNextResourceDescriptor(Handle, ResourceGroup, Previous, Type, Subtype, Uid)` | Enumerates the descriptors of the resource group; always called with type, subtype and UID = 0xFFFF (any) |
 | +0x0C | `sub_401BB8` | `HalMapIoSpace(PHYSICAL_ADDRESS, Size, MEMORY_CACHING_TYPE)` | Maps the BAM registers, the second register block of the controller and the clock controller, always `MmNonCached` (0) |
-| +0x20 | (stub at 0x401BA4) | ? | Not called |
+| +0x20 | (stub at 0x401BA4) | ? (a shared stub in the HAL) | Not called |
 
 ### AddResourceGroup (sub_401944, 0x401944)
 
@@ -58,7 +58,7 @@ Called by the HAL with `(Handle, ResourceGroup)` for each CSRT resource group ha
 2. Subtype 1 (DMA controller):
    - if a controller is already being built (its BAM physical address at +0x1C is not 0), it's registered first (step 4) and the context is cleared;
    - the descriptor is copied at the start of the context: 0x38 bytes if its `Length` is 0x38 (then the security entry count at +0x38 is set to 0), 0x5C bytes if it's 0x5C; other lengths aren't copied;
-   - the [controller initialization block](#dma-controller-initialization-block) is filled. The controller id starts at 3 and is incremented after each controller registered.
+   - the [controller initialization block](#dma-controller-initialization-block) is filled. The controller id put in it starts at 3 and is incremented after each controller registered, but the HAL ignores it and writes its own id there (see the block below).
 3. Subtype 0 (DMA channel): needs a controller (BAM address not 0) and a pipe number (+0x0C) < 32, otherwise `STATUS_INVALID_PARAMETER` (0xC000000D) is returned at once. The first 0x28 bytes of the descriptor are copied into the [channel slot](#channel-slot) of the pipe, its busy flag is cleared and its bit is cleared in the active mask (+0x8C0).
 4. Other subtypes are ignored. At the end of the enumeration the last controller is registered: `RegisterResourceDescriptor` of the context (the descriptor copy) with the controller initialization block, then, for every channel slot whose `Length` isn't 0, `RegisterResourceDescriptor` of the slot with a [channel initialization block](#dma-channel-initialization-block). The results are ignored; the HAL keeps its own copy of the context (it's the `InternalData` of the controller) since the global one is cleared afterwards.
 
@@ -113,7 +113,7 @@ A channel's request line is its pipe number plus the minimum request line of the
 |--------|------|-------|
 | 0x00 | 4 | 1 (version) |
 | 0x04 | 4 | 0x44 (size) |
-| 0x08 | 4 | Controller id: 3, 4, … |
+| 0x08 | 4 | Controller id: 3, 4, … set by the extension, overwritten by the HAL with its own sequential id (0, 1, 2… in registration order, [HalpRegisterDmaController](./hal.md#dma-controller-initialization-block)). The extension reads it back after `RegisterResourceDescriptor` for the channel blocks |
 | 0x0C | 4 | 32: number of channels |
 | 0x10 | 1 | 0: cache coherent ? |
 | 0x14 | 4 | 32: DMA address width ? |
@@ -137,7 +137,7 @@ A channel's request line is its pipe number plus the minimum request line of the
 |--------|------|-------|
 | 0x00 | 4 | 1 (version) |
 | 0x04 | 4 | 0x24 (size) |
-| 0x08 | 4 | Controller id |
+| 0x08 | 4 | Controller id: the one written by the HAL in the controller block |
 | 0x0C | 1 | 0: generates interrupt ? |
 | 0x10 | 4 | 0: GSIV ? |
 | 0x14 | 8 | 0 ? |

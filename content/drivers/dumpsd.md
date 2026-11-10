@@ -7,7 +7,7 @@ The state of the controller and of the card (`sdbus.sys` FDO/socket extension, 1
 
 There's no device name and no symbolic link. It doesn't process any IOCTL and doesn't send any.  
 There's no parameters in the registry (the timeouts are copied from the `sdbus.sys` context, see below).  
-Imports: `ntoskrnl.exe` (`MmMapIoSpace`, `MmGetPhysicalAddress`, `PoSetHiberRange`, `KeBugCheckEx`, …), `HAL.dll` (`HalDmaAllocateCrashDumpRegistersEx`, `HalDmaFreeCrashDumpRegistersEx`, `KeStallExecutionProcessor`, `KeQueryPerformanceCounter`).  
+Imports: `ntoskrnl.exe` (`MmMapIoSpace`, `MmGetPhysicalAddress`, `PoSetHiberRange`, `KeBugCheckEx`, …), [HAL.dll](../libraries/hal.md) (`HalDmaAllocateCrashDumpRegistersEx`, `HalDmaFreeCrashDumpRegistersEx`, `KeStallExecutionProcessor`, `KeQueryPerformanceCounter`).  
 No ETW provider is registered: the ETW templates inherited from `sdbus.sys` (`Template_xx`, …) call `EtwWrite` with a null `REGHANDLE`, so they do nothing.  
 Debug output: `SdbusDebugPrint` (`DbgPrintEx`, component id 77 = `DPFLTR_SD_ID` ?) and `_SdDumpDebugPrint` (prefix `DUMPSD: `, only if `g_EnableDbgPrint` ≠ 0; it is 0 and never written).  
 Some code paths of `sdbus.sys` are still present but not reachable in dump mode (PoFx, `IoInvalidateDeviceRelations`, `PdcScenarioClientRequest`).

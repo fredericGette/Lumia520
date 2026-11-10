@@ -2,7 +2,7 @@
 
 The Bluetooth connection manager of Windows Phone 8.1: the `BTConnMgr` service, hosted by `svchost.exe`, which owns the radio on/off state, the paired devices, the profile connections and the pairing.  
 `BtConnectionManagerService.dll` is a large C++ DLL (344 064 bytes, 1117 functions, the database has its full symbols). It talks down to the Microsoft Bluetooth stack with the `BthPort` IOCTLs, and offers a message protocol to its clients on the named pipe `\\.\Pipe\BtConnectionManager`. It switches the radio through the OEM `SupportDLL` of the registry, keeps the list of local profiles from the registry (`Parameters\Services\{GUID}`), starts or waits for the service of each profile, creates the listeners (RFCOMM sockets, L2CAP) and hands the connections to the clients. It also signals background tasks on Bluetooth events (RFCOMM, connection change, GATT characteristic change) through the Background Infrastructure, and has two built-in profiles: A2DP and PAN.  
-It relies on [QcBtradioctrl8930.dll](./qcbtradioctrl8930.md) as `SupportDLL` for the radio power (according to the [Bluetooth stack](../bluetooth/README.md) diagram; the value itself comes from the registry). The client side of the pipe is [BtConnectionManagerClient.dll](./btconnectionmanagerclient.md), which implements the COM class `{101C5B9F-C6F7-41C4-815B-69AAC1ECA0A9}`. That CLSID is also present in [BTAGService.dll](./btagservice.md) (the HFP audio gateway, a client), [BthavctpSvc.dll](./bthavctpsvc.md) (the AVCTP transport of AVRCP, a client), `BthOPPManager.dll` and `Bthpbapservice.dll` (not analysed), the probable clients.
+It relies on [QcBtradioctrl8930.dll](./qcbtradioctrl8930.md) as `SupportDLL` for the radio power (according to the [Bluetooth stack](../bluetooth/README.md) diagram; the value itself comes from the registry). The client side of the pipe is [BtConnectionManagerClient.dll](./btconnectionmanagerclient.md), which implements the COM class `{101C5B9F-C6F7-41C4-815B-69AAC1ECA0A9}`. That CLSID is also present in [BTAGService.dll](./btagservice.md) (the HFP audio gateway, a client), [BthavctpSvc.dll](./bthavctpsvc.md) (the AVCTP transport of AVRCP, a client), [BthOPPManager.dll](./bthoppmanager.md) (the Object Push Profile, a client: profiles `{00001105-0000-1000-8000-00805F9B34FB}` and `{99999999-0000-1000-8000-00805F9B34FB}`) and [Bthpbapservice.dll](./bthpbapservice.md) (the Phone Book Access Profile server, a client: profile `{0000112F-0000-1000-8000-00805F9B34FB}`), the probable clients.
 
 Location on the phone: `C:\Windows\System32\BtConnectionManagerService.dll` ? (the extracted file has no notes).  
 Service name: `BTConnMgr`.  
@@ -229,7 +229,7 @@ At startup, `GetEnumeratedEventsStatic` restores the registered events (`BiEnume
 | `SYSTEM\CurrentControlSet\Services\BTHPORT\Parameters\Radio Support` | `SupportDLL` |
 | `System\CurrentControlSet\Services\BthPort\Parameters` | `Slave Role COD Masks` (written) |
 | Device Parameters of BthPort | `Page Scan Window`, `Page Scan Interval`, `Page Scan Type` (`UpdatePageScanSettingsIfNeeded`) |
-| `SYSTEM\CurrentControlSet\services\BTHPORT\Parameters\Devices\%012llx\CachedServices` | SDP cache (`Device::UpdateSdpRecordCache`) |
+| `SYSTEM\CurrentControlSet\services\BTHPORT\Parameters\Devices\%012llx\CachedServices` | SDP cache (`Device::UpdateSdpRecordCache`); also written by [BTHSERV.DLL](./bthserv.md#activateservice) |
 | `System\CurrentControlSet\Services\BTHPORT\Parameters\Devices` | `LEAddressType` (SQM) |
 
 The key of the "?" row is a handle kept in an object (`BtService`+0x60 for `EnableRadio`, `RestartCount` and `RestartTime`); it wasn't traced for each value.
@@ -268,7 +268,7 @@ Bits 0x04 to 0x20 are cleared when bit 0x02 is clear.
 | `GUID_BLUETOOTHLE_DEVICE_INTERFACE` `{781AEE18-7733-4CE4-ADD0-91F41C67B592}` | LE devices (`BtGetDeviceHandle`, `ConnectLEDeviceWorker`) |
 | `GUID_BLUETOOTH_GATT_SERVICE_DEVICE_INTERFACE` `{6E3BB679-4372-40C8-9EAA-4509DF260CD8}` | GATT services (`GattDescriptorInitializer`) |
 
-Custom notifications handled by `Radio::HandleNotificationCallback` (0x1002F044): `GUID_BLUETOOTH_HCI_EVENT`, `GUID_BLUETOOTH_SCO_EVENT`, `GUID_BLUETOOTH_L2CAP_EVENT`, `GUID_BLUETOOTH_RADIO_IN_RANGE`, `GUID_BLUETOOTH_RADIO_OUT_OF_RANGE`, `GUID_BLUETOOTH_AUTHENTICATION_REQUEST`, `GUID_BLUETOOTH_LE_AUTHENTICATION_REQUEST`, `GUID_BLUETOOTH_HCI_LE_ADVERTISEMENT`.
+Custom notifications handled by `Radio::HandleNotificationCallback` (0x1002F044): `GUID_BLUETOOTH_HCI_EVENT`, `GUID_BLUETOOTH_SCO_EVENT`, `GUID_BLUETOOTH_L2CAP_EVENT`, `GUID_BLUETOOTH_RADIO_IN_RANGE`, `GUID_BLUETOOTH_RADIO_OUT_OF_RANGE`, `GUID_BLUETOOTH_AUTHENTICATION_REQUEST`, `GUID_BLUETOOTH_LE_AUTHENTICATION_REQUEST`, `GUID_BLUETOOTH_HCI_LE_ADVERTISEMENT`. [BTHSERV.DLL](./bthserv.md#radio) (the `BthServ` service) opens the same radio and handles most of these notifications too (it forwards the authentication requests to its RPC clients), and also `GUID_BLUETOOTH_MUST_SYNCHRONIZE_STORE` `{69F95E75-EB00-485B-9E61-34A330BAFBF2}`.
 
 IOCTLs, with the names of `BthIoctlName` (0x10030DD8):
 

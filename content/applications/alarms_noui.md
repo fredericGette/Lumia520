@@ -168,7 +168,7 @@ The PacMan client creates its interfaces on demand with `CoCreateInstance(CLSID 
 |----------|-----|
 | `sub_100518C` (used to get the tile) | `{698D57C2-292D-4CF3-B73C-D95A6922ED9A}` |
 | `sub_1004ED0` (used to save the tile) | `{D622EEDE-5363-41FC-91C3-88E321191A34}` |
-| `sub_1005A0C` | `{D83400E1-A7A6-4990-9B84-10490AFF2063}` |
+| `sub_1005A0C` | `{D83400E1-A7A6-4990-9B84-10490AFF2063}` (its method 3 maps an application ID to an object whose interface `{50AFB58A-438C-4088-9789-F8C4899829C7}` gives the product ID, see [BtsCli.dll](../libraries/btscli.md#foreground-listener)) |
 | `sub_1005C10` | `{095BF7A5-F134-42B9-A4B0-7C5F1A9E199A}` (with CLSID `{D0DF0C7D-33BF-4E04-9B11-B1D7AE572EED}`, not the PacMan one) |
 | `sub_1005D78` | `{75E430A7-9559-4828-98DD-BC657620AB87}` |
 | `sub_1006358` | `{11ED725B-8820-45F8-96E6-6845524E46DA}` |

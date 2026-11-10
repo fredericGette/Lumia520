@@ -26,7 +26,7 @@ It communicates with the following devices:
 |--------|--------|---------|
 | ACPI PDO of `ACPI000E` (default I/O target) | [acpi.sys](./acpi.md) | internal `IOCTL_ACPI_EVAL_METHOD` (0x32C004) for every ACPI method; `GUID_ACPI_INTERFACE_STANDARD` to receive the `Notify` |
 | Kernel power manager | ntoskrnl | `PoSetFixedWakeSource` |
-| — | Kernel time service (HAL / `ExpTimeRefreshWork` ?) | Caller of `IOCTL_ACPI_GET_REAL_TIME` / `IOCTL_ACPI_SET_REAL_TIME` through the device interface ? |
+| — | [HAL.dll](../libraries/hal.md#real-time-clock-and-wake-alarm) | Caller of `IOCTL_ACPI_GET_REAL_TIME` / `IOCTL_ACPI_SET_REAL_TIME` (`HalQueryRealTimeClock` / `HalSetRealTimeClock`) and of `IOCTL_SET_WAKE_ALARM_VALUE` / `IOCTL_SET_WAKE_ALARM_POLICY` (`HaliSetWakeAlarm`), through the device interface (`IoRegisterPlugPlayNotification` on `GUID_DEVICE_ACPI_TIME`) |
 
 ### Lumia 520 ACPI node
 
@@ -86,7 +86,8 @@ The wake-alarm IOCTLs only check that the whole `_GCP` value is non-zero, so on 
 
 ### IOCTL 0x294210 — IOCTL_ACPI_GET_REAL_TIME
 
-This IOCTL is processed by Acpitime.sys
+This IOCTL is processed by Acpitime.sys  
+It's sent by [HAL.dll](../libraries/hal.md#real-time-clock-and-wake-alarm) (`HalpQueryAcpiRealTimeClock`)
 
 | Property | Value |
 |----------|-------|
@@ -120,7 +121,8 @@ Outputbuffer (ACPI time buffer, ACPI spec `_GRT`):
 
 ### IOCTL 0x298214 — IOCTL_ACPI_SET_REAL_TIME
 
-This IOCTL is processed by Acpitime.sys
+This IOCTL is processed by Acpitime.sys  
+It's sent by [HAL.dll](../libraries/hal.md#real-time-clock-and-wake-alarm) (`HalpSetAcpiRealTimeClock`)
 
 | Property | Value |
 |----------|-------|
@@ -144,7 +146,8 @@ Backend: `WaHandleAcpiSetRealTime` (0x156C8). Requires `_GCP` bit 2. Evaluates `
 ### IOCTL 0x29C208 — IOCTL_GET_WAKE_ALARM_VALUE
 ### IOCTL 0x29C20C — IOCTL_GET_WAKE_ALARM_POLICY
 
-These IOCTLs are processed by Acpitime.sys
+These IOCTLs are processed by Acpitime.sys  
+`IOCTL_SET_WAKE_ALARM_VALUE` and `IOCTL_SET_WAKE_ALARM_POLICY` are sent by [HAL.dll](../libraries/hal.md#real-time-clock-and-wake-alarm) (`HalpArmAcpiWakeAlarm`: value then policy 1, for timer 0 (AC) then timer 1 (DC))
 
 | Property | Value |
 |----------|-------|
