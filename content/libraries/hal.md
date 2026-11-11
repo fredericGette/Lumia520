@@ -2,7 +2,7 @@
 
 Microsoft hardware abstraction layer for ARM ("ARM HAL", ACPI/UEFI SoC HAL, PDB `hal.pdb`, public symbols available, 875 functions).  
 It's a kernel-mode image loaded with `ntoskrnl.exe` by the boot loader. It hides the SoC from the kernel: interrupt controller (ARM GIC described by the MADT), timers (ARM generic timer of the GTDT, processor cycle counter, WDAT watchdog, and the timers of the HAL extensions), system DMA (controllers registered by the HAL extensions), processor start / idle / reset, real-time clock and wake alarm (through [acpitime.sys](../drivers/acpitime.md)), UEFI runtime services (variables, reset, capsules), ACPI table cache and performance counters (ARM PMU, with the Qualcomm Krait events). It contains no Qualcomm code: everything SoC-specific comes from the firmware ACPI tables and from the [HAL extensions](#hal-extensions) listed in the CSRT.  
-Its exports are used by every kernel driver (e.g. `KeStallExecutionProcessor` in [qcsysdef8930.sys](../drivers/qcsysdef8930.md), the crash dump DMA functions in [dumpsd.sys](../drivers/dumpsd.md), [crashdmp.sys](../drivers/crashdmp.md)). It loads and drives the HAL extensions [QCHalExtQ8x60Bam.dll](./qchalextq8x60bam.md) and [QCHalExtQcAdm3Dma.dll](./qchalextqcadm3dma.md) (DMA), and probably `HalExtQ8660Timers.dll` (timers, not analysed). It creates the `ACPI_HAL\PNP0C08` root device on which [acpi.sys](../drivers/acpi.md) loads.
+Its exports are used by every kernel driver (e.g. `KeStallExecutionProcessor` in [qcsysdef8930.sys](../drivers/qcsysdef8930.md), the crash dump DMA functions in [dumpsd.sys](../drivers/dumpsd.md), [crashdmp.sys](../drivers/crashdmp.md)). It loads and drives the HAL extensions [QCHalExtQ8x60Bam.dll](./qchalextq8x60bam.md) and [QCHalExtQcAdm3Dma.dll](./qchalextqcadm3dma.md) (DMA), and probably [HalExtQ8660Timers.dll](./halextq8660timers.md) (timers). It creates the `ACPI_HAL\PNP0C08` root device on which [acpi.sys](../drivers/acpi.md) loads.
 
 Location on the phone: `C:\Windows\System32\hal.dll` ? (the extracted file `HAL.DLL` has no notes).  
 
@@ -22,7 +22,7 @@ Files used other than the static imports.
 
 | File | How | Use |
 |------|-----|-----|
-| HAL extensions: [QCHalExtQ8x60Bam.dll](./qchalextq8x60bam.md), [QCHalExtQcAdm3Dma.dll](./qchalextqcadm3dma.md), `HalExtQ8660Timers.dll` ? | Loaded by the boot loader (list in the loader parameter block), entry point called by [HalpExtInitExtensions](#hal-extensions) | SoC DMA controllers, timers and cache controllers described in the CSRT |
+| HAL extensions: [QCHalExtQ8x60Bam.dll](./qchalextq8x60bam.md) (or its older build [HalExtQ8x60Bam.dll](./halextq8x60bam.md) ?), [QCHalExtQcAdm3Dma.dll](./qchalextqcadm3dma.md) (or its older build [HalExtQcAdm3Dma.dll](./halextqcadm3dma.md) ?), [HalExtQ8660Timers.dll](./halextq8660timers.md) ? | Loaded by the boot loader (list in the loader parameter block), entry point called by [HalpExtInitExtensions](#hal-extensions) | SoC DMA controllers, timers and cache controllers described in the CSRT |
 | [acpitime.sys](../drivers/acpitime.md) | Device interface `GUID_DEVICE_ACPI_TIME`, `IoBuildDeviceIoControlRequest` | [Real-time clock and wake alarm](#real-time-clock-and-wake-alarm) |
 | [acpi.sys](../drivers/acpi.md) | `ZwOpenFile("\DosDevices\ACPI_ROOT_OBJECT")`, `IRP_MN_QUERY_INTERFACE` `GUID_PCC_INTERFACE_STANDARD` | Platform Communication Channel interface (`HalpAcquirePccInterface`, for the PCC commands of `HalpSendPccCommand`) |
 | UEFI firmware | Runtime services (`HalEfi*`) | Variables, `ResetSystem`, capsules, see [Firmware](#firmware) |
@@ -253,7 +253,7 @@ Registered timers are in `HalpRegisteredTimers`; the HAL then picks the clock, p
 
 ### Timers
 
-`HalpTimerRegisterBuiltinPluginsCommon` registers the HAL's own timers: the processor cycle counter (phase 0, `HalpCycleCounterDiscover`, known type 10, resource id `VEN_vvvv&DEV_dddd&…`), then the ARM generic timer of the `GTDT` (`HalpGitDiscover`) and the watchdog of the `WDAT` (or `WDRT`) table (`HalpWdatDiscover`, known type 13, `HalpWdatArmTimer` / `HalpWdatStop`). The timers of the CSRT come from the extensions. The system watchdog is started at phase 19 unless `SYSTEMWATCHDOGPOLICY=DISABLED`; when the last reset came from it, phase 23 writes the [ETW event](#etw) and "System was rebooted due to system watchdog timeout.".
+`HalpTimerRegisterBuiltinPluginsCommon` registers the HAL's own timers: the processor cycle counter (phase 0, `HalpCycleCounterDiscover`, known type 10, resource id `VEN_vvvv&DEV_dddd&…`), then the ARM generic timer of the `GTDT` (`HalpGitDiscover`) and the watchdog of the `WDAT` (or `WDRT`) table (`HalpWdatDiscover`, known type 13, `HalpWdatArmTimer` / `HalpWdatStop`). The timers of the CSRT come from the extensions. On the Lumia 520 there's no GTDT: the timers are the cycle counter, the WDAT watchdog (Krait timer block 0x0208A000) and the 5 timers of the [CSRT](#lumia-520-tables). The system watchdog is started at phase 19 unless `SYSTEMWATCHDOGPOLICY=DISABLED`; when the last reset came from it, phase 23 writes the [ETW event](#etw) and "System was rebooted due to system watchdog timeout.".
 
 ### Real-time clock and wake alarm
 
@@ -298,7 +298,44 @@ Searched in the loader options string (`strstr`) by `HalpMiscGetParameters` and 
 
 ### ACPI tables
 
-Read from the firmware (only the DSDT and SSDT are in [content/acpi](../acpi/README.md)): RSDP / `RSDT` / `XSDT`, `FACP` (FADT), `FACS`, `DSDT`, `APIC` (MADT, GIC), `GTDT` (generic timer), `CSRT` ([HAL extensions](#hal-extensions)), `WDAT` / `WDRT` (watchdog), `DBGP` (debug port), `FPDT`, `WAET`, `SLIC` (audit), `SRAT`, `SLIT`, `MSCT`, `MPST` (NUMA), `DMAR`. Error messages: "HalpAcpiFindRsdp: Could not find RSDP", "HalpAcpiTableCacheInit: Unable to map RSDT", …
+Looked up by the HAL: RSDP / `RSDT` / `XSDT`, `FACP` (FADT), `FACS`, `DSDT`, `APIC` (MADT, GIC), `GTDT` (generic timer), `CSRT` ([HAL extensions](#hal-extensions)), `WDAT` / `WDRT` (watchdog), `DBGP` (debug port), `FPDT`, `WAET`, `SLIC` (audit), `SRAT`, `SLIT`, `MSCT`, `MPST` (NUMA), `DMAR`. Error messages: "HalpAcpiFindRsdp: Could not find RSDP", "HalpAcpiTableCacheInit: Unable to map RSDT", …
+
+### Lumia 520 tables
+
+The UEFI driver `AcpiPlatform` (in the `UEFI` partition) loads the tables as files from the `ACPI` folder of the `PLAT` partition (GUID `543C031A-4CB6-4897-BFFE-4B485768A8AD`, "ACPI: Loading table: %a."). The folder holds `bgrt.acp`, `csrt.acp`, `dbg2.acp`, `dsdt.aml`, `facp.acp`, `facs.acp`, `fpdt.acp`, `madt.acp`, `ssdt.aml`, `tpm2.acp` and `wdat.acp`. The DSDT and SSDT are the ones of [content/acpi](../acpi/README.md). OEM ID `QCOM`, table ID `QCOMEDK2`; the checksums are left at 0 (patched at load ?).
+
+There's **no GTDT**: the ARM generic timer isn't used (the Krait timers come from the CSRT), and there's no SRAT/SLIT, DMAR or DBGP.
+
+| Table | Content used by the HAL |
+|-------|-------------------------|
+| `FACP` (rev 5, 0xF4 bytes) | PM profile 8 (tablet); flags 0x00300000 = `HW_REDUCED_ACPI` + `LOW_POWER_S0_IDLE_CAPABLE`; reset register: space 3, address 0x009020B4, value 1; no PM1/GPE blocks |
+| `APIC` (MADT rev 3) | GIC CPU interface 0x02002000; 2 GICC entries (40 bytes, old format): CPU interface 0 and 1, enabled, parking protocol version 1, parked address 0x80301000 / 0x80302000, performance interrupt GSIV 26; GIC distributor (GICD) 0x02000000, GSI base 0 |
+| `WDAT` | Watchdog of the Krait per-CPU timer block at 0x0208A000: 1 ms period, count 1…300000 (5 minutes), enabled. 14 instructions on +0x38 (reset), +0x40 (enable), +0x44, +0x4C, +0x5C (counts, 0x1B77400 = 28800000), +0x88 bit 24 (state) |
+| `CSRT` | 4 resource groups, see below |
+| `DBG2` | 3 debug devices: `\_SB.UAR1` serial (type 0x8000, subtype 4) at 0x16440000; `\_SB.UFN1` at 0x12500000 as type 0x8003 (subtype 0x5143) and type 0x8002 (subtype 4) |
+| `FPDT` | boot performance record at 0x80380000 |
+| `BGRT` | boot logo image at 0x80C00000 |
+| `TPM2` | start method 5 |
+| `FACS` | 64 bytes, all zero |
+
+CSRT resource groups (vendor `QCOM`). The extension that takes each group is chosen by the boot loader; the match below comes from the descriptor formats each extension parses.
+
+| Group (device id) | Descriptors | Extension |
+|-------------------|-------------|-----------|
+| 0x1001 | 4 timers (type 2), UID 1, 2, 4, 5; shared info (0x20 bytes) 0x0200A000, 0, 0x1000, 2, 0x0208A000, 0, 0x0209A000, 0 | [HalExtQ8660Timers.dll](./halextq8660timers.md#addresourcegroup-sub_100013cc-0x100013cc) ? (the only analysed extension that parses timer descriptors): maps the block at shared info +0x10 (0x0208A000, size +0x08), registers the DGT and the GPT |
+| 0x1002 | 1 DMA controller + 12 channels | [QCHalExtQcAdm3Dma.dll](./qchalextqcadm3dma.md#lumia-520-csrt): the ADM at 0x18300000 |
+| 0x1003 | 1 timer (type 2), UID 1 | ? ([HalExtQ8660Timers.dll](./halextq8660timers.md#addresourcegroup-sub_100013cc-0x100013cc) accepts this group explicitly but registers nothing for it) |
+| 0x1005 | 5 DMA controllers × 2 channels | [QCHalExtQ8x60Bam.dll](./qchalextq8x60bam.md#lumia-520-csrt): the BAMs of the 5 SD controllers |
+
+Timer descriptors (bytes after the 12-byte header, as dwords; format of [HalExtQ8660Timers.dll](./halextq8660timers.md#timer-descriptor): +0x0C kind (1 = GPT, 2 = DGT, others ignored), +0x10 dword index of the `MATCH_VAL` register in the 0x0208A000 block, +0x14 frequency, +0x18 GSIV):
+
+| Group, UID | +0x0C | +0x10 | +0x14 | +0x18 |
+|------------|-------|-------|-------|-------|
+| 0x1001, 1 | 2 | 9 | 0x0066FF30 (6750000: frequency of the DGT, 27 MHz / 4, `DGT_CLK_CTL` = 3) | 0x11 (GSIV 17 = PPI 1 ?) |
+| 0x1001, 2 | 1 | 1 | 0x8000 (32768: frequency of the GPT, sleep clock ?) | 0x12 (GSIV 18 = PPI 2 ?) |
+| 0x1001, 4 | 3 | 0x0E | 0 | 0x14 (GSIV 20 = PPI 4 ?) |
+| 0x1001, 5 | 3 | 0x18 | 0 | 0x15 (GSIV 21 = PPI 5 ?) |
+| 0x1003, 1 | 0x00200024 | 0 | 4 | 0 |
 
 ### Performance counters
 

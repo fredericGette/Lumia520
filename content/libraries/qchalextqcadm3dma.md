@@ -2,7 +2,9 @@
 
 HAL extension that exposes the Qualcomm ADM3 data mover ("DMOV") as a system DMA controller to the Windows HAL, build `P:\ADM\rel\8.2.1.1\Output\arm\Release\HalExtQcAdm3Dma.pdb`.  
 It's a tiny kernel-mode image (32 functions, no import at all), built like its sibling [QCHalExtQ8x60Bam.dll](./qchalextq8x60bam.md): the HAL gives it a table of services at its entry point and the extension returns its `AddResourceGroup` function. `AddResourceGroup` reads the CSRT DMA controller and channel descriptors of up to 2 ADMs, and registers for each one a controller and its channels (at most 16) with the HAL; the HAL then drives the ADM through the 10 functions of a [DMA function table](#dma-function-table). A transfer is a list of ADM "box" commands built from the scatter/gather list, or a command list given by the driver itself ([ConfigureChannel](#configurechannel-sub_4013f8-0x4013f8) function 2). A DMA request line is turned into an ADM CRCI (flow-control line) number: request line − minimum request line of the controller.  
-Its known users are the crypto engine drivers [qcearm8930.sys](../drivers/qcearm8930.md#dma) (request lines 2 and 3) and [qce2arm8930.sys](../drivers/qce2arm8930.md#dma) (request lines 4 and 5), which build their own command lists and use exactly the `ConfigureAdapterChannel` functions 0, 1 and 2 of this extension; [Qcuart8930.sys](../drivers/qcuart8930.md#dma) also gets ADM channels with `IoGetDmaAdapter`. Which ADM(s) it drives depends on the CSRT of the firmware, which isn't in [content/acpi](../acpi/README.md); the register offsets (0x20000 + 0x800 × security domain 1) match an ADM block at 0x18300000 ([Qcuart8930.sys](../drivers/qcuart8930.md#dma) programs the CRCIs of the ADM at 0x18300000) ?.
+Its known users are the crypto engine drivers [qcearm8930.sys](../drivers/qcearm8930.md#dma) (request lines 2 and 3) and [qce2arm8930.sys](../drivers/qce2arm8930.md#dma) (request lines 4 and 5), which build their own command lists and use exactly the `ConfigureAdapterChannel` functions 0, 1 and 2 of this extension; [Qcuart8930.sys](../drivers/qcuart8930.md#dma) also gets ADM channels with `IoGetDmaAdapter`. On the Lumia 520 the [CSRT](#lumia-520-csrt) gives it a single ADM, at 0x18300000 (the one whose CRCIs [Qcuart8930.sys](../drivers/qcuart8930.md#dma) programs), with 12 channels and CRCIs 0–15.
+
+An older build of the same code, ADM release 5.0 (August 2012), was extracted as [HalExtQcAdm3Dma.dll](./halextqcadm3dma.md); it only lacks one register read in ProgramChannel.
 
 Location on the phone: `C:\Windows\System32\QCHalExtQcAdm3Dma.dll` ? (the extracted file has no notes).  
 
@@ -79,6 +81,31 @@ DMA channel (type 3, subtype 0):
 | 0x0C | 4 | Controller index (< 2) |
 | 0x10 | 4 | Channel number (< 16) |
 | 0x14 | 4 | CRCI mask: bit `n` set = the channel may be used with CRCI `n` (request line minimum + `n`). CRCI 0 is always allowed |
+
+### Lumia 520 CSRT
+
+Resource group `QCOM` device 0x1002 of the CSRT (`csrt.acp` of the `PLAT` partition, see [HAL.dll](./hal.md#lumia-520-tables)), no shared info.
+
+Controller (UID 1, `Length` 0x28): index 0, registers 0x18300000, GSIV 0xCB (203), 12 channels, request lines 0–15. The minimum request line being 0, the CRCI number is the request line itself.
+
+Channels (UID 2…13, `Length` 0x18), all on controller index 0:
+
+| Channel | CRCI mask (+0x14) | CRCIs allowed besides 0 | Known user |
+|---------|-------------------|-------------------------|------------|
+| 0 | 0x0004 | 2 | [qcearm8930.sys](../drivers/qcearm8930.md#dma) input |
+| 1 | 0x0008 | 3 | qcearm8930.sys output |
+| 2 | 0x0002 | 1 | |
+| 3 | 0x0080 | 7 | |
+| 4 | 0x0100 | 8 | |
+| 5 | 0x0010 | 4 | [qce2arm8930.sys](../drivers/qce2arm8930.md#dma) input |
+| 6 | 0x0020 | 5 | qce2arm8930.sys output |
+| 7 | 0x0800 | 11 | |
+| 8 | 0x0040 | 6 | |
+| 9 | 0x1000 | 12 | |
+| 10 | 0x2000 | 13 | |
+| 11 | 0xC000 | 14, 15 | |
+
+CRCIs 6–11 are the ones that [Qcuart8930.sys](../drivers/qcuart8930.md#dma) routes to its UARTs.
 
 ### DMA controller initialization block
 
@@ -204,7 +231,7 @@ All the register accesses are preceded by a `DSB` barrier. Unlike the BAM extens
 
 `(ControllerContext, ChannelNumber, RequestLine, PDMA_SCATTER_GATHER_LIST, PHYSICAL_ADDRESS DeviceAddress, BOOLEAN WriteToDevice, BOOLEAN LoopTransfer)`; `LoopTransfer` is ignored.
 
-1. State = 2 (programmed).
+1. `DSB`, then a dummy read of `STATUS(ch)` (value discarded; this read is absent from the older build [HalExtQcAdm3Dma.dll](./halextqcadm3dma.md#differences-with-qchalextqcadm3dmadll)). State = 2 (programmed).
 2. If the driver gave a command list (+0x80, ConfigureChannel function 2): the dword at common buffer + 8 = (address >> 3) | 0x80000000 (last pointer), and `CMD_PTR` gets (common buffer physical >> 3) | 1, i.e. it points at that entry. The request line, the scatter/gather list and the device address aren't used: the driver's command list does everything. This is the path of [qcearm8930.sys](../drivers/qcearm8930.md#dma) and [qce2arm8930.sys](../drivers/qce2arm8930.md#dma).
 3. Otherwise box commands (24 bytes each) are written from common buffer + 8:
    - CRCI = request line − minimum (16 if not valid, which reads a wrong burst length); burst = burst length of the CRCI;

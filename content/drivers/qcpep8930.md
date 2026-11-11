@@ -290,7 +290,7 @@ Regions mapped with `MmMapIoSpace` (non-cached):
 | 0x00800000 | 0x4000 / 0x2154 | sub_4289C4, sub_42E7B4 | TLMM (GPIO) |
 | 0x00900000 | 0x4000 | sub_4D3F30 | Clock controller (GCC), TSENS registers |
 | 0x02000000 | 0x1000 | sub_41342C | QGIC distributor ? |
-| 0x0200A000 | 0x1000 | sub_43AE8C | ? |
+| 0x0200A000 | 0x1000 | sub_43AE8C | ? (first address of the shared info of the CSRT timer group, see [HAL.dll](../libraries/hal.md#lumia-520-tables): Krait timer block ?; [HalExtQ8660Timers.dll](../libraries/halextq8660timers.md) reads this group but only maps 0x0208A000, the CPU 0 block) |
 | 0x02011000 | ? | sub_42CD4C | APCS GCC (IPC interrupt to the RPM ?) |
 | 0x02012000 | 0x1000 | sub_43AE8C | L2 SAW2 (SPM) |
 | 0x02089000, 0x02099000 | 0x1000 each | sub_43AE8C | CPU0 / CPU1 SAW2 (SPM) |

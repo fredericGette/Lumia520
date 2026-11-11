@@ -20,7 +20,7 @@ GUID of the ETW provider (WPP):
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| DMA adapter, `DmaRequestLine` 2 | HAL / [QCHalExtQcAdm3Dma.dll](../libraries/qchalextqcadm3dma.md) (ADM, CRCI = request line − minimum ?) | Engine input: command lists and data in (`dword_406BA0`) |
+| DMA adapter, `DmaRequestLine` 2 | HAL / [QCHalExtQcAdm3Dma.dll](../libraries/qchalextqcadm3dma.md) (ADM at 0x18300000, CRCI = request line − minimum request line, 0 on the Lumia 520) | Engine input: command lists and data in (`dword_406BA0`) |
 | DMA adapter, `DmaRequestLine` 3 | HAL / [QCHalExtQcAdm3Dma.dll](../libraries/qchalextqcadm3dma.md) | Engine output: data out and register read-back (`dword_406B80`) |
 
 ### WDF configuration

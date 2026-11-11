@@ -2,8 +2,9 @@
 
 HAL extension that exposes a Qualcomm BAM (Bus Access Manager, "SPS" DMA engine) as a system DMA controller to the Windows HAL, build `P:\BAM\rel\8.2.1.1\Output\arm\Release\HalExtQ8x60Bam.wp\HalExtQ8x60Bam.pdb`.  
 It's a tiny kernel-mode image (33 functions, no import at all): the HAL gives it a table of services (CSRT enumeration, resource registration, I/O space mapping) at its entry point, and the extension returns its `AddResourceGroup` function. For each CSRT resource group it's matched with, `AddResourceGroup` reads the DMA controller and DMA channel descriptors and registers them with the HAL; the HAL then drives the BAM through the 10 functions of a [DMA function table](#dma-function-table) (initialize the controller, program a channel with a scatter/gather list, handle the interrupt, cancel…). Each DMA channel is a BAM pipe in system mode whose descriptor FIFO is the common buffer allocated by the HAL.  
-It's the HAL-side counterpart of [qckmbam8930.sys](../drivers/qckmbam8930.md), which drives the BAMs of the ACPI namespace for kernel clients: the register programming is the same (reset, `BAM_CNFG_BITS`, pipe trust, pipe connect). Which BAM it drives depends on the CSRT of the firmware, which isn't in [content/acpi](../acpi/README.md); the 0x00900000 clock controller writes of the "type 2" controller suggest the BAM-DMA engine (`BAMDMA`, 0x12244000) ?. Its users are the drivers that get a system DMA adapter (`IoGetDmaAdapter`) for a request line served by this controller: unknown.  
-Sibling binary: [QCHalExtQcAdm3Dma.dll](./qchalextqcadm3dma.md), the HAL extension of the ADM3 data mover, built from the same code (same entry point and HAL services).
+It's the HAL-side counterpart of [qckmbam8930.sys](../drivers/qckmbam8930.md), which drives the BAMs of the ACPI namespace for kernel clients: the register programming is the same (reset, `BAM_CNFG_BITS`, pipe trust, pipe connect). On the Lumia 520 the [CSRT](#lumia-520-csrt) gives it the BAMs of the 5 SD controllers SDCC1–SDCC5 (BAM at SDCC base + 0x2000, second register block = the SDCC DML at base + 0x800), all of variant 1, 2 pipes each, request lines 46–75. Its users are therefore the SD host drivers that get a system DMA adapter (`IoGetDmaAdapter`) for one of those request lines (`\_SB.SDC1` eMMC and `\_SB.SDC3` SD card, see [dumpsd.sys](../drivers/dumpsd.md) ?).  
+Sibling binary: [QCHalExtQcAdm3Dma.dll](./qchalextqcadm3dma.md), the HAL extension of the ADM3 data mover, built from the same code (same entry point and HAL services).  
+Older build of the same extension (BAM release 5.0, 2012): [HalExtQ8x60Bam.dll](./halextq8x60bam.md), identical except for the width of three register reads.
 
 Location on the phone: `C:\Windows\System32\QCHalExtQ8x60Bam.dll` ? (the extracted file has no notes).  
 
@@ -105,6 +106,27 @@ DMA channel (subtype 0), 0x28 bytes used:
 
 A channel's request line is its pipe number plus the minimum request line of the controller (see [ValidateRequestLineBinding](#validaterequestlinebinding-sub_401408-0x401408)).
 
+### Lumia 520 CSRT
+
+Resource group `QCOM` device 0x1005 of the CSRT (`csrt.acp` of the `PLAT` partition, see [HAL.dll](./hal.md#lumia-520-tables)), no shared info. 5 controllers in the 0x38-byte format (no security entries); `Type` 3 everywhere. The SDCC numbers come from the controller addresses of [dumpsd.sys](../drivers/dumpsd.md).
+
+| UID | Controller | Variant (+0x0C) | DML (+0x10, size +0x18) | BAM (+0x1C, size +0x24) | GSIV (+0x28) | EE (+0x2C) | Request lines (+0x30…+0x34) |
+|-----|------------|-----------------|--------------------------|--------------------------|--------------|------------|------------------------------|
+| 3 | SDCC1 (eMMC) | 1 | 0x12400800, 0x100 | 0x12402000, 0x2000 | 0x82 (130) | 0 | 46–51 |
+| 6 | SDCC2 | 1 | 0x12140800, 0x100 | 0x12142000, 0x2000 | 0x81 (129) | 0 | 52–57 |
+| 9 | SDCC3 (SD card) | 1 | 0x12180800, 0x100 | 0x12182000, 0x2000 | 0x80 (128) | 0 | 58–63 |
+| 12 | SDCC4 | 1 | 0x121C0800, 0x100 | 0x121C2000, 0x2000 | 0x7F (127) | 0 | 64–69 |
+| 15 | SDCC5 | 1 | 0x12200800, 0x100 | 0x12202000, 0x2000 | 0x7E (126) | 0 | 70–75 |
+
+Each controller is followed by 2 channels (UID + 1 and + 2), identical for the 5 controllers:
+
+| Pipe (+0x0C) | Direction (+0x10) | System mode (+0x14) | +0x18 | FIFO size (+0x1C) | +0x20 |
+|--------------|-------------------|---------------------|-------|-------------------|-------|
+| 0 | 0 | 1 | 6 | 0x1000 | 0 |
+| 1 | 1 | 1 | 6 | 0x1000 | 0 |
+
+The variant is 1, so the [initialization](#initializecontroller-sub_401230-0x401230) of the "variant 2" (clock controller 0x00900000 writes) isn't used on this phone. The controller ids given by the HAL depend on the order in which the extensions are called (?).
+
 ### DMA controller initialization block
 
 0x44 bytes, built on the stack by `AddResourceGroup` and passed to `RegisterResourceDescriptor` with the controller descriptor. Field names with "?" follow the public `DMA_INITIALIZATION_BLOCK` of the Windows HAL extensions.
@@ -151,8 +173,10 @@ A channel's request line is its pipe number plus the minimum request line of the
 | Offset | Size | Comment |
 |--------|------|---------|
 | 0x00 | 0x5C | Copy of the [controller descriptor](#csrt-descriptors) |
-| 0x60 | 4 | Virtual address of the BAM registers (mapped at the first initialization) |
-| 0x70 | 4 | Virtual address of the second register block |
+| 0x60 | 8 | Physical address of the BAM registers (descriptor +0x1C), set by `AddResourceGroup` |
+| 0x68 | 4 | Virtual address of the BAM registers (mapped at the first initialization) |
+| 0x70 | 8 | Physical address of the second register block (descriptor +0x10), set by `AddResourceGroup` |
+| 0x78 | 4 | Virtual address of the second register block |
 | 0x7C | 4 | `BAM_NUM_PIPES` bits 0-7: number of pipes |
 | 0x80 | 4 | `BAM_REVISION` bits 0-7: revision |
 | 0x84 | 4 | `BAM_REVISION` bits 8-11: number of EEs |
@@ -205,7 +229,7 @@ All the register accesses are surrounded by `DSB` barriers. Most functions first
 `(PVOID ControllerContext)`:
 
 1. Adds the context to the table `dword_404A20` (8 entries, first free slot; not read anywhere else).
-2. Maps the BAM registers (+0x1C, size +0x24) into +0x60 and, if its address isn't 0, the second register block (+0x10, size +0x18) into +0x70, the first time only.
+2. Maps the BAM registers (+0x1C, size +0x24) (physical address copied at +0x60) into +0x68 and, if its address isn't 0, the second register block (+0x10, size +0x18, copied at +0x70) into +0x78, the first time only.
 3. Variant 2 (+0x0C): maps the clock controller at 0x00900000 (0x3000 bytes, once, `dword_404A08`) and writes 0x10 (branch clock enable ?) at its offsets 0x25C0, 0x25A0 and 0x2564; then writes 1 at +0x00 and 0x131 at +0x04 of the second register block.
 4. BAM reset, same values as [qckmbam8930.sys](../drivers/qckmbam8930.md):
 

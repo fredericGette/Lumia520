@@ -6,6 +6,8 @@ ACPI tables of the Lumia 520 firmware (Windows Phone 8.1), disassembled with the
 | [dsdt.dsl](./dsdt.dsl) | DSDT (revision 2) | `QCOMM ` | `MSM8930 ` | 4 | 70813 bytes |
 | [ssdt.dsl](./ssdt.dsl) | SSDT (revision 1) | `NOKIA ` | `MSM8930 ` | 4 | 3364 bytes |
 
+The tables are files of the `ACPI` folder of the `PLAT` partition, loaded by the UEFI driver `AcpiPlatform`. The other tables of that folder (`FACP`, `FACS`, `APIC`, `CSRT`, `WDAT`, `DBG2`, `FPDT`, `BGRT`, `TPM2`) are decoded in [HAL.dll](../libraries/hal.md#lumia-520-tables); the CSRT values are also in the pages of the HAL extensions [QCHalExtQ8x60Bam.dll](../libraries/qchalextq8x60bam.md#lumia-520-csrt) and [QCHalExtQcAdm3Dma.dll](../libraries/qchalextqcadm3dma.md#lumia-520-csrt).
+
 The DSDT is the Qualcomm platform table: SoC blocks, subsystems, PMIC, display, audio, etc. The SSDT is the Nokia table: sensors, the battery/charger device and some Nokia devices. All the devices are in the `\_SB` scope.
 
 `iasl` doesn't decode the resource buffers returned by the `_CRS` methods (they're shown as raw bytes). The decoded values are given in the driver pages. The format of the descriptors is in the ACPI specification, §6.4 "Resource Data Types for ACPI".
