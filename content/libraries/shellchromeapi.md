@@ -11,7 +11,7 @@ Location on the phone: `C:\Windows\System32\ShellChromeAPI.dll` ?
 | DLL | Functions |
 |-----|-----------|
 | RPCRT4.dll | `RpcBindingCreateW`, `RpcBindingBind`, `RpcBindingFree`, `NdrClientCall2`, `I_RpcExceptionFilter` |
-| SecRuntime.dll | `QueryTransientObjectSecurityDescriptor`, `FreeTransientObjectSecurityDescriptor` |
+| [SecRuntime.dll](./secruntime.md) | `QueryTransientObjectSecurityDescriptor`, `FreeTransientObjectSecurityDescriptor` |
 | ntdll.dll | `NtQueryWnfStateData`, `RtlQueryWnfStateData`, `RtlPublishWnfStateData`, `RtlNtStatusToDosError` |
 | CoreMessaging.dll | `CoreUICreate`, `CoreUIOpenExisting` |
 | CoreUIComponents.dll | `CoreUIFactoryCreate`, `MsgBlobCreateShared`, `MsgStringCreateShared`, `MsgRelease` |
@@ -184,7 +184,7 @@ There is no global object: each RPC export builds its binding on the stack and f
 Interface `{8B111127-818E-4AE5-9788-7396504EF98F}` version 0.0 (MIDL stub descriptor at 0x10001310, proc format string from 0x10001362, type format string at 0x100011FA). All procedures take the binding as explicit primitive handle and return a `long` (HRESULT).
 
 **Binding** (`ConnectShell`, `sub_10008E1C`; an inlined copy in `sub_100066DC`):
-1. `QueryTransientObjectSecurityDescriptor(9, L"RPCShellChrome\\Server", &sd)` (SecRuntime): security descriptor the server must have. On failure the NTSTATUS with bit 28 set is returned.
+1. `QueryTransientObjectSecurityDescriptor(9, L"RPCShellChrome\\Server", &sd)` ([SecRuntime](./secruntime.md#querytransientobjectsecuritydescriptor-0x10003c20)): security descriptor the server must have. On failure the NTSTATUS with bit 28 set is returned.
 2. `RpcBindingCreateW(&template, &security, NULL, &h)`:
    - template: version 1, flags 0, protocol sequence 3 (`RPC_PROTSEQ_LRPC`), no address, no endpoint (resolved by the endpoint mapper);
    - security: version 1, authentication level 6 (`RPC_C_AUTHN_LEVEL_PKT_PRIVACY`), service 10 (`RPC_C_AUTHN_WINNT`), QoS version 5 with `RPC_C_QOS_IDENTITY_DYNAMIC`, `RPC_C_IMP_LEVEL_IDENTIFY` and `ServerSecurityDescriptor = sd`.
@@ -375,7 +375,7 @@ All under `HKEY_LOCAL_MACHINE`:
 
 `Shell_RegisterButtonPressCallback(button, callback)` and `Shell_UnregisterButtonPressCallback(button, callback)` (critical section `unk_1001E558`) use a process-wide listener (`GetButtonListener`, `sub_10007094`, object in `dword_1001E52C`):
 - At first use, if the calling thread already has a CoreMessaging context (`CoreUIOpenExisting`), the listener connects on this thread (`sub_10007470`); otherwise it starts its own thread (`sub_10018FC8`) and +0x44 = 1.
-- Connection: `CoreUICreate`, `CoreUIFactoryCreate`, then the endpoint `L"System\\ShellButtonRouterOutputEndpoint"` (router object at +0x18). With its own thread, it also creates the named events `ButtonHandler_Register_Proceed` and `ButtonHandler_Unregister_Proceed` and waits on them.
+- Connection: `CoreUICreate`, `CoreUIFactoryCreate`, then the endpoint `L"System\\ShellButtonRouterOutputEndpoint"` (router object at +0x18; served by the `ShellButtonRouter` of [MobileUI.exe](../applications/mobileui.md#hardware-buttons)). With its own thread, it also creates the named events `ButtonHandler_Register_Proceed` and `ButtonHandler_Unregister_Proceed` and waits on them.
 - Register: the callbacks are kept in a hash map button → list of callbacks (`AddRef` on the callback). The first callback of a button calls the router method +0x0C (subscribe). With the listener thread, the request is posted to it (`sub_100171B0` / `sub_10017170`) and the caller waits for the `…_Proceed` event.
 - Unregister: `Release` and removal; the last callback of a button calls the router method +0x10; when the map is empty, the listener is stopped.
 

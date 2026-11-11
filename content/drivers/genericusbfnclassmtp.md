@@ -69,7 +69,7 @@ There's no parameters read by the driver in the registry (the `Parameters` key o
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| Lower device of its stack (`WdfDeviceGetIoTarget`) = PDO `USBFN\MTP\3&1d123fc3&0&00`, child of `ACPI\QCOM01C0\1` | USB function class extension (UFX) / controller driver ? | Receives the forwarded `IOCTL_INTERNAL_USBFN_*`, see [genericusbfnclass.sys](./genericusbfnclass.md#ioctl-forwarding) |
+| Lower device of its stack (`WdfDeviceGetIoTarget`) = PDO `USBFN\MTP\3&1d123fc3&0&00`, child of `ACPI\QCOM01C0\1` | USB function class extension [usbfnclx.sys](./usbfnclx.md) / controller driver [usbfnchipidea.sys](./usbfnchipidea.md) | Receives the forwarded `IOCTL_INTERNAL_USBFN_*`, see [genericusbfnclass.sys](./genericusbfnclass.md#ioctl-forwarding) |
 
 ### USB function configuration
 

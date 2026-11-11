@@ -2,7 +2,7 @@
 
 The Bluetooth Support Service of Windows Phone 8.1: the `BthServ` service, hosted by `svchost.exe`, which offers the local RPC interface `BthServRPCService` to the user-mode Bluetooth code (device list and cache, SDP records, discoverable/connectable mode, pairing requests).  
 `BTHSERV.DLL` is a C DLL (90 112 bytes, 304 functions, the database has its full symbols). It opens the radio of the Microsoft stack (`GUID_BTHPORT_DEVICE_INTERFACE`) and sends it the `BthPort` IOCTLs; it keeps a cache of the remote devices and of their SDP records in memory (red-black trees) and on disk (`bthservsdp.dat`); it forwards the pairing requests of the stack (`GUID_BLUETOOTH_AUTHENTICATION_REQUEST`, `GUID_BLUETOOTH_LE_AUTHENTICATION_REQUEST`) to the clients that registered an event; it counts the clients that want the radio discoverable or connectable; it keeps the Device Association Framework store (offline association endpoints) in sync with the paired devices of the stack; and it removes from the Bluetooth hopping (AFH) the frequencies of the current Wi-Fi channel. Most of its RPC methods take a context handle opened with `BthServOpen`.  
-The RPC interface `{2ACB9D68-B434-4B3E-B966-E06B4B3A84CB}` and the endpoint `BthServEp` are also present in `WSHBTH.DLL` (the Winsock helper of Bluetooth, not analysed), its probable client. The same notifications and IOCTLs are used by [BtConnectionManagerService.dll](./btconnectionmanagerservice.md#devices-and-notifications), the other user of the radio handle.
+The RPC interface `{2ACB9D68-B434-4B3E-B966-E06B4B3A84CB}` and the endpoint `BthServEp` are used by [WSHBTH.DLL](./wshbth.md#rpc), the Winsock helper and namespace provider of Bluetooth (opnums 0, 1, 7, 12 and 13: device list for `WSALookupService*`, SDP records of `WSASetService`). The same notifications and IOCTLs are used by [BtConnectionManagerService.dll](./btconnectionmanagerservice.md#devices-and-notifications), the other user of the radio handle.
 
 Location on the phone: `C:\Windows\System32\bthserv.dll` ? (the extracted file has no notes).  
 Service name: `BthServ` (`RegisterServiceCtrlHandlerExW`); PDB `bthserv.pdb`.  
@@ -114,19 +114,19 @@ Interface `{2ACB9D68-B434-4B3E-B966-E06B4B3A84CB}` version 1.0, 22 procedures (N
 
 | Opnum | Routine | Parameters (after `handle_t` or the context handle) | Use |
 |-------|---------|------------------------------------------------------|-----|
-| 0 | `BthServOpen` (0x10002A80) | `[out] context`, `[out] status`, `[in]` struct of 2 DWORDs: client process id, ? | Creates the [client context](#client-context); `OpenProcess(PROCESS_DUP_HANDLE)` of the process id while impersonating the client |
+| 0 | `BthServOpen` (0x10002A80) | `[out] context`, `[out] status`, `[in]` struct of 2 DWORDs: client process id, thread id (the client id of the TEB, as sent by [WSHBTH.DLL](./wshbth.md#rpc)) | Creates the [client context](#client-context); `OpenProcess(PROCESS_DUP_HANDLE)` of the process id while impersonating the client |
 | 1 | `BthServClose` (0x100023EC) | `[in, out] context`, `[out] status` | Releases the discovery / connectable requests, the authentication registrations and the SDP records (`IOCTL_BTH_SDP_REMOVE_RECORD`) of the client |
 | 2 | `BthServRegisterAuthenticationEvent` (0x100027F0) | `[out] status`, `[in] BTH_ADDR *`, `[in] hyper` event handle in the client process, `[in] long` ?, `[in] long` flags | [Pairing requests](#pairing-requests): `BthServAddAuthenticationClient` |
 | 3 | `BthServDeregisterAuthenticationEvent` (0x1000B650) | `[out] status`, `[in] BTH_ADDR *`, `[in] hyper` event handle | `BthServRemoveAuthenticationClientByEventHandle` |
 | 4 | `BthServGetAuthRequest` (0x1000B594) | `[out] status`, `[out] BTHSERV_AUTHENTICATION_REQUEST *` | Next queued request of the client; `ERROR_NOT_FOUND` (1168) if none |
 | 5 | `BthServGetDeviceInfo` (0x1000CF7C) | `[out] status`, `[in]` source (enum), `[in] BTH_ADDR *`, `[in, out] BLUETOOTH_DEVICE_INFO *` | Device from the cache or the stack (`BthServClientGetDeviceInfo`, 0x1000C2C8) |
 | 6 | `BthServSetDeviceName` (0x1000B278) | `[out] status`, `[in] BTH_ADDR *`, `[in, string] wchar_t *` | Local name of a device in the cache (up to 248 characters) |
-| 7 | `BthServGetDeviceList` (0x1000CEFC) | `[out] status`, `[in] long` inquiry, `[in] byte`, `[in] long` size, `[out, size_is] BLUETOOTH_DEVICE_INFO[]`, `[out] long *` size | [Device list](#device-list) |
+| 7 | `BthServGetDeviceList` (0x1000CEFC) | `[out] status`, `[in] long` inquiry, `[in] byte` (inquiry length computed by [WSHBTH.DLL](./wshbth.md#nsplookupservicebegin)), `[in] long` size, `[out, size_is] BLUETOOTH_DEVICE_INFO[]`, `[out] long *` size | [Device list](#device-list) |
 | 8 | `BthServActivateService` (0x1000D498) | `[out] status`, `[in] BTH_ADDR *`, `[in] long` size, `[in, size_is] byte[]` SDP record | Stores a remote service record in `CachedServices` ([below](#activateservice)) |
 | 9 | `BthServUpdateService` (0x1000A40C) | `[out] status`, `[in] long` size, `[in, size_is] byte[]`, `[in] long` wait | `IOCTL_BTH_UPDATE_DEVICE` (0x411030) with the buffer (at least 0x524 bytes); if the last parameter is non-zero, `Sleep(3000)` after it |
 | 10 | `BthServGetSdpRecord` (0x1000D5C4) | `[out] status`, `[in] BTH_ADDR *`, `[in]` kind (enum: 0 L2CAP, 1 PnP), `[in]` source (enum), `[in] long` size, `[out, size_is] byte[]`, `[out] long *` size | [SDP cache](#sdp-cache) |
 | 11 | `BthServSetSdpRecord` (0x1000B70C) | `[out] status`, `[in] long` size, `[in, size_is] byte[]`, `[out] hyper *` handle | `IOCTL_BTH_SDP_SUBMIT_RECORD` (0x410214); the record is remembered in the context, the handle is a counter of the service |
-| 12 | `BthServSetSdpRecordWithInfo` (0x1000B678) | `[out] status`, `[in] long` ×3 (the first three DWORDs of the 16-byte header, the fourth is the size), `[in] long` size, `[in, size_is] byte[]`, `[out] hyper *` handle | Builds a `BTH_SET_SERVICE` (16-byte header + record) and sends `IOCTL_BTH_SDP_SUBMIT_RECORD_WITH_INFO` (0x41021C) |
+| 12 | `BthServSetSdpRecordWithInfo` (0x1000B678) | `[out] status`, `[in] long` ×3 (the first three DWORDs of the 16-byte header, the fourth is the size; [WSHBTH.DLL](./wshbth.md#published-record-context) sends 0, 0, `fCodService`), `[in] long` size, `[in, size_is] byte[]`, `[out] hyper *` handle | Builds a `BTH_SET_SERVICE` (16-byte header + record) and sends `IOCTL_BTH_SDP_SUBMIT_RECORD_WITH_INFO` (0x41021C) |
 | 13 | `BthServRemoveSdpRecord` (0x1000B5C8) | `[out] status`, `[in] hyper` handle | `IOCTL_BTH_SDP_REMOVE_RECORD` (0x410218) of a record of this client |
 | 14 | `BthServEnableDiscovery` (0x1000A268) | `[out] status`, `[in] long` enable | [Discoverable and connectable](#discoverable-and-connectable) |
 | 15 | `BthServEnableIncomingConnections` (0x1000A234) | `[out] status`, `[in] long` enable | Same, connectable |
@@ -146,7 +146,7 @@ Allocated by `BthServOpen` (60 bytes, `HeapAlloc`):
 | Offset | Size | Comment |
 |--------|------|---------|
 | 0x00 | 4 | Process id of the client (first DWORD of the input structure) |
-| 0x04 | 4 | Second DWORD of the input structure (?) |
+| 0x04 | 4 | Second DWORD of the input structure: thread id of the client |
 | 0x08 | 4 | Handle of the client process (`PROCESS_DUP_HANDLE`), used to duplicate its events |
 | 0x0C | 8 | List of the authentication registrations of the client |
 | 0x14 | 8 | Queue of the pairing requests waiting for `BthServGetAuthRequest` |

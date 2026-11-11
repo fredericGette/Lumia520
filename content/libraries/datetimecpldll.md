@@ -2,7 +2,7 @@
 
 The user interface and the code-behind of the "date+time" settings page of Windows Phone 8.1, started by [DateTimeCPL.exe](../applications/datetimecpl.md).  
 `DateTimeCPLdll.dll` is a small DLL (61 440 bytes, 228 functions, most of them CRT, STL strings and UIX object boilerplate). Its resources hold the compiled UIX markup of the whole page (`Frame.uix`, `Main.uix`, `TimeZone.uix`…). Its code is a UIX schema (exports `UIXGetSchemaFactory` / `UIXSchemaUnloaded`) that gives the markup two types: `DateTimeProvider` (automatic time and time zone, 24-hour clock, time zone, date and time) and `TimeZoneData` (one entry of the time zone list). The settings are read from and written to the registry (`HKLM\System\State\DateTime`), the locale (`SetLocaleInfoWP`) and the system clock (`SetLocalTime`, `SetTimeZoneInformationByID`), and two WNF states of the shell are published when they change.  
-It's loaded by `UIXMobile.dll` (the UIX framework, not analysed): as a resource module for `res://DateTimeCPLdll!…` and as a schema for `dll://DateTimeCPLdll`. [DateTimeCPL.exe](../applications/datetimecpl.md) only passes `res://DateTimeCPLdll!Frame.uix` to `UIXMobile!RunApplication`. The localised strings come from the sibling `DateTimeCPLRes.dll` (not analysed).
+It's loaded by the UIX engine (`UIXn.dll`, not analysed, started by [UIXMobile.dll](./uixmobile.md)): as a resource module for `res://DateTimeCPLdll!…` and as a schema for `dll://DateTimeCPLdll`. [DateTimeCPL.exe](../applications/datetimecpl.md) only passes `res://DateTimeCPLdll!Frame.uix` to [UIXMobile!RunApplication](./uixmobile.md#runapplication-0x1003152c). The localised strings come from the sibling `DateTimeCPLRes.dll` (not analysed).
 
 Location on the phone: ? (no path in the binary; probably next to `DateTimeCPL.exe`).  
 
@@ -38,8 +38,8 @@ Files used other than the static imports.
 
 | File | How | Use |
 |------|-----|-----|
-| `UIXMobile.dll` | Host: calls `UIXGetSchemaFactory` (`dll://DateTimeCPLdll` in the markup) and loads the `res://DateTimeCPLdll!…` resources | UIX framework running the page; its object passed to `UIXGetSchemaFactory` is used to create strings and to signal property changes |
-| `UIXMobile.dll` resources | `res://UIXMobile!PageStack.uix`, `Frame.uix`, `Page.uix`, `Button.uix`, `List.uix`, `PickerBox.uix`, `PopupControl.uix`, `ToggleSwitch.uix`, `Styles.uix`, `DatePicker.uix`, `TimePicker.uix`, `dll://UIXMobile` (in `_DataTable.uib`) | Standard controls used by the markup |
+| `UIXn.dll` (UIX engine started by [UIXMobile.dll](./uixmobile.md)) | Host: calls `UIXGetSchemaFactory` (`dll://DateTimeCPLdll` in the markup) and loads the `res://DateTimeCPLdll!…` resources | UIX framework running the page; its object passed to `UIXGetSchemaFactory` is used to create strings and to signal property changes |
+| [UIXMobile.dll](./uixmobile.md) resources | `res://UIXMobile!PageStack.uix`, `Frame.uix`, `Page.uix`, `Button.uix`, `List.uix`, `PickerBox.uix`, `PopupControl.uix`, `ToggleSwitch.uix`, `Styles.uix`, `DatePicker.uix`, `TimePicker.uix`, `dll://UIXMobile` (in `_DataTable.uib`) | Standard controls used by the markup |
 | `DateTimeCPLRes.dll` | `res://DateTimeCPLRes!SplashStrings.uix` (in `_DataTable.uib`) | Localised strings `IDS_TITLE_LABEL`, `IDS_AUTOSET_LABEL`, `IDS_24_LABEL_ON_TEXT`… (`Resources.LoadString`) |
 | `SettingsAssets{ScreenResolution}` (`SettingsAssets<resolution>.dll` ?) | `res://SettingsAssets{ScreenResolution}!Constants.uix` (in `_DataTable.uib`) | Layout constants of the settings pages, chosen by screen resolution |
 | `emclient.dll` | `GetModuleHandleW` + `GetProcAddress("SHTerminateProcessForOOM")` | Called before terminating the process when out of memory, only if already loaded |
@@ -66,7 +66,7 @@ The markup uses the names of the schema types, properties and methods below. It 
 
 | Ordinal | Name | Address | Parameters |
 |---------|------|---------|------------|
-| 1 | `UIXGetSchemaFactory` | 0x10004288 | `IUnknown **factory` (out), `host` (interface of `UIXMobile.dll`) |
+| 1 | `UIXGetSchemaFactory` | 0x10004288 | `IUnknown **factory` (out), `host` (`IUIXServices` of the UIX engine, the same object [UIXMobile.dll](./uixmobile.md#uix-schema) receives) |
 | 2 | `UIXSchemaUnloaded` | 0x10004340 | `DWORD` (0: unload) |
 
 **UIXGetSchemaFactory** creates (once; a second call crashes on purpose) the schema object (28 bytes, `dword_100072E0`, built from the schema description at 0x1000149C) and a factory object (16 bytes, `dword_100072E8`) that holds a reference on it, saves `host` in `off_100072EC` and returns the factory with a reference added. Returns `E_OUTOFMEMORY` (0x8007000E) if an allocation fails, `S_OK` otherwise.  

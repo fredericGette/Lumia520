@@ -391,4 +391,4 @@ WNF states published (`ZwUpdateWnfStateData`):
 | WNF_DX_MODE_CHANGE_NOTIFICATION | 0x41C61629A3BC1035 | `DxgkStatusChangeNotify` ? |
 | WNF_DX_OCCLUSION_CHANGE_NOTIFICATION | 0x41C61629A3BC1835 | `DxgkStatusChangeNotify` ? |
 | WNF_DX_STEREO_CONFIG | 0x41C61629A3BC0C75 | `DxgkSetStereoEnabled` |
-| WNF_DX_NETWORK_DISPLAY_STATE_CHANGE_NOTIFICATION | 0x41C61629A3BC2035 | `DpiMiracastBroadcastDeviceStateChange` |
+| WNF_DX_NETWORK_DISPLAY_STATE_CHANGE_NOTIFICATION | 0x41C61629A3BC2035 | `DpiMiracastBroadcastDeviceStateChange` (consumed by [MirrorUX.dll](../libraries/mirrorux.md#wnf-states), data ≥ 0x214 bytes) |

@@ -28,7 +28,7 @@ It communicates with the following devices:
 | \Device\SMD | [qcsmd8930.sys](./qcsmd8930.md) | Interface `{F9D15453-8335-434C-AA72-FCD925F135F3}`. Channel `DATA40_CNTL`, edge 0 (APPS↔MODEM): QMI control messages. [internal IOCTL 0x22003](#internal-ioctl-0x22003), [internal IOCTL 0x2201F, 0x22027](#internal-ioctl-0x2201f-0x22027), plus read/write requests |
 | \Device\DMUX | [qcbamdmux8930.sys](./qcbamdmux8930.md) | Interface `{CCCB7664-4951-40C3-8EB1-FDA3964A4479}` ("ready"). Stream 2, channel 8: IP packets. [internal IOCTL 0x82003](#internal-ioctl-0x82003), then the [BAM DMUX query-interface](./qcbamdmux8930.md#bam-dmux-interface) `{EA38864C-56D4-4426-B145-AC2E39C2BB72}` |
 | \Device\USB_RMNET | USB RmNet function driver ? | Interface `{96F30BBF-0C5E-40F6-8A12-FFDCF265FF73}`. Control side of the USB function: [IOCTL 0x808520C0](#ioctl-0x808520c0), [IOCTL 0x808520CD](#ioctl-0x808520cd), [IOCTL 0x808520D2](#ioctl-0x808520d2) |
-| Interface `{CEC7D47F-A1E1-4607-A693-9A0061465DB7}` | USB function driver ? | Opened by the symbolic link given in the PnP notification. Bulk data side: [internal IOCTL 0x2AC011](#internal-ioctl-0x2ac011) (to the host), [internal IOCTL 0x2AC016](#internal-ioctl-0x2ac016) (from the host) |
+| Interface `{CEC7D47F-A1E1-4607-A693-9A0061465DB7}` | [usbfnclx.sys](./usbfnclx.md#interface-guid) (USB function controller FDO) | Opened by the symbolic link given in the PnP notification. Bulk data side: [internal IOCTL 0x2AC011](#internal-ioctl-0x2ac011) (to the host), [internal IOCTL 0x2AC016](#internal-ioctl-0x2ac016) (from the host) |
 
 All targets are opened with `WdfIoTargetOpen` (`DesiredAccess` 0x1F0000 = `FILE_ALL_ACCESS`; share mode read/write for `\Device\SMD` and `\Device\DMUX`, none for the two USB targets). The 4 I/O targets are created in `EvtDriverDeviceAdd` (`sub_40802C`: context +0x04 = SMD, +0x08 = `\Device\USB_RMNET`, +0x0C = DMUX, +0x10 = USB data interface).
 
@@ -263,7 +263,7 @@ This IOCTL is sent by Qcrmnetbridge8930.sys to the USB data interface `{CEC7D47F
 Inputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | 08 00 00 00 | Pipe / endpoint ? (context +0x84) |
+| 00-03 | 08 00 00 00 | `USBFNPIPEID`: index in the pipe table of [usbfnclx.sys](./usbfnclx.md#internal-ioctls-on-the-controller-fdo) (context +0x84). Must be an IN endpoint |
 
 Outputbuffer:  
 | Bytes | Value | Comment |
@@ -290,7 +290,7 @@ This IOCTL is sent by Qcrmnetbridge8930.sys to the USB data interface `{CEC7D47F
 Inputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | 09 00 00 00 | Pipe / endpoint ? (context +0x80) |
+| 00-03 | 09 00 00 00 | `USBFNPIPEID`: index in the pipe table of [usbfnclx.sys](./usbfnclx.md#internal-ioctls-on-the-controller-fdo) (context +0x80). Must be an OUT endpoint |
 
 Outputbuffer:  
 | Bytes | Value | Comment |
@@ -380,7 +380,7 @@ When the request succeeds, the [BAM DMUX interface](./qcbamdmux8930.md#bam-dmux-
 USB RmNet control interface, registered by the USB function driver that creates `\Device\USB_RMNET`  
 `{96F30BBF-0C5E-40F6-8A12-FFDCF265FF73}`
 
-USB data interface (bulk transfers, internal IOCTLs 0x2AC011 / 0x2AC016), USB function driver ?  
+USB data interface (bulk transfers, internal IOCTLs 0x2AC011 / 0x2AC016): `USBFN_CLX_DEVICE_INTERFACE` of the USB function controller, registered by [usbfnclx.sys](./usbfnclx.md#interface-guid)  
 `{CEC7D47F-A1E1-4607-A693-9A0061465DB7}`
 
 SMD interface (`SMD_DEVICE_INTERFACE_GUID`) of [qcsmd8930.sys](./qcsmd8930.md)  

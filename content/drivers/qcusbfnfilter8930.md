@@ -1,7 +1,7 @@
 ## Qcusbfnfilter8930.sys
 
 USB function controller filter driver (low-power / PHY control of the USB HS controller).  
-It is a KMDF filter (`WdfFdoInitSetFilter`) installed in the stack of the USB function controller (ACPI `\_SB.UFN1` ?, `_HID` `QCOM01C0`: `ACPI\QCOM01C0\1` is the parent of the USB function child devices such as `USBFN\IpOverUsb`, see [genericusbfnclassipoverusb.sys](./genericusbfnclassipoverusb.md)). It doesn't drive the USB function itself: it only handles 2 internal IOCTLs used by the controller driver above it to put the USB HS controller and its ULPI PHY into low-power mode and to wake them up ([internal IOCTL 0x2AC03A](#internal-ioctl-0x2ac03a--ioctl_internal_usbfn_set_power_filter_state) and [internal IOCTL 0x2AC03E](#internal-ioctl-0x2ac03e)). Every other request is forwarded unchanged to the lower driver.  
+It is a KMDF filter (`WdfFdoInitSetFilter`) installed in the stack of the USB function controller, below its function driver [usbfnchipidea.sys](./usbfnchipidea.md) (ACPI `\_SB.UFN1` ?, `_HID` `QCOM01C0`: `ACPI\QCOM01C0\1` is the parent of the USB function child devices such as `USBFN\IpOverUsb`, see [genericusbfnclassipoverusb.sys](./genericusbfnclassipoverusb.md)). It doesn't drive the USB function itself: it only handles 2 internal IOCTLs sent by the class extension [usbfnclx.sys](./usbfnclx.md) of the controller driver above it to put the USB HS controller and its ULPI PHY into low-power mode and to wake them up ([internal IOCTL 0x2AC03A](#internal-ioctl-0x2ac03a--ioctl_internal_usbfn_set_power_filter_state) and [internal IOCTL 0x2AC03E](#internal-ioctl-0x2ac03e)). Every other request is forwarded unchanged to the lower driver.  
 It accesses the hardware directly: the registers of the USB HS controller (ChipIdea core, same offsets as the Linux `msm_otg.c` driver) at the hardcoded address 0x12500000, the ULPI PHY through the ULPI viewport, and the clock controller at the hardcoded address 0x00900000.  
 PDB path: `P:\QcUsbFnFilter\rel\8.2.1\arm\Release\qcusbfnfilter8930.pdb`.
 
@@ -107,7 +107,7 @@ Any failure is returned by `EvtDevicePrepareHardware` (the device doesn't start)
 ### internal IOCTL 0x2AC03A — IOCTL_INTERNAL_USBFN_SET_POWER_FILTER_STATE
 
 This internal IOCTL is processed by Qcusbfnfilter8930.sys (`EvtIoInternalDeviceControl`, `sub_4017FC`).  
-Kernel-mode only: it must be sent as `IRP_MJ_INTERNAL_DEVICE_CONTROL`. Probably sent by the USB function controller driver above the filter ?.
+Kernel-mode only: it must be sent as `IRP_MJ_INTERNAL_DEVICE_CONTROL`. Not sent by the code of [usbfnchipidea.sys](./usbfnchipidea.md): it is sent by its class extension [usbfnclx.sys](./usbfnclx.md#internal-ioctl-0x2ac03a--ioctl_internal_usbfn_set_power_filter_state) from `EvtDeviceArmWakeFromS0`.
 
 | Property | Value |
 |----------|-------|
@@ -123,8 +123,8 @@ Kernel-mode only: it must be sent as `IRP_MJ_INTERNAL_DEVICE_CONTROL`. Probably 
 Inputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | 01 00 00 00 | Command, see below. `USBFN_POWER_FILTER_STATE.DeviceState` (`USBFN_DEVICE_STATE`: 1 = Attached, 2 = Default, 3 = Detached, 4 = Addressed, 5 = Configured, 6 = Suspended ?) |
-| 04-07 | ? | Not used. `USBFN_POWER_FILTER_STATE.PState` / `Reserved` |
+| 00-03 | 01 00 00 00 | Command, see below. `USBFN_POWER_FILTER_STATE.DeviceState` (`USBFN_DEVICE_STATE`: 1 = Attached, 2 = Default, 3 = Detached, 4 = Addressed, 5 = Configured, 6 = Suspended): the current device state of [usbfnclx.sys](./usbfnclx.md#state-machine) |
+| 04-07 | 00 00 00 00 | Not used. `USBFN_POWER_FILTER_STATE.PState` / `Reserved`, always 0 |
 
 | Command | Action | Information |
 |---------|--------|-------------|
@@ -142,7 +142,7 @@ An InputBuffer smaller than 8 bytes → the status of `WdfRequestRetrieveInputBu
 ### internal IOCTL 0x2AC03E
 
 This internal IOCTL is processed by Qcusbfnfilter8930.sys (`EvtIoInternalDeviceControl`, `sub_4017FC`).  
-Kernel-mode only: it must be sent as `IRP_MJ_INTERNAL_DEVICE_CONTROL`. Probably sent by the USB function controller driver above the filter ?.
+Kernel-mode only: it must be sent as `IRP_MJ_INTERNAL_DEVICE_CONTROL`. Not sent by the code of [usbfnchipidea.sys](./usbfnchipidea.md): it is sent by its class extension [usbfnclx.sys](./usbfnclx.md#internal-ioctl-0x2ac03e--exit-low-power-mode) from `EvtDeviceD0Entry`.
 
 | Property | Value |
 |----------|-------|

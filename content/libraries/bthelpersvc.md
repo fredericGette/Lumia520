@@ -2,7 +2,7 @@
 
 A Bluetooth helper of Windows Phone 8.1: a COM local server that exposes the Bluetooth SDP functions of Winsock (namespace `NS_BTH`) through the interface `IBtHelperSvc`.  
 `bthelpersvc.dll` is a very small C++ DLL (64 functions, most of them CRT and MIDL proxy/stub code; the database has its symbols). `InitializeBtHelperSvc` creates one `BtHelperSvc` object, calls `WSAStartup` and registers the object with `CoRegisterClassObject` as a local server. Its methods check whether a remote device offers a service (`WSALookupServiceBeginW` / `WSALookupServiceNextW` with the device address as context), run a service lookup step by step for the client, and publish or delete raw SDP records on the local SDP server (`WSASetServiceW` with a `BTH_SET_SERVICE` blob). The published records are remembered with the process id of the RPC client, and only that process can delete them. The same DLL is the proxy/stub DLL of `IBtHelperSvc` (`DllGetClassObject`, `GetProxyDllInfo`).  
-The process that calls `InitializeBtHelperSvc` (the host of the server) and the clients of the interface are unknown: no other extracted binary references the DLL, its CLSID or its IID. Its role (giving SDP access to a process that can't use the Bluetooth namespace of Winsock itself, e.g. an application) is a guess ?. The Winsock Bluetooth provider is presumably `WSHBTH.DLL` (not analysed).
+The process that calls `InitializeBtHelperSvc` (the host of the server) and the clients of the interface are unknown: no other extracted binary references the DLL, its CLSID or its IID. Its role (giving SDP access to a process that can't use the Bluetooth namespace of Winsock itself, e.g. an application) is a guess ?. The Winsock Bluetooth namespace provider is [WSHBTH.DLL](./wshbth.md).
 
 Location on the phone: `C:\Windows\System32\bthelpersvc.dll` ? (the extracted file has no notes).  
 Source folder: `src\appplat\src\nativefx\network\bluetooth\bthelpersvc\lib\` (precompiled header symbol of the static library `BtHelperSvcLib`).  
@@ -27,7 +27,7 @@ Files used other than the static imports.
 
 | File | How | Use |
 |------|-----|-----|
-| Winsock Bluetooth namespace provider (`WSHBTH.DLL` ?, not analysed) | `WSASetServiceW` / `WSALookupService*` with `dwNameSpace` = `NS_BTH` (16) | Local SDP records and SDP queries to remote devices (`WSHBTH.DLL` contains the client of the RPC interface of [BTHSERV.DLL](./bthserv.md#rpc), which publishes SDP records and queries the remote ones) |
+| [WSHBTH.DLL](./wshbth.md) (Winsock Bluetooth namespace provider) | `WSASetServiceW` / `WSALookupService*` with `dwNameSpace` = `NS_BTH` (16) | Local SDP records (published through the RPC interface of [BTHSERV.DLL](./bthserv.md#rpc)) and SDP queries sent to remote devices (`IOCTL_BTH_SDP_*` on the radio) |
 
 No DLL is loaded at run time, and no process, file or COM server is opened.
 

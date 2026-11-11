@@ -68,7 +68,7 @@ Driver: the Windows driver that loads on the node, when it's documented in [driv
 | `\_SB.SCM0` | QCOM0E90 | [qcscm8930.sys](../drivers/qcscm8930.md#acpi-memory-resources) | Secure channel manager (`GCFG`) |
 | `\_SB.SDC1`, `SDC3` | QCOM7002 | | SD controllers (eMMC, SD card) |
 | `\_SB.ACHW`, `TICO`, `MBHC`, `MBGP` | QCOM0741, 0742, 0746, 2149 | [qcsitarcodec8930.sys](../drivers/qcsitarcodec8930.md), [qctablaint8930.sys](../drivers/qctablaint8930.md), [qcmbhc8930.sys](../drivers/qcmbhc8930.md), [qcmbhcgpio8930.sys](../drivers/qcmbhcgpio8930.md) | Audio |
-| `\_SB.UFN1` | QCOM01C0 | [qcusbfnfilter8930.sys](../drivers/qcusbfnfilter8930.md) (filter) ? | USB function controller |
+| `\_SB.UFN1` | QCOM01C0 | [usbfnchipidea.sys](../drivers/usbfnchipidea.md), [qcusbfnfilter8930.sys](../drivers/qcusbfnfilter8930.md) (filter) ? | USB function controller |
 | `\_SB.QDIG` | QCOM0F80 | [qcdiagrouter8930.sys](../drivers/qcdiagrouter8930.md) ? | DIAG router |
 | `\_SB.QDCI` | QCOM0F81 | [qcdiagcsi8930.sys](../drivers/qcdiagcsi8930.md) ? | DIAG consumer interface |
 | `\_SB.QCDB` | QCOM1204 | | |

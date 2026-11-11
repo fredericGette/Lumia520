@@ -16,7 +16,7 @@ There's no parameters in the registry.
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| Lower device of its stack (`WdfDeviceGetIoTarget`) | USB function class extension (UFX) / controller driver ? | Receives the forwarded `IOCTL_INTERNAL_USBFN_*`. The internal IOCTLs of the same family 0x2AC03A / 0x2AC03E are handled by [qcusbfnfilter8930.sys](./qcusbfnfilter8930.md) in the controller stack |
+| Lower device of its stack (`WdfDeviceGetIoTarget`) | USB function class extension [usbfnclx.sys](./usbfnclx.md) / controller driver [usbfnchipidea.sys](./usbfnchipidea.md) | Receives the forwarded `IOCTL_INTERNAL_USBFN_*` (the transfers end in the endpoint queues of [usbfnchipidea.sys](./usbfnchipidea.md#internal-ioctl-0x2ac00d--ioctl_internal_usbfn_transfer_in)). The internal IOCTLs of the same family 0x2AC03A / 0x2AC03E are handled by [qcusbfnfilter8930.sys](./qcusbfnfilter8930.md) in the controller stack |
 
 ### WDF configuration
 
@@ -118,7 +118,8 @@ Example, IOCTL 0x22C00D:
 
 This internal IOCTL is sent by Genericusbfnclass.sys to the lower driver of its stack (USB function class extension ?), from `UsbFnKmClassLibHelperSendDeviceIoControlSynchronous` (`sub_100026D0`), during `EvtDevicePrepareHardware`.  
 It is sent with `WdfIoTargetSendInternalIoctlSynchronously`, no input buffer, the output buffer as a `WDFMEMORY` handle (`WdfMemoryCreatePreallocated` on the caller's 748-byte buffer), send options `WDF_REQUEST_SEND_OPTION_TIMEOUT | WDF_REQUEST_SEND_OPTION_SYNCHRONOUS` with `Timeout` = 20000 (0x4E20). The value is positive, so WDF treats it as an *absolute* time (2 ms after 1601-01-01, already in the past) and not as a relative 2 ms: the request only succeeds when the lower driver completes it immediately ?  
-It is also the translation of the user-mode `IOCTL_GENERICUSBFN_GET_CLASS_INFO` (0x22C022), see [IOCTL forwarding](#ioctl-forwarding).
+It is also the translation of the user-mode `IOCTL_GENERICUSBFN_GET_CLASS_INFO` (0x22C022), see [IOCTL forwarding](#ioctl-forwarding).  
+This internal IOCTL is also sent by [ufnserialclass.sys](./ufnserialclass.md#internal-ioctl-0x2ac022--ioctl_internal_usbfn_get_class_info), with a 552-byte output buffer (no `SuperSpeedClassInterface`) and a relative 25 ms timeout.
 
 | Property | Value |
 |----------|-------|
@@ -131,7 +132,7 @@ It is also the translation of the user-mode `IOCTL_GENERICUSBFN_GET_CLASS_INFO` 
 |------|-------------|------------------|-------------------|
 | IOCTL_INTERNAL_USBFN_GET_CLASS_INFO | lower device | 0 | 748 |
 
-Outputbuffer: [USBFN_CLASS_INFORMATION_PACKET](#usbfn_class_information_packet).
+Outputbuffer: [USBFN_CLASS_INFORMATION_PACKET](#usbfn_class_information_packet). The class extension [usbfnclx.sys](./usbfnclx.md#internal-ioctls-on-the-child-pdos) only requires and fills the first 552 bytes (no `SuperSpeedClassInterface`), and completes the request with Information 0.
 
 A failure → "Failed to query for class information via IOCTL." and `EvtDevicePrepareHardware` fails with `STATUS_UNSUCCESSFUL`.
 

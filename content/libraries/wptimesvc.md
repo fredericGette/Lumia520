@@ -12,7 +12,7 @@ Location on the phone: `C:\Windows\System32\WPTimeSvc.dll` ? (svchost service; t
 |-----|-----------|
 | ntdll.dll | `RtlSubscribeWnfStateChangeNotification`, `RtlUnsubscribeWnfStateChangeNotification`, `RtlUnsubscribeWnfNotificationWaitForCompletion`, `NtQueryWnfStateData`, `RtlPublishWnfStateData`, `ZwAlpcConnectPort`, `ZwAlpcSendWaitReceivePort`, `ZwAlpcCancelMessage`, `ZwAlpcDisconnectPort`, `ZwAlpcQueryInformation`, `AlpcInitializeMessageAttribute`, `AlpcGetMessageAttribute`, `TpAllocAlpcCompletion`, `TpWaitForAlpcCompletion`, `TpReleaseAlpcCompletion`, `RtlWaitOnAddress`, `RtlWakeAddressAll`, `RtlInitUnicodeString`, `ZwClose`, `RtlAllocateHeap`, `RtlFreeHeap`, `RtlNtStatusToDosError`, `vDbgPrintEx` |
 | RPCRT4.dll | `RpcStringBindingComposeW`, `RpcBindingFromStringBindingW`, `RpcBindingSetAuthInfoExW`, `RpcStringFreeW`, `RpcBindingCreateW`, `RpcBindingBind`, `RpcBindingFree`, `NdrClientCall2`, `RpcExceptionFilter`, `I_RpcExceptionFilter` |
-| SecRuntime.dll | `QueryTransientObjectSecurityDescriptor`, `FreeTransientObjectSecurityDescriptor` |
+| [SecRuntime.dll](./secruntime.md) | `QueryTransientObjectSecurityDescriptor`, `FreeTransientObjectSecurityDescriptor` |
 | ZTrace.dll | `ZTraceHelper`, `ZTraceHelperNoThis`, `ZTraceReportOrigination`, `ZTraceReportOriginationNoThis`, `ZTraceReportPropagation`, `ZTraceReportPropagationNoThis` |
 | WPGLOBUTIL.dll | `GetTimeZoneList`, `SetTimeZoneInformationByID` |
 | WPCOREUTIL.dll | `SHGetKnownFolderPath` |

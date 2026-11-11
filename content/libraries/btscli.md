@@ -36,7 +36,7 @@ Files used other than the static imports.
 |------|-----|-----|
 | `BTSERV` service ([BtServ.dll](./btserv.md)) | `StartAndWaitForService(L"BTSERV", …)`, then RPC `ncalrpc` with a dynamic endpoint ([RPC](#rpc)) | The Background Transfer Service itself |
 | Destination file of a download, source (and response) file of an upload | `GetFileAttributesW`, `CreateFileW(CREATE_NEW)` + `WriteFile` of 0 bytes, `GetFileAttributesExW`, then `DSCreateSharedFileToken` ([Transfer parameters](#transfer-parameters)) | Shared with the `BTSERV` service as a token instead of a path |
-| PacMan server, CLSID `{B9E511FC-E364-497A-A121-B7B3612CEDCE}` (`CLSID_PMSvc`) | `CoCreateInstance(…, CLSCTX_ALL (0x17), {D83400E1-A7A6-4990-9B84-10490AFF2063})` | Product ID of the foreground application ([Foreground listener](#foreground-listener)) |
+| PacMan server [pacmanserver.dll](./pacmanserver.md), CLSID `{B9E511FC-E364-497A-A121-B7B3612CEDCE}` (`CLSID_PMSvc`) | `CoCreateInstance(…, CLSCTX_ALL (0x17), {D83400E1-A7A6-4990-9B84-10490AFF2063})` (`IPMEnumerationManager2`) | Product ID of the foreground application ([Foreground listener](#foreground-listener)) |
 | Message proxy `System\NavigationServer_BrokerSessionManager` | `CoreUIFactoryCreate` + factory method 5 (CoreMessaging) | Foreground application changes ([Foreground listener](#foreground-listener)); the server isn't documented here |
 
 No DLL is loaded at run time and no process is started.
@@ -196,7 +196,7 @@ The GUIDs are product IDs of applications. Object fields: +0x10 binding, +0x14 f
 3. `OnConnected` (0x10006CE4) sets the event, reads the current foreground application ID (methods 6 and 5 of the `{804D0167-…}` interface: a CoreMessaging string, inline or by pointer) and keeps its product ID.
 4. `OnPropertyChanged(proxy, 3)` (0x10006E4C, other properties ignored): reads the new application ID, `GetProductIdFromAppId`; if the product changed, proxy opnum 5 with the previous product and state 2 (left the foreground) and with the new product and state 1 (foreground). The null GUID is never sent.
 
-`GetProductIdFromAppId` (0x10007064): method 3 of the PacMan interface `{D83400E1-…}` with the application ID as a `BSTR`, QueryInterface `{50AFB58A-438C-4088-9789-F8C4899829C7}` on the result, method 3 of it returns the product GUID (0x8004020D when the interface is missing).
+`GetProductIdFromAppId` (0x10007064): method 3 of the PacMan interface `{D83400E1-…}` with the application ID as a `BSTR`, QueryInterface `{50AFB58A-438C-4088-9789-F8C4899829C7}` (`IPMApplicationInfo`) on the result, method 3 of it returns the product GUID (0x8004020D when the interface is missing).
 
 `UnRegisterForegroundChangeNotifications` (0x10006744) queues `lambda_1594a1…` (0x100068C8): method 8 of the proxy (unregisters the listener), releases the proxy, stops the worker thread (work item type 6, waits up to 60 s); the caller waits up to 5 s.
 

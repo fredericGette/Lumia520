@@ -41,7 +41,7 @@ Files used other than the static imports.
 | `PacManMock.dll` | `LoadLibraryExW` + `GetProcAddress` (`sub_1004CC8`) | Test replacement of the PacMan COM client (see [COM](#com)) |
 | `c:\Programs\Alarms\Alarms_NoUI.exe` (itself) | Program and command line of the reminders (`CreateAlarmReminder`) | Started again by the shell when an alarm is dismissed (see [Parameters](#parameters)) |
 | Sound file of `HKLM\Software\Microsoft\EventSounds\SoundCategories\Alarm\DefaultSound` | Path built with `PathCchCombine` (`ValidateAlarmDefaultSound`), not opened | Default sound of a new alarm (+0x118 of the alarm record, see [Commands](#commands)) |
-| PacMan server, CLSID `{B9E511FC-E364-497A-A121-B7B3612CEDCE}` | `CoCreateInstance` | Start tile of Alarms (see [COM](#com)) |
+| PacMan server [pacmanserver.dll](../libraries/pacmanserver.md), CLSID `{B9E511FC-E364-497A-A121-B7B3612CEDCE}` | `CoCreateInstance` | Start tile of Alarms (see [COM](#com)) |
 | COM server `{D0DF0C7D-33BF-4E04-9B11-B1D7AE572EED}` | `CoCreateInstance` (`sub_1005C10`, IID `{095BF7A5-F134-42B9-A4B0-7C5F1A9E199A}`) | ? (part of the linked PacMan client library, not used by the alarm code; also created by [ShellChrome.dll](../libraries/shellchrome.md#dependencies)) |
 
 ### Parameters
@@ -158,7 +158,7 @@ The launch structure is 5 DWORDs:
 3. Sets the two strings in the tile properties 0x1000F and 0x10004 (tile vtable +0x34, then property vtable +0x14 with a `BSTR`), and saves the tile (`off_1009270` method +0x10, `sub_1004FE4`).
 4. `Shell_SetLockScreenAlarmIndication(next != NULL)`.
 
-The strings are read with `LoadStringW(hRes, id, &ptr, 0)` (pointer into the resource) from `AlarmsRes.dll`, loaded once with `LoadLibraryExW(L"AlarmsRes.dll", NULL, LOAD_LIBRARY_AS_DATAFILE)` (`sub_100737C`). The meaning of the two tile properties is unknown (`PacMan` isn't analysed).
+The strings are read with `LoadStringW(hRes, id, &ptr, 0)` (pointer into the resource) from `AlarmsRes.dll`, loaded once with `LoadLibraryExW(L"AlarmsRes.dll", NULL, LOAD_LIBRARY_AS_DATAFILE)` (`sub_100737C`). The meaning of the two tile properties is unknown (not determined from [pacmanserver.dll](../libraries/pacmanserver.md) either).
 
 ### COM
 
@@ -166,14 +166,14 @@ The PacMan client creates its interfaces on demand with `CoCreateInstance(CLSID 
 
 | Function | IID |
 |----------|-----|
-| `sub_100518C` (used to get the tile) | `{698D57C2-292D-4CF3-B73C-D95A6922ED9A}` |
-| `sub_1004ED0` (used to save the tile) | `{D622EEDE-5363-41FC-91C3-88E321191A34}` |
-| `sub_1005A0C` | `{D83400E1-A7A6-4990-9B84-10490AFF2063}` (its method 3 maps an application ID to an object whose interface `{50AFB58A-438C-4088-9789-F8C4899829C7}` gives the product ID, see [BtsCli.dll](../libraries/btscli.md#foreground-listener)) |
+| `sub_100518C` (used to get the tile) | `{698D57C2-292D-4CF3-B73C-D95A6922ED9A}` (`IPMEnumerationManager`) |
+| `sub_1004ED0` (used to save the tile) | `{D622EEDE-5363-41FC-91C3-88E321191A34}` (`IPMTileManager`) |
+| `sub_1005A0C` | `{D83400E1-A7A6-4990-9B84-10490AFF2063}` (`IPMEnumerationManager2`; its method 3 maps an application ID to an object whose interface `{50AFB58A-438C-4088-9789-F8C4899829C7}` (`IPMApplicationInfo`) gives the product ID, see [BtsCli.dll](../libraries/btscli.md#foreground-listener)) |
 | `sub_1005C10` | `{095BF7A5-F134-42B9-A4B0-7C5F1A9E199A}` (with CLSID `{D0DF0C7D-33BF-4E04-9B11-B1D7AE572EED}`, not the PacMan one) |
-| `sub_1005D78` | `{75E430A7-9559-4828-98DD-BC657620AB87}` |
-| `sub_1006358` | `{11ED725B-8820-45F8-96E6-6845524E46DA}` |
-| `sub_100650C` | `{35F785FA-1979-4A8B-BC8F-FD70EB0D1544}` |
-| `sub_1007094` | `{D29905F5-BAA2-48C5-A98A-F0DC7E122B84}` |
+| `sub_1005D78` | `{75E430A7-9559-4828-98DD-BC657620AB87}` (`IPMDeploymentManager2`) |
+| `sub_1006358` | `{11ED725B-8820-45F8-96E6-6845524E46DA}` (`IPMLicenseManager`) |
+| `sub_100650C` | `{35F785FA-1979-4A8B-BC8F-FD70EB0D1544}` (`IPMDeploymentManager`) |
+| `sub_1007094` | `{D29905F5-BAA2-48C5-A98A-F0DC7E122B84}` (`IPMTileManager2`) |
 
 Only the first two are used by the alarm code; the others belong to the linked library. If `PacManMock.dll` can be loaded (`sub_1004CC8`), its exports `CreatePacManMockInterfaces`, `GetSampleLegacyApplications`, `GetSampleModernApplications`, `GetSampleLegacyTiles`, `GetSampleModernTiles`, `AddApplicationsToDatabase`, `AddModernApplicationsToDatabase`, `AddTilesToDatabase`, `AddModernTilesToDatabase`, `OpenIPCEntryPoint`, `CloseIPCEntryPoint` replace `CoCreateInstance` (test hook, the DLL isn't on a retail phone ?).
 

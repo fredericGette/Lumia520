@@ -73,6 +73,7 @@
 [qcwlan8930.sys](./qcwlan8930.md)  
 [qcxoadc8930.sys](./qcxoadc8930.md)  
 [socprodtest.sys](./socprodtest.md)  
+[ufnserialclass.sys](./ufnserialclass.md)  
 
 ## Nokia
 [acckxtnk1000.sys](./acckxtnk1000.md)  
@@ -110,3 +111,6 @@
 [genericusbfnclassmtp.sys](./genericusbfnclassmtp.md)  
 [hwnhaptics.sys](./hwnhaptics.md)  
 [wpprecorder.sys](./wpprecorder.md)  
+[ufnvidstream.sys](./ufnvidstream.md)  
+[usbfnchipidea.sys](./usbfnchipidea.md)  
+[usbfnclx.sys](./usbfnclx.md)  

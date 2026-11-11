@@ -96,7 +96,7 @@ At start (sub_40D958, called from the `QCOM0811` device add) the driver:
 3. Calls `PoFxRegisterPlugin` with `PEP_INFORMATION` version 2:
    * `AcceptDeviceNotification` = sub_40DBC8. Dispatch table at `.data:0x0049ECA8` (pairs id/handler, ids 0–23).
    * `AcceptProcessorNotification` = sub_40F860 (only when `EnableProcessorManagement` = 1). Dispatch table at `.data:0x004A20B0` (ids 0–17).
-4. Stores the kernel callbacks returned in `PEP_KERNEL_INFORMATION` (version 1, 28 bytes); all six must be non-NULL, otherwise `STATUS_INVALID_PARAMETER`.
+4. Stores the kernel callbacks returned in `PEP_KERNEL_INFORMATION` (version 1, 28 bytes: plug-in handle, `RequestWorker`, `EnumerateUnmaskedInterrupts`, `ProcessorHalt`, `RequestInterrupt`, `TransitionCriticalResource`, see [ntoskrnl.exe](../libraries/ntoskrnl.md#power-framework)); all six must be non-NULL, otherwise `STATUS_INVALID_PARAMETER`.
 
 Device notifications handled:  
 | Id | Handler | Comment |
@@ -142,7 +142,7 @@ Requests sent by device drivers with `PoFxPowerControl` (or `DxgkCbPowerRuntimeC
 `sub_40E648` compares the GUID with 5 codes (`.rdata:0x448498`…`0x4484E7`):  
 | PowerControlCode | Handler | Request | Senders |
 |------------------|---------|---------|---------|
-| `{3404DAAC-8E2C-41E4-8458-3158E5AD442B}` | sub_410B6C (`PepPerformanceWork`, `PEP_PState_Mgmt.c`) | [Set the P-state of a component](#3404daac-set-p-state) | [qcwcn8930.sys](./qcwcn8930.md#power-management), [qcadsp8930.sys](./qcadsp8930.md#power-management), [qcamss8930.sys](./qcamss8930.md#power-management), [qcuart8930.sys](./qcuart8930.md#power-management), [qccamvfe8930.sys](./qccamvfe8930.md), [qcvpe8930.sys](./qcvpe8930.md#power-management), [qcdxkm8930.sys](./qcdxkm8930.md#other-guid) |
+| `{3404DAAC-8E2C-41E4-8458-3158E5AD442B}` | sub_410B6C (`PepPerformanceWork`, `PEP_PState_Mgmt.c`) | [Set the P-state of a component](#3404daac-set-p-state) | [qcwcn8930.sys](./qcwcn8930.md#power-management), [qcadsp8930.sys](./qcadsp8930.md#power-management), [qcamss8930.sys](./qcamss8930.md#power-management), [qcuart8930.sys](./qcuart8930.md#power-management), [qccamvfe8930.sys](./qccamvfe8930.md), [qcvpe8930.sys](./qcvpe8930.md#power-management), [qcdxkm8930.sys](./qcdxkm8930.md#other-guid), [usbfnclx.sys](./usbfnclx.md#power-management) |
 | `{5E7A62C2-1983-44C1-A399-5B8353A4A933}` | sub_4098B0 | [Set the D-state of a device by name](#5e7a62c2-set-d-state-by-name) | [qcpepproxy8930.sys](./qcpepproxy8930.md#d-state-change) |
 | `{C9A3994A-E72C-4E73-8C8F-41225DCDC154}` | sub_414840 + sub_414A70 | [Configure a clock by name](#c9a3994a-configure-a-clock) | ? |
 | `{9E50A259-FB71-400B-975A-4680F895A04E}` | sub_40EF08 | [Read the RPM sleep statistics](#9e50a259--f1923a9a-xo-statistics-and-debug-control) | [qcsysdef8930.sys](./qcsysdef8930.md#ioctl-0x88880000) |

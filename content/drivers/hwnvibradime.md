@@ -78,6 +78,7 @@ Input buffer (`HWN_HEADER` with one `HWN_SETTINGS`, same layout as the buffer se
 
 Any other type, a mode > 2, an intensity > 100 or more than one setting returns `STATUS_UNSUCCESSFUL` (0xC0000001).  
 [ShellChrome.dll](../libraries/shellchrome.md#haptic-feedback) sends this request (IOCTL 0x228000, interface `{825E8FD3-…}`) for the haptic feedback of the hardware buttons: mode 1 with the intensity of `HKLM\SYSTEM\TOUCH\BUTTONS`, then mode 0 after `Duration` ms.  
+[MobileUI.exe](../applications/mobileui.md#ioctl-0x228000--vibrate) also sends it (`ShellButtonRouter::Vibrate`, camera button held on the lock screen): mode 1 at 100 %, then mode 0 after 50 ms.  
 The buffer-length check is inverted: `(length − 12) % (36 × count)` is only tested when the length is 0, so the length is in practice never validated (and a length of 0 with a count of 0 divides by zero).  
 
 Processing:

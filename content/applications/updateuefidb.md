@@ -11,7 +11,7 @@ Location on the phone: `C:\Windows\System32\UpdateUEFIDb.exe` ? (no path in the 
 | DLL | Functions |
 |-----|-----------|
 | ntdll.dll | `NtQuerySystemEnvironmentValueEx`, `NtSetSystemEnvironmentValueEx`, `RtlInitUnicodeString`, `RtlNtStatusToDosError` |
-| SecRuntime.dll | `QueryTransientObjectSecurityDescriptor`, `FreeTransientObjectSecurityDescriptor` |
+| [SecRuntime.dll](../libraries/secruntime.md) | `QueryTransientObjectSecurityDescriptor`, `FreeTransientObjectSecurityDescriptor` |
 | RPCRT4.dll | `RpcBindingCreateW`, `RpcBindingBind`, `RpcBindingFree`, `NdrClientCall2`, `I_RpcExceptionFilter` |
 | api-ms-win-security-base-l1-2-0.dll | `AdjustTokenPrivileges` |
 | api-ms-win-security-lsalookup-l2-1-1.dll | `LookupPrivilegeValueW` |

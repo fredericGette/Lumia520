@@ -11,7 +11,7 @@ Location on the phone: `C:\Programs\Alarms\AlarmsSettingHandler.dll` ? (extracte
 | DLL | Functions |
 |-----|-----------|
 | [ShellChromeAPI.dll](./shellchromeapi.md) | `Shell_InitReminders`, `Shell_DeInitReminders`, `Shell_CreateReminder`, `Shell_GetReminderData`, `Shell_ReleaseReminderData`, `Shell_DeleteReminder`, `Shell_SetLockScreenAlarmIndication` |
-| SecRuntime.dll | `GetChamberSidFromId`, `CreateTokenFromChamberSid`, `CreateProcessInChamber` |
+| [SecRuntime.dll](./secruntime.md) | `GetChamberSidFromId`, `CreateTokenFromChamberSid`, `CreateProcessInChamber` |
 | ntdll.dll | `RtlPublishWnfStateData` |
 | PROPSYS.dll | `PSCreateMemoryPropertyStore`, `PSPropertyBag_WriteStr`, `PropVariantToStringAlloc`, `PropVariantToFileTime`, `PropVariantToBoolean`, `InitPropVariantFromFileTime` |
 | SHCORE.dll | `SHCreateMemStream`, `IStream_Reset` |
@@ -54,7 +54,7 @@ Files used other than the static imports.
 | Setting item factory, CLSID `{3F66CF3F-68BE-485E-8BFE-0A005B2D00F2}` | `CoCreateInstance` (`sub_10007D6C`) | Setting items given to the backup engine (server DLL unknown) |
 | Folder handler, CLSID `{C0AB2A0D-F2D2-46E2-9DF9-8885A424C29A}` | `CoCreateInstance` (`CreateFolderHandler`, `sub_10007DA0`) | Ringtones folder of the backup session (server DLL unknown) |
 | Metadata parser, CLSID `{9E164D20-64A5-411E-B690-880DD2C6D5D9}` | `CoCreateInstance(CLSCTX_INPROC_SERVER)` (`MetadataParserLoader::GetMetadataMunger`, `sub_10012348`) | Reads the metadata of a ringtone file when it's verified (server DLL unknown) |
-| PacMan server, CLSID `{B9E511FC-E364-497A-A121-B7B3612CEDCE}`, and `{D0DF0C7D-33BF-4E04-9B11-B1D7AE572EED}` | `CoCreateInstance` (PacMan client library) | Alarms tile, as in [Alarms_NoUI.exe](../applications/alarms_noui.md#com) |
+| PacMan server [pacmanserver.dll](./pacmanserver.md), CLSID `{B9E511FC-E364-497A-A121-B7B3612CEDCE}`, and `{D0DF0C7D-33BF-4E04-9B11-B1D7AE572EED}` | `CoCreateInstance` (PacMan client library) | Alarms tile, as in [Alarms_NoUI.exe](../applications/alarms_noui.md#com) |
 
 ### Exports
 

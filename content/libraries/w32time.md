@@ -54,7 +54,7 @@ Files used other than the static imports.
 
 | File | How | Use |
 |------|-----|-----|
-| SecRuntime.dll | `LoadLibraryExW` + `GetProcAddress("QueryTransientObjectSecurityDescriptor" / "FreeTransientObjectSecurityDescriptor")` ([IsMobileCore](#ismobilecore-0x64ba6610)) | Security descriptors of the RPC endpoint and interface, only when the licence value `Microsoft-Windows-W32Time-License-SecurityRuntime` is set |
+| [SecRuntime.dll](./secruntime.md) | `LoadLibraryExW` + `GetProcAddress("QueryTransientObjectSecurityDescriptor" / "FreeTransientObjectSecurityDescriptor")` ([IsMobileCore](#ismobilecore-0x64ba6610)) | Security descriptors of the RPC endpoint and interface, only when the licence value `Microsoft-Windows-W32Time-License-SecurityRuntime` is set |
 | ntdll.dll | `GetModuleHandleExW` + `GetProcAddress("NtQuerySystemInformation")` ([IsMobileCore](#ismobilecore-0x64ba6610)) | Licence value query (`SystemPolicyInformation`, class 0x86) |
 | Time provider DLLs | `LoadLibraryExW(DllName)` + `GetProcAddress("TimeProvOpen" / "TimeProvCommand" / "TimeProvClose")` (`StartProvider`, 0x64BB4080) | Every enabled provider of `W32Time\TimeProviders\<name>` (`DllName`, `Enabled`, `InputProvider`). On the phone both `NtpClient` and `NtpServer` have `DllName` = `%systemroot%\system32\w32time.dll` (this DLL, [TimeProvOpen](#time-provider-interface)), and only `NtpClient` is enabled ([values on the phone](#values-on-the-phone)): no other DLL is loaded |
 | File log (`Config\FileLogName`) | `CreateFileW` / `WriteFile` (`FileLog*`) | Debug log, written only when `FileLogName` is set. On the phone this is `<known folder {8C19F0BC-…}>\NonEtwLogs\w32time.log`, written by [WPTimeSvc.dll](./wptimesvc.md#ntp-ntpsync) |
@@ -140,7 +140,7 @@ In the phone image the licence value is 1 (entry of `HKLM\SYSTEM\ControlSet001\C
 ### RPC server
 
 `W32TmStartRpcServer` (0x64BAEC94):
-1. If `IsMobileCore()`: `QueryTransientObjectSecurityDescriptor(8, L"DefaultRpcAccess", &epSd)` and `(9, L"W32Time\\Interface", &ifSd)` (SecRuntime). If either fails, the error is 0x8007053A (`ERROR_INVALID_SECURITY_DESCR`) and the server isn't started.
+1. If `IsMobileCore()`: `QueryTransientObjectSecurityDescriptor(8, L"DefaultRpcAccess", &epSd)` and `(9, L"W32Time\\Interface", &ifSd)` ([SecRuntime](./secruntime.md#querytransientobjectsecuritydescriptor-0x10003c20)). If either fails, the error is 0x8007053A (`ERROR_INVALID_SECURITY_DESCR`) and the server isn't started.
 2. `RpcServerUseProtseqEpW(L"ncalrpc", 10, L"W32TIME_ALT", epSd)` (`epSd` is NULL on the desktop), then `RpcServerUseProtseqEpW(L"ncacn_np", 10, L"\\PIPE\\W32TIME_ALT", NULL)`; 1740 (`RPC_S_DUPLICATE_ENDPOINT`) is accepted.
 3. Registration of the interface (`0x64B81378`):
    - with `ifSd`: `RpcServerRegisterIf3(if, NULL, NULL, 0x29 = RPC_IF_AUTOLISTEN | RPC_IF_ALLOW_SECURE_ONLY | RPC_IF_ALLOW_LOCAL_ONLY, 1234 = RPC_C_LISTEN_MAX_CALLS_DEFAULT, 0, NULL, ifSd)`: no security callback, the access check is the interface security descriptor;

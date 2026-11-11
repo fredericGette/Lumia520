@@ -15,7 +15,7 @@ Source folder: `src\net\bluetooth\product\services\connectionmanager\server\`, `
 | BluetoothApis | `BluetoothFindFirstRadio`, `BluetoothFindRadioClose`, `BluetoothGetRadioInfo`, `BluetoothGATTGetServices`, `BluetoothGATTGetIncludedServices`, `BluetoothGATTGetCharacteristics`, `BluetoothGATTGetDescriptors`, `BluetoothGATTGetDescriptorValue`, `BluetoothGATTSetDescriptorValue` |
 | WS2_32 | `WSASocketW`, `WSAAccept`, `WSAEventSelect`, `WSADuplicateSocketW`, `WSAStartup`, `WSAGetLastError`, `bind`, `closesocket`, `connect`, `getsockname`, `listen`, `setsockopt` |
 | ntdll | `RtlSubscribeWnfStateChangeNotification`, `RtlUnsubscribeWnfStateChangeNotification`, `RtlUnsubscribeWnfNotificationWaitForCompletion`, `RtlPublishWnfStateData`, `RtlQueryWnfStateData`, `NtQueryWnfStateData`, `RtlAllocateWnfSerializationGroup`, `WinSqmStartSession`, `WinSqmEndSession`, `WinSqmAddToStreamEx`, `WinSqmIncrementDWORD`, `WinSqmSetIfMaxDWORD`, `RtlInitUnicodeString`, `RtlQueryPackageIdentity`, `RtlNtStatusToDosError` |
-| SecRuntime | `CapabilityCheck`, `QueryTransientObjectSecurityDescriptor`, `FreeTransientObjectSecurityDescriptor` |
+| [SecRuntime](./secruntime.md) | `CapabilityCheck`, `QueryTransientObjectSecurityDescriptor`, `FreeTransientObjectSecurityDescriptor` |
 | policymanager | `PolicyManager_GetConnectivityPolicy_AllowBluetooth` |
 | bcrypt | `BCryptOpenAlgorithmProvider`, `BCryptCloseAlgorithmProvider`, `BCryptGetProperty`, `BCryptCreateHash`, `BCryptHashData`, `BCryptFinishHash`, `BCryptDestroyHash`, `BCryptGenRandom` |
 | api-ms-win-core-bicltapi-l1-1-2 | `BiCreateEventForPackageName`, `BiDeleteEvent`, `BiEnumerateBrokeredEvents`, `BiFreeMemory`, `BiQueryBrokeredEvent`, `BiQuerySystemStateBroadcastChannels`, `BiSignalTriggerEvent` |
@@ -239,7 +239,7 @@ The key of the "?" row is a handle kept in an object (`BtService`+0x60 for `Enab
 | Name | Owner, sequence | Data | Action |
 |------|-----------------|------|--------|
 | 0x0992022FA3BC0875 `WNF_BLTH_BLUETOOTH_STATUS` (`.text:0x10002C80`) | `BLTH`, 1 | 4 bytes: bits below | Published by `BtService::ChangeWNFStatusBitCallback` (0x1001ADD8) when the value changes |
-| 0x13920028A3BC2075 `WNF_ENTR_CONNECTIVITY_POLICY_VALUE_CHANGED` (`.text:0x10009720`) | `ENTR`, 4 | ? | Queried and subscribed by `Radio::StartCallback`: `PolicyChangedStatic` reads the policy again |
+| 0x13920028A3BC2075 `WNF_ENTR_CONNECTIVITY_POLICY_VALUE_CHANGED` (`.text:0x10009720`) | `ENTR`, 4 | ? | Queried and subscribed by `Radio::StartCallback`: `PolicyChangedStatic` reads the policy again. Also subscribed by [IpOverUsb.dll](./ipoverusb.md#wnf-states) (`AllowUSBConnection`) |
 | 0x41C6072FA3BC7075 `WNF_BI_BI_READY` (`.text:0x10002420`) | `BI`, 14 | ? | Subscribed by `BackgroundBroker::Dispatch` (`BrokerReadyChangedStatic`) |
 | Names from `BiQuerySystemStateBroadcastChannels` | ? | ? | `Broker::BILayer::NotificationChannel`, `WnfNotification` |
 

@@ -18,7 +18,7 @@ Source folder: `src\net\bluetooth\product\services\hfp\server\`, `src\net\blueto
 | PIMSTORE | `FindMatchingContactEx` |
 | WS2_32 | `WSAStartup`, `WSACleanup`, `WSARecv`, `WSASend`, `WSACreateEvent`, `WSASetEvent`, `WSAGetOverlappedResult`, `WSAGetLastError`, `closesocket` |
 | ntdll | `RtlSubscribeWnfStateChangeNotification`, `RtlUnsubscribeWnfNotificationWaitForCompletion`, `RtlPublishWnfStateData`, `NtQueryWnfStateData`, `WinSqmStartSession`, `WinSqmEndSession`, `WinSqmIncrementDWORD`, `WinSqmSetIfMaxDWORD`, `WinSqmAddToStreamEx` |
-| SecRuntime | `QueryTransientObjectSecurityDescriptor`, `FreeTransientObjectSecurityDescriptor` |
+| [SecRuntime](./secruntime.md) | `QueryTransientObjectSecurityDescriptor`, `FreeTransientObjectSecurityDescriptor` |
 | bcrypt | `BCryptOpenAlgorithmProvider`, `BCryptCloseAlgorithmProvider`, `BCryptGetProperty`, `BCryptCreateHash`, `BCryptHashData`, `BCryptFinishHash`, `BCryptDestroyHash` |
 | api-ms-win-core-com-l1-1-1 | `CoCreateInstance`, `CoTaskMemFree` |
 | api-ms-win-core-namedpipe-l1-2-0 | `CreateNamedPipeW`, `ConnectNamedPipe` |

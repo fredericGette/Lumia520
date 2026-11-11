@@ -2,5 +2,8 @@
 [Alarms_NoUI.exe](./alarms_noui.md)  
 [audiodg.exe](./audiodg.md)  
 [DateTimeCPL.exe](./datetimecpl.md)  
+[MirrorCPL.exe](./mirrorcpl.md)  
+[MobileUI.exe](./mobileui.md)  
 [QcShutdownSvc8930.exe](./qcshutdownsvc8930.md)  
 [UpdateUEFIDb.exe](./updateuefidb.md)  
+[WININIT.EXE](./wininit.md)  

@@ -67,7 +67,7 @@ There's no parameters read by the driver in the registry (the `Parameters` key o
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| Lower device of its stack (`WdfDeviceGetIoTarget`) = PDO `USBFN\IpOverUsb\3&1d123fc3&0&01`, child of `ACPI\QCOM01C0\1` | USB function class extension (UFX) / controller driver ? | Receives the forwarded `IOCTL_INTERNAL_USBFN_*`, see [genericusbfnclass.sys](./genericusbfnclass.md#ioctl-forwarding) |
+| Lower device of its stack (`WdfDeviceGetIoTarget`) = PDO `USBFN\IpOverUsb\3&1d123fc3&0&01`, child of `ACPI\QCOM01C0\1` | USB function class extension [usbfnclx.sys](./usbfnclx.md) / controller driver [usbfnchipidea.sys](./usbfnchipidea.md) | Receives the forwarded `IOCTL_INTERNAL_USBFN_*`, see [genericusbfnclass.sys](./genericusbfnclass.md#ioctl-forwarding) |
 
 ### USB function configuration
 
@@ -106,7 +106,7 @@ Other interfaces declared in `Control\USBFN\Interfaces` (each is a `USBFN\<name>
 |-----------|---------------|---------------|
 | [MTP](./genericusbfnclassmtp.md) | `{61fd7822-e8d4-44c4-9065-aaad0a3beff0}` | Default |
 | IpOverUsb | `{30613563-7df3-4afb-80e0-e8c427c7e9bf}` | Default |
-| VidStream | `{31648E59-6FCB-4D81-9C97-D00999B0459A}` | Default, VidStream |
+| VidStream ([ufnvidstream.sys](./ufnvidstream.md), screen projection; the PC client finds the phone with this GUID) | `{31648E59-6FCB-4D81-9C97-D00999B0459A}` | Default, VidStream |
 | NCSd | `{7eaff726-34cc-4204-b09d-f95471b873cf}` | RetailConfig |
 | DIAG | `{3641691D-B4BD-4715-BB46-641FD214E147}` | RmNetCompositeConfig, SerialCompositeConfig |
 | NMEA_NET | `{AA557611-9DB7-4810-88E6-DD03614D1003}` | RmNetCompositeConfig |
@@ -123,7 +123,7 @@ USB device identity: `Control\USBFN` (retail) VID 0x0421 / PID 0x0661, "Nokia" /
 Processed (user mode → forwarded): 0x22C00D, 0x22C011, 0x22C016, 0x22C018, 0x22C01C, 0x22C022, 0x22C026, 0x22C029, 0x22C02C, 0x22C030, 0x22C036, see [IOCTL forwarding](./genericusbfnclass.md#ioctl-forwarding).  
 Sent: internal IOCTL 0x2AC022, see [IOCTL_INTERNAL_USBFN_GET_CLASS_INFO](./genericusbfnclass.md#internal-ioctl-0x2ac022--ioctl_internal_usbfn_get_class_info).  
 
-The user-mode client of this instance is the IP over USB service (`IpOverUsbSvc` ?), which opens `\\.\GenericUsbFn_{30613563-7df3-4afb-80e0-e8c427c7e9bf}` or enumerates the device interface `{30613563-7df3-4afb-80e0-e8c427c7e9bf}` ?
+The user-mode client of this instance is the IP over USB service [IpOverUsb.dll](../libraries/ipoverusb.md): it enumerates the device interface `{30613563-7df3-4afb-80e0-e8c427c7e9bf}` (`CM_Get_Device_Interface_ListW`, removal watched with `CM_Register_Notification`), opens it twice and sends 0x22C02C, 0x22C036, 0x22C022, 0x22C00D, 0x22C016, 0x22C026 and 0x22C029 (see [its IOCTLs](../libraries/ipoverusb.md#ioctls)). It uses `PipeArr[1]` (IN) and `PipeArr[2]` (OUT) of the high-speed interface for its packet protocol.
 
 ### Interface GUID
 

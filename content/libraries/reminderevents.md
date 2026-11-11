@@ -2,7 +2,7 @@
 
 The bridge between the reminders stored by the Task Scheduler service and the shell of Windows Phone 8.1: it watches the reminders and hands each one to the shell when it must be shown.  
 `ReminderEvents.dll` is a small DLL (40 960 bytes, 131 functions, most of them CRT, RPC stubs and a hash map). It's an RPC client of the Task Scheduler service (interface `ITaskSchedulerSvcRpc`). At initialisation it lists the reminders of the service, and subscribes to the WNF state of each one. When the service publishes a reminder in its WNF state, the DLL forwards it to [ShellChrome.dll](./shellchrome.md#reminders)`!ProcessReminder`. It also handles dismiss/snooze requests from accessories (`ShellChrome!ProcessAccessoryReminderRequest`), and exports dismiss and snooze functions that call the service.  
-The reminders of the alarms are created by [Alarms_NoUI.exe](../applications/alarms_noui.md) with [ShellChromeAPI.dll](./shellchromeapi.md#reminders)`!Shell_CreateReminder`, which creates the `_Reminder_` task (opnum 0) and packs the reminder data. `ReminderEvents.dll` is imported by [ShellChrome.dll](./shellchrome.md), the shell chrome library it calls back, which uses `AddReminderPublishStateName`, `RemoveReminderPublishStateName`, `ShellSnoozeReminder` and `ShellDismissReminder`. `InitializeReminderEvents` / `UninitializeReminderEvents` aren't imported by ShellChrome.dll: their caller is unknown.
+The reminders of the alarms are created by [Alarms_NoUI.exe](../applications/alarms_noui.md) with [ShellChromeAPI.dll](./shellchromeapi.md#reminders)`!Shell_CreateReminder`, which creates the `_Reminder_` task (opnum 0) and packs the reminder data. `ReminderEvents.dll` is imported by [ShellChrome.dll](./shellchrome.md), the shell chrome library it calls back, which uses `AddReminderPublishStateName`, `RemoveReminderPublishStateName`, `ShellSnoozeReminder` and `ShellDismissReminder`. `InitializeReminderEvents` / `UninitializeReminderEvents` aren't imported by ShellChrome.dll: they're called by the shell process [MobileUI.exe](../applications/mobileui.md#startup), at the start and the end of its shell events thread.
 
 Location on the phone: `C:\Programs\Alarms\ReminderEvents.dll` ? (it was extracted next to `Alarms.exe`, `Alarms_NoUI.exe` and [AlarmsSettingHandler.dll](./alarmssettinghandler.md)).  
 
@@ -12,7 +12,7 @@ Location on the phone: `C:\Programs\Alarms\ReminderEvents.dll` ? (it was extract
 |-----|-----------|
 | [ShellChrome.dll](./shellchrome.md) | `ProcessReminder`, `ProcessAccessoryReminderRequest` |
 | RPCRT4.dll | `RpcBindingCreateW`, `RpcBindingBind`, `RpcBindingFree`, `NdrClientCall2`, `I_RpcExceptionFilter` |
-| SecRuntime.dll | `QueryTransientObjectSecurityDescriptor`, `FreeTransientObjectSecurityDescriptor` |
+| [SecRuntime.dll](./secruntime.md) | `QueryTransientObjectSecurityDescriptor`, `FreeTransientObjectSecurityDescriptor` |
 | ntdll.dll | `RtlSubscribeWnfStateChangeNotification`, `RtlUnsubscribeWnfStateChangeNotification`, `RtlUnsubscribeWnfNotificationWaitForCompletion`, `RtlQueryWnfStateData`, `RtlNtStatusToDosError` |
 | WPCOREUTIL.dll | `SHGetKnownFolderPath` |
 | api-ms-win-core-file-l1-2-1.dll | `DeleteFileW` |
@@ -160,7 +160,7 @@ The image of a reminder is `<known folder>\Reminders\Images\{GUID}.png`. The kno
 ### RPC
 
 `sub_10003848` connects to the Task Scheduler service:
-1. `QueryTransientObjectSecurityDescriptor(9, L"ITaskSchedulerSvcRpc\\Server", &sd)` (SecRuntime): security descriptor expected for the server. NTSTATUS 0xC0000109 is returned as 0x8007013D, other errors as the Win32 error of `RtlNtStatusToDosError` (or the NTSTATUS with bit 28 set).
+1. `QueryTransientObjectSecurityDescriptor(9, L"ITaskSchedulerSvcRpc\\Server", &sd)` ([SecRuntime](./secruntime.md#querytransientobjectsecuritydescriptor-0x10003c20)): security descriptor expected for the server. NTSTATUS 0xC0000109 is returned as 0x8007013D, other errors as the Win32 error of `RtlNtStatusToDosError` (or the NTSTATUS with bit 28 set).
 2. `RpcBindingCreateW(&template, &security, NULL, &hBinding)`:
    - template: version 1, flags 0, protocol sequence 3 (`RPC_PROTSEQ_LRPC`), no address, no endpoint (resolved by the endpoint mapper);
    - security: version 1, no principal name, authentication level 6 (`RPC_C_AUTHN_LEVEL_PKT_PRIVACY`), service 10 (`RPC_C_AUTHN_WINNT`), QoS version 5 with `RPC_C_QOS_IDENTITY_DYNAMIC`, `RPC_C_IMP_LEVEL_IDENTIFY` and `ServerSecurityDescriptor = sd` (the server must have this security descriptor).

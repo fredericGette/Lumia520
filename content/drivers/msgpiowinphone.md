@@ -184,7 +184,8 @@ Inputbuffer:
 | 04 | 01 / 00 | 1 = enabled on idle, 0 = disabled |
 | 05-07 | | Ignored |
 
-Wrong sizes or button → `STATUS_INVALID_DEVICE_REQUEST` (0xC0000010). `SetButtonEnabledOnIdle` (sub_100023AC) changes bit n of `EnabledOnIdleBitMask` (`+0xA2`) and, if it changed, writes it to `HKLM\SYSTEM\Input\Buttons\EnabledOnIdleBitMask` (REG_DWORD, length 2). During the low power epoch nothing is changed ("Can't change button EnabledOnIdle state during LowPowerEpoch"), but `STATUS_SUCCESS` is returned. Disabling buttons 2 or 3 is ignored when `PxoPowerCollapseLedEnable` = 1. The change only takes effect at the next low power epoch.
+Wrong sizes or button → `STATUS_INVALID_DEVICE_REQUEST` (0xC0000010). `SetButtonEnabledOnIdle` (sub_100023AC) changes bit n of `EnabledOnIdleBitMask` (`+0xA2`) and, if it changed, writes it to `HKLM\SYSTEM\Input\Buttons\EnabledOnIdleBitMask` (REG_DWORD, length 2). During the low power epoch nothing is changed ("Can't change button EnabledOnIdle state during LowPowerEpoch"), but `STATUS_SUCCESS` is returned. Disabling buttons 2 or 3 is ignored when `PxoPowerCollapseLedEnable` = 1. The change only takes effect at the next low power epoch.  
+This IOCTL is sent by [MobileUI.exe](../applications/mobileui.md#ioctl-0xb02a8--set-button-enabled-on-idle) (`ApiButtonSetEnabledOnIdleOnDriver`) for buttons 2 and 3 (volume up / down): enabled while the screen is off and music is playing (or another, unidentified, condition is true).
 
 ---
 

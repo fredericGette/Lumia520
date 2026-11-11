@@ -2,7 +2,7 @@
 
 The "chrome" of the Windows Phone 8.1 shell: system tray, application bar, lock screen, hardware buttons, volume, toasts, reminders, wallpaper, Kid's Corner and driving mode, and the RPC server behind [ShellChromeAPI.dll](./shellchromeapi.md).  
 `ShellChrome.dll` is a big UIX library (1.5 MB, 4042 functions, 157 exports). Its exports are called by the shell process that hosts it. `LaunchShellChromeServer` starts the shell RPC server `{8B111127-818E-4AE5-9788-7396504EF98F}`: its 80 procedures implement the `Shell_*` exports of ShellChromeAPI.dll, and almost every one checks a capability of the caller first. It's also the shell side of the reminders. It imports [ReminderEvents.dll](./reminderevents.md), which calls back `ProcessReminder` and `ProcessAccessoryReminderRequest`. It shows the reminder, then snoozes / dismisses it, and starts the program stored in the reminder (for the alarms, [Alarms_NoUI.exe](../applications/alarms_noui.md)). It publishes and reads about 40 WNF states (owner `SHL` mostly), creates the `AlarmLockIconTask` scheduled task, and drives the vibrator ([hwnvibradime.sys](../drivers/hwnvibradime.md)) for the haptic feedback of the buttons.  
-The process that loads it isn't known (the shell UI host, it exports `UIXGetSchemaFactory` / `UIXSchemaUnloaded`, the entry points of a UIX schema called by `UIXMobile.dll`, as in [DateTimeCPLdll.dll](./datetimecpldll.md#exports)). Only the parts used by the other documented binaries are described in detail here: the RPC server, the reminders, the WNF states and the alarm-related tasks. The UI code (application bar, system tray, context menus, lock screen UI…) isn't analysed.
+It's imported by the shell process [MobileUI.exe](../applications/mobileui.md), which calls `SetMobileUICallback`, `LaunchShellChromeServer` and most of the `Invoke*` / `SetSystemTray*` exports (it also exports `UIXGetSchemaFactory` / `UIXSchemaUnloaded`, the entry points of a UIX schema called by the UIX engine `UIXn.dll`, as in [DateTimeCPLdll.dll](./datetimecpldll.md#exports)). Only the parts used by the other documented binaries are described in detail here: the RPC server, the reminders, the WNF states and the alarm-related tasks. The UI code (application bar, system tray, context menus, lock screen UI…) isn't analysed.
 
 Location on the phone: `C:\Windows\System32\ShellChrome.dll` ? (the analysed file was extracted to `C:\Users\Public\ShellChrome.dll`).  
 
@@ -11,12 +11,12 @@ Location on the phone: `C:\Windows\System32\ShellChrome.dll` ? (the analysed fil
 | DLL | Functions |
 |-----|-----------|
 | RPCRT4.dll | Server: `RpcServerUseProtseqW`, `RpcServerInqBindings`, `RpcServerRegisterIf3`, `RpcEpRegisterW`, `RpcServerListen`, `RpcMgmtStopServerListening`, `RpcServerInqCallAttributesW`, `I_RpcBindingInqLocalClientPID`, `NdrServerCall2`. Client: `RpcBindingCreateW`, `RpcBindingBind`, `RpcStringBindingComposeW`, `RpcBindingFromStringBindingW`, `RpcBindingSetAuthInfoExW`, `RpcBindingFree`, `NdrClientCall2`, `NdrRpcSmClientAllocate/Free` |
-| SecRuntime.dll | `QueryTransientObjectSecurityDescriptor`, `FreeTransientObjectSecurityDescriptor`, `RpcClientCapabilityCheck`, `CapabilityCheck`, `CreateProcessInChamber`, `OpenProcessForQuery`, `OpenProcessTokenForQuery`, `IsProductionConfiguration` |
+| [SecRuntime.dll](./secruntime.md) | `QueryTransientObjectSecurityDescriptor`, `FreeTransientObjectSecurityDescriptor`, `RpcClientCapabilityCheck`, `CapabilityCheck`, `CreateProcessInChamber`, `OpenProcessForQuery`, `OpenProcessTokenForQuery`, `IsProductionConfiguration` |
 | ReminderEvents.dll | `AddReminderPublishStateName`, `RemoveReminderPublishStateName`, `ShellSnoozeReminder`, `ShellDismissReminder` |
 | ShellChromeAPI.dll | `Shell_IsDrivingModeActive`, `Shell_GetCurrentMode`, `Shell_GetCurrentLockState`, `Shell_IsLocked`, `Shell_IsDoNotDisturbModeActive`, `Shell_IsKidZoneEnabled`, `Shell_SetKidZoneEnabled`, `Shl::ActionDialog::Create` (partial screen) |
 | BNSClient.dll | `BNSCNotifyDismiss`, `BNSCNotifySnooze`, `BNSCNotifyOpenApp` |
 | ntdll.dll | WNF (`RtlSubscribeWnfStateChangeNotification`, `RtlUnsubscribeWnfStateChangeNotification`, `RtlUnsubscribeWnfNotificationWaitForCompletion`, `RtlQueryWnfStateData`, `NtQueryWnfStateData`, `RtlPublishWnfStateData`), ALPC (`ZwAlpcConnectPort`, `ZwAlpcSendWaitReceivePort`, …), `WinSqm*`, `RtlNtStatusToDosError` |
-| UIXn.dll, UIXMobile.dll | `UIXGetServices`; themes (`ThemeSetThemeOverride`, `ThemeSetHighContrastOverride`, `ThemeGetSystemScreenSize`, …), `GetResolutionWidth/Height` |
+| UIXn.dll, [UIXMobile.dll](./uixmobile.md) | `UIXGetServices`; themes (`ThemeSetThemeOverride`, `ThemeSetHighContrastOverride`, `ThemeGetSystemScreenSize`, …), `GetResolutionWidth/Height` |
 | CoreMessaging.dll, CoreUIComponents.dll | `CoreUICreate`, `CoreUIClientCreate`, `CoreUIFactoryCreate`, `MsgStringCreateShared`, `MsgRelease` |
 | EMCLIENT.dll, EMSVCS.dll | `ExecutionModel::ApplicationUri`, `Rm*` resource manager, `CreateExecutionManager`, `CreateBackgroundWorkerManager` |
 | NotificationQueueManager.dll | `NQM_Create`, `NQM_SendTileNotificationRequest`, `NQM_RemoveTile`, … |
@@ -65,9 +65,9 @@ Files used other than the static imports (the delay-loaded DLLs are in the [Impo
 | `DefaultLockScreen.jpg` | `sub_10086478` | Default lock screen image |
 | Lock screen extension XML of an application | `SHCreateStreamOnFileW` + XmlLite (`sub_10086A60`) | `x:Extension` with `AppID`, `Args`, `DisplayName`, `IconPath`, `TaskSwitcherResume` (lock screen apps) |
 | Vibrator device interface `{825E8FD3-6467-4A5B-ABFB-BB010734FF4D}` | `CreateFileW` (`sub_1005164C`) | [hwnvibradime.sys](../drivers/hwnvibradime.md) (the same interface is registered by [hwnhaptics.sys](../drivers/hwnhaptics.md), not present on a Lumia 520), see [Haptic feedback](#haptic-feedback) |
-| PacMan server, CLSID `{B9E511FC-E364-497A-A121-B7B3612CEDCE}` | `CoCreateInstance` (`sub_10065EE4`, `sub_1007008C`…`sub_100707F8`, …) | `IPMEnumerationManager`, `IPMApplicationInfo` (installed applications, tiles) |
+| PacMan server [pacmanserver.dll](./pacmanserver.md), CLSID `{B9E511FC-E364-497A-A121-B7B3612CEDCE}` | `CoCreateInstance` (`sub_10065EE4`, `sub_1007008C`…`sub_100707F8`, …) | `IPMEnumerationManager`, `IPMApplicationInfo` (installed applications, tiles) |
 | MMDevAPI, CLSID `{BCDE0395-E52F-467C-8E3D-C4579291692E}` (`MMDeviceEnumerator`) | `CoCreateInstance` (`sub_10053F44`) | Audio endpoints (volume limit warning) |
-| COM servers `{317D06E8-5F24-433D-BDF7-79CE68D8ABC2}`, `{228826AF-02E1-4226-A9E0-99A855E455A6}`, `{D0DF0C7D-33BF-4E04-9B11-B1D7AE572EED}`, `{27949969-876A-41D7-9447-568F6A35A4DC}`, `{E8D66722-1CBB-4605-9638-B248A200CC2F}` | `CoCreateInstance` (`sub_10039B18`, `sub_100534A4`, `sub_10054894`, `sub_10084A00`, `sub_10070BD8`) | ? (server DLLs unknown; `{D0DF0C7D-…}` is also created by the PacMan client library of [Alarms_NoUI.exe](../applications/alarms_noui.md#dependencies)) |
+| COM servers `{317D06E8-5F24-433D-BDF7-79CE68D8ABC2}`, `{228826AF-02E1-4226-A9E0-99A855E455A6}`, `{D0DF0C7D-33BF-4E04-9B11-B1D7AE572EED}`, `{27949969-876A-41D7-9447-568F6A35A4DC}`, `{E8D66722-1CBB-4605-9638-B248A200CC2F}` | `CoCreateInstance` (`sub_10039B18`, `sub_100534A4`, `sub_10054894`, `sub_10084A00`, `sub_10070BD8`) | ? (server DLLs unknown; `{D0DF0C7D-…}` is also created by the PacMan client library of [Alarms_NoUI.exe](../applications/alarms_noui.md#dependencies), `{228826AF-…}` by [pacmanserver.dll](./pacmanserver.md#dependencies)) |
 
 ### Exports
 
@@ -182,7 +182,7 @@ Interface `{8B111127-818E-4AE5-9788-7396504EF98F}` version 0.0 (`RPC_SERVER_INTE
 | 72 | `sub_10097E34` | `ID_CAP_ORIENTATION_LOCK` | `Shell_LockOrientation` | Publishes `SHL` 42 (`sub_10071D8C`) |
 | 73, 74, 75 | `sub_1009ACD0`, `sub_1009A4A8`, `sub_1009A454` | `ID_CAP_SHELL_DEVICE_LOCK_UI_API` | `Shell_GetLockPinpadHeight`, `Shell_BeginUnlock`, `Shell_EndUnlock` | |
 | 76, 77, 78 | `sub_10097F4C`, `sub_100982EC`, `sub_1009A8D0` | – | `Shell_EnableLockApp`, `TestHook_EnableOverlayApp`, `Shell_RaiseToastNotifications` | `sub_10093358`, `sub_1009338C`, `sub_10092FE8` |
-| 79 | `sub_10070C98` | – | `Shell_GetSystemScreenSize` | `UIXMobile!ThemeGetSystemScreenSize` |
+| 79 | `sub_10070C98` | – | `Shell_GetSystemScreenSize` | [UIXMobile!ThemeGetSystemScreenSize](./uixmobile.md#theme-engine) (0/1/2 for the scale factor 10/20/30) |
 
 "–" means that no capability check was found in the routine (it may be done by a callee). The errors are logged with the source line number (`sub_1004F3E0`, ETW).
 
@@ -191,7 +191,7 @@ Interface `{8B111127-818E-4AE5-9788-7396504EF98F}` version 0.0 (`RPC_SERVER_INTE
 | Interface | Binding | Opnums used | Use |
 |-----------|---------|-------------|-----|
 | `{33D84484-3626-47EE-8C6F-E7E98B113BE1}` v2.0 `ITaskSchedulerSvcRpc` (stub descriptor 0x10009418) | `sub_1003D138`: the same code as [ReminderEvents.dll](./reminderevents.md#rpc) (`ITaskSchedulerSvcRpc\Server`, LRPC, packet privacy, 3 tries) | 0 (`sub_100559E8`, create task), 4 (`sub_10060F34`, close an enumeration context ?) | [AlarmLockIconTask](#alarmlockicontask) |
-| `{85F9809B-3B25-4EEB-8160-FA4A60B80746}` v0.0 (stub descriptor 0x100094F8) | `sub_10053694`: `RpcStringBindingComposeW(NULL, L"ncalrpc", NULL, NULL…)`, `RpcBindingSetAuthInfoExW(level 6, service 10, QoS identify)`, with `SeShutdownPrivilege` enabled during the connection (`sub_10060FA0`); then registers the ETW provider `{5C103042-…}`. Binding in `dword_100AD41C`, context handle `dword_100AD428` | 1 (`sub_10049BC0`: `[in]` context handle, `[in] small`; retried once after reconnecting on 0x80010106), 4 (`sub_10060F34`: close the context handle) | Called by `Shell_Lock` (opnum 0) and `Shell_IdleTimerReset` (opnum 19) via `sub_10049B88` when the WNF state `OS` 7 says so. The server isn't known (power manager ?) |
+| `{85F9809B-3B25-4EEB-8160-FA4A60B80746}` v0.0 (stub descriptor 0x100094F8) | `sub_10053694`: `RpcStringBindingComposeW(NULL, L"ncalrpc", NULL, NULL…)`, `RpcBindingSetAuthInfoExW(level 6, service 10, QoS identify)`, with `SeShutdownPrivilege` enabled during the connection (`sub_10060FA0`); then registers the ETW provider `{5C103042-…}`. Binding in `dword_100AD41C`, context handle `dword_100AD428` | 1 (`sub_10049BC0`: `[in]` context handle, `[in] small`; retried once after reconnecting on 0x80010106), 4 (`sub_10060F34`: close the context handle) | Called by `Shell_Lock` (opnum 0) and `Shell_IdleTimerReset` (opnum 19) via `sub_10049B88` when the WNF state `OS` 7 says so. The server isn't known (power manager ?). [MobileUI.exe](../applications/mobileui.md#rpc-clients) is also a client (opnums 0, 1, 2 and 4, for the Power and Start buttons) |
 | `{A33A5C51-D8DC-4F1E-8B55-D5B5D00BF2F1}` v0.0 (stub descriptor 0x10008D68) | `sub_1006FB6C`: `RpcBindingCreateW` (LRPC, no endpoint), packet privacy, `ServerSecurityDescriptor` from `QuickSettingsSvcRpc\Interface`; rebinds once on 0x800106BF / 0x800106BE | 0 (`sub_10065BD0`, no parameter), 1 (`sub_10065B68`, 3 × `[in] long`) | Quick settings service |
 
 There is also an ALPC client of `\PdcPort` (`sub_10065FD0`, `ZwAlpcConnectPort`): the power dependency coordinator.
@@ -279,7 +279,7 @@ Decoded with `wnf.py`. All are well-known, system scope, version 1. `SHL` is the
 
 | Name | Owner, sequence | Data | Action |
 |------|-----------------|------|--------|
-| 0x418A063EA3BC0875 | `SHL`, 1 | 4 bytes: lock state | Published by `sub_1004BDA0`, read by [ShellChromeAPI.dll](./shellchromeapi.md#wnf-states); subscribed by `sub_1009DBB8` |
+| 0x418A063EA3BC0875 | `SHL`, 1 | 4 bytes: lock state | Published by `sub_1004BDA0`, read by [ShellChromeAPI.dll](./shellchromeapi.md#wnf-states); subscribed by `sub_1009DBB8`, and by [IpOverUsb.dll](./ipoverusb.md#wnf-states) (no USB tunnel while locked) |
 | 0x418A063EA3BC1075 (`.text:0x100105B0`) | `SHL`, 2 | | Published by `sub_10095228` |
 | 0x418A063EA3BC3875 (`.text:0x100312B8`) | `SHL`, 7 (`WNF_SHL_START_READY`) | | Read by `sub_1004C3C0` and `sub_10071B90`; trigger of [AlarmLockIconTask](#alarmlockicontask); also read by [wppower.sys](../drivers/wppower.md#wnf-states) and [wpcrdmp.sys](../drivers/wpcrdmp.md) |
 | 0x418A063EA3BC6075 | `SHL`, 12 | | Published by `sub_1004B7D4` |
@@ -355,7 +355,7 @@ Main keys, all under `HKEY_LOCAL_MACHINE` (strings of the binary, not all follow
 | `Global\SharedObjectDirectory\ContentSharing.ProgressAvailable` | `sub_1004DD20` |
 | `AppContainerNamedObjects`, `UIA_NOBODY_THERE_EVENT` | `sub_10064F74` (accessibility) |
 | `System\ActionDialogManagerEndpoint`, `ActionDialogManagerTestHook_Endpoint`, `System\SystemWaitCursorEndpoint` | CoreMessaging endpoints also used by [ShellChromeAPI.dll](./shellchromeapi.md#action-dialogs): server side ? |
-| `System\RawShellButtonRouterInput`, `System\PickerContractUIEndpoint`, `System\RemoteInputLocaleManager`, `System\RemoteTextInputState`, `System\RemoteTextInputProcessor`, `System\NavigationServer_ShellSessionManager`, `System\SearchMaps\Assist\Persona` | Other CoreMessaging endpoints |
+| `System\RawShellButtonRouterInput`, `System\PickerContractUIEndpoint`, `System\RemoteInputLocaleManager`, `System\RemoteTextInputState`, `System\RemoteTextInputProcessor`, `System\NavigationServer_ShellSessionManager`, `System\SearchMaps\Assist\Persona` | Other CoreMessaging endpoints (`System\RawShellButtonRouterInput` is served by [MobileUI.exe](../applications/mobileui.md#coremessaging-endpoints)) |
 | `\PdcPort` | ALPC port of the power dependency coordinator |
 
 ### ETW
@@ -363,7 +363,7 @@ Main keys, all under `HKEY_LOCAL_MACHINE` (strings of the binary, not all follow
 | Provider GUID | Registered by |
 |---------------|---------------|
 | `{9F79511C-06AD-4812-B18B-90006088D2CA}` | `DllMain` (context `dword_100AD400`, enable bits in `dword_100B2280`): main provider, used by the error logger `sub_1004F3E0` (bit 0x02) and the reminder events (bit 0x01, 0x04000000) |
-| `{5C103042-7E75-4629-A748-BDFA67607FAC}` | `sub_10053694`, after the `{85F9809B-…}` binding (context `dword_100ADAB8`) |
+| `{5C103042-7E75-4629-A748-BDFA67607FAC}` | `sub_10053694`, after the `{85F9809B-…}` binding (context `dword_100ADAB8`). Named `Microsoft-WindowsPhone-Power` in [MobileUI.exe](../applications/mobileui.md#etw), which registers it the same way |
 | `{B55B0DE9-E22B-4201-ACF8-974585BE7935}` | `sub_100537D0`: PacMan client library (as in [Alarms_NoUI.exe](../applications/alarms_noui.md#etw)) |
 | `{A6270E87-076E-4B23-B2B5-B11B5A377007}` | `sub_1004C130` (COM / `CoInitializeSecurity` init, `sub_100533F4`) |
 
