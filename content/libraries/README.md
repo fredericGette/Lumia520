@@ -51,3 +51,5 @@
 [MirrorUX.dll](./mirrorux.md)  
 [BOOTVID.DLL](./bootvid.md)  
 [UIXMobile.dll](./uixmobile.md)  
+[TaskSchedulerSvc.dll](./taskschedulersvc.md)  
+[vrfcore.dll](./vrfcore.md)  

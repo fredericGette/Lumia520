@@ -27,6 +27,8 @@ All about Nokia Lumia 520
 
 ## [Boot](content/boot/README.md)
 
+## [Physical Memory Mapping](content/memory/README.md)
+
 ## [Bluetooth stack](content/bluetooth/README.md)
 
 ## [Windows drivers](content/drivers/README.md)

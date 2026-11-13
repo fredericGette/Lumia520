@@ -57,24 +57,6 @@ When the PBL is not able to find or start the SBL1, it enters in Emergency Downl
 SBL1 is executed in the Internal MEMory (IMEM) because the main memory (SDRAM) is not ready yet (the SDRAM is initialized by SBL2).  
 TZ is also running in IMEM.  
 SBL2 is first running in MIMEM (?) and can also use Graphics internal MEMory (GMEM) if needed.  
-SBL3, UEFI and MainOS are running in SDRAM.  
+SBL3, UEFI and MainOS are running in SDRAM.
 
-# Memory addresses
-
-| Description | Start address | Size | Offset |
-|-------------|---------------|------|--------|
-| Boot ROM | 0x0 |  | |
-| RPM Code RAM | 0x20000 | 0x23FFF (144KB) | |
-| RPM Message RAM | 0x00108000 | 0x5FFF (24KB) | |
-| System IMEM | 0x2A000000 | 0x3FFFF (256KB) | |  
-| MM IMEM | 0x2E000000 | 0x2FFFF (192KB) | |  
-| Graphical Internal Memory (GMEM or GIMEM) | 0x2E030000 | 0x7FFFF (512KB) | |
-| Main Memory (EBI1) | 0x80000000 | 0x1FFFFFFF (512MB) | |
-| Shared memory (SMEM or SMI) | 0x80000000 | 0x200000 (2MB)| 0x0 | 
-| Krait HLOS | 0x80200000 | 0x83FFFFF (132MB)| |
-| Modem memory (Q6SW) | 0x89000000 | 0x4A00000 (74MB) | 0x9000000 |
-| Q6FW | 0x8D400000 |  | |
-| LPASS | 0x8DA00000 | 0x1800000 (24MB) | |
-
-
-
+The addresses of these memories are in [Physical Memory Mapping](../memory/README.md).

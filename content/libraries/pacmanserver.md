@@ -211,12 +211,14 @@ Interface `{33D84484-3626-47EE-8C6F-E7E98B113BE1}` version 2.0 (stub descriptor 
 
 `SetLiveTileTaskState(?, state, type)` takes the task GUID from the schedule type 0…3 (`E_INVALIDARG` above 3):
 
-| Type | Task GUID |
-|------|-----------|
-| 0 | `{2B00BA79-D967-404E-B4E2-FB3C963EFA2B}` |
-| 1 | `{F14C2492-5908-4808-A2FD-E74D27581F5F}` |
-| 2 | `{284FDFA6-37DE-42F7-8235-AB7E3708FC51}` |
-| 3 | `{8ECFF87D-F3EA-4EFD-A0A1-B93E344F6774}` |
+| Type | Task GUID | Task name (from the [task store](./taskschedulersvc.md#tasks-of-a-phone)) |
+|------|-----------|-----------|
+| 0 | `{2B00BA79-D967-404E-B4E2-FB3C963EFA2B}` | `LiveTokenHourly` |
+| 1 | `{F14C2492-5908-4808-A2FD-E74D27581F5F}` | `LiveTokenDaily` |
+| 2 | `{284FDFA6-37DE-42F7-8235-AB7E3708FC51}` | `LiveTokenWeekly` |
+| 3 | `{8ECFF87D-F3EA-4EFD-A0A1-B93E344F6774}` | `LiveTokenMonthly` |
+
+The four tasks start `%systemdrive%\windows\system32\LiveToken.exe` on a list trigger (type 2) of WNF states (`CNET` 1, `SHL` 1, `CNET` 3, `OS` 8).
 
 `AddLiveTokenSubscription` (`sub_100A6458`) enables the task of the schedule (field +0x3C of the subscription); `RemoveLiveTokenSubscription` (`sub_100A625C`) disables it when no subscription of that type is left.
 

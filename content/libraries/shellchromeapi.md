@@ -47,7 +47,7 @@ Files used other than the static imports (the delay-loaded DLLs are in the [Impo
 | Image file of a reminder (reminder +0x54, given by the caller) → `<known folder {2856B913-7185-4C9D-9ACC-981269A83C14}>\Reminders\Images\{GUID}.png` | `CopyFileW` (`PackReminder`, `sub_10016994`), `DeleteFileW` on failure and in `Shell_DeleteReminder` | See [Files](#files) |
 | Wallpaper file given to `Shell_SetCurrentWallpaper*` / `Shell_SetCurrentKidZoneWallpaper` | `PathFileExistsW` + `DSCreateSharedFileToken(…, L"MobileUI", …)` (`sub_1000D8A4`) | Shared with the shell, which moves it into its wallpaper folder ([ShellChrome.dll](./shellchrome.md#dependencies)); see [Wallpaper](#wallpaper) |
 | [ShellChrome.dll](./shellchrome.md#rpc-server) (shell RPC server `{8B111127-818E-4AE5-9788-7396504EF98F}`, dynamic LRPC endpoint) | `RpcBindingCreateW` / `RpcBindingBind` | Every `Shell_*` export, see [Shell RPC interface](#shell-rpc-interface) |
-| RPC server of the Task Scheduler service (`ITaskSchedulerSvcRpc`, dynamic LRPC endpoint) | `RpcBindingCreateW` / `RpcBindingBind` | Reminders, see [Task Scheduler RPC](#task-scheduler-rpc-reminders); the hosting service binary isn't known |
+| RPC server of the Task Scheduler service (`ITaskSchedulerSvcRpc`, dynamic LRPC endpoint) | `RpcBindingCreateW` / `RpcBindingBind` | Reminders, see [Task Scheduler RPC](#task-scheduler-rpc-reminders); served by [TaskSchedulerSvc.dll](./taskschedulersvc.md#rpc) |
 
 No DLL is loaded with `LoadLibrary` and no process is started. The only `CoCreateInstance` is the standard COM global interface table (`{00000323-0000-0000-C000-000000000046}`, `sub_1000B36C`).
 
@@ -285,7 +285,7 @@ Interface `{33D84484-3626-47EE-8C6F-E7E98B113BE1}` version 2.0 (stub descriptor 
 | 3 | `sub_10007F50` | `Shell_FindFirstReminder`, `Shell_FindNextReminder` | `[in]` context handle, 3 × `[in,out]` (the last one is the item) | Next task |
 | 4 | `sub_10008340` | `Shell_FindFirstReminder`, `Shell_FindReminderClose` | `[in,out]` context handle | End of the enumeration |
 | 5 | `sub_10008A18` | `Shell_GetReminderData` | `[in] GUID *`, `[in,out]`, `[in,out]` item | Get one task |
-| 6 | `sub_1000B7F4` | `Shell_SetReminderState` | `[in] GUID *`, `[in] long` | Enable / disable ? |
+| 6 | `sub_1000B7F4` | `Shell_SetReminderState` | `[in] GUID *`, `[in] long` | Enable / disable (the service writes the task's `Enabled` value, see [TaskSchedulerSvc.dll](./taskschedulersvc.md#rpc)) |
 | 11 | `sub_1000B790` | `Shell_CreateReminder`, `Shell_DeleteReminder` | `[in] GUID *`, `[in,out]` 8 bytes | WNF state name of the task |
 
 Opnums 1, 2, 3, 4, 5 and 11 are also used by [ReminderEvents.dll](./reminderevents.md#rpc) (which adds 10, snooze); 0 and 6 are only used here among the reminder clients. [UpdateUEFIDb.exe](../applications/updateuefidb.md#task-scheduler-rpc) also calls opnum 6, with state 0, for two tasks. [WPTimeSvc.dll](./wptimesvc.md#task-scheduler-rpc) uses opnums 0, 1 and 5 for its `NTP Time Sync Schedule` task, whose action (type 3) publishes a WNF state instead of carrying data. The errors 0x82CF010D and 0x82CF010E (end of enumeration / not found ?) are returned as 0x80070490 (`ERROR_NOT_FOUND`) by the find functions; `Shell_GetReminderData` returns S_OK with `*ppData = NULL` for 0x82CF010E.

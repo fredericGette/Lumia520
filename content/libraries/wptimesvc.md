@@ -51,7 +51,7 @@ Files used other than the static imports.
 | `W32Time` service ([w32time.dll](./w32time.md)) | `OpenServiceW` + `StartServiceW` / `ControlService(SERVICE_CONTROL_STOP)`, RPC `ncalrpc:[W32TIME_ALT]` ([W32Time RPC](#w32time-rpc)) | NTP client that actually talks to the time servers |
 | `HKLM\System\ControlSet001\Services\W32Time\Parameters` and `\Config` | `RegSetKeyValueW` / `RegDeleteKeyValueW` | Configuration written for W32Time before each sync (server list, log file), see [Registry](#registry) |
 | `<known folder {8C19F0BC-CFD5-48E0-807B-0682F051E368}>\NonEtwLogs\w32time.log` | `SHGetKnownFolderPath(…, 0x4000)`, `CreateFileW(OPEN_ALWAYS)`, `SetNamedSecurityInfoW` | Log file of W32Time, only when `NTP Service Logging Enabled` is set; written by W32Time, not by this DLL |
-| RPC server of the Task Scheduler service (`ITaskSchedulerSvcRpc`, dynamic LRPC endpoint) | `RpcBindingCreateW` / `RpcBindingBind` ([Task Scheduler RPC](#task-scheduler-rpc)) | Task `NTP Time Sync Schedule`; the hosting service binary isn't known |
+| RPC server of the Task Scheduler service (`ITaskSchedulerSvcRpc`, dynamic LRPC endpoint) | `RpcBindingCreateW` / `RpcBindingBind` ([Task Scheduler RPC](#task-scheduler-rpc)) | Task `NTP Time Sync Schedule`; served by [TaskSchedulerSvc.dll](./taskschedulersvc.md#rpc) |
 | `\PdcPort` | `ZwAlpcConnectPort` ([PDC activation](#pdc-activation)) | Power dependency coordinator (kernel): keeps the system active during the W32Time resync |
 
 No DLL is loaded with `LoadLibrary`, no process is started and no COM object is created.

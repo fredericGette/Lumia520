@@ -33,7 +33,7 @@ Files used other than the static imports: none. There is no `LoadLibrary`, `Crea
 | Component | How | Use |
 |-----------|-----|-----|
 | UEFI variable `db` | `NtQuerySystemEnvironmentValueEx`, `NtSetSystemEnvironmentValueEx` | Read and replaced, see [Update of db](#update-of-db) |
-| RPC server of the Task Scheduler service (`ITaskSchedulerSvcRpc`, dynamic LRPC endpoint) | `RpcBindingCreateW` / `RpcBindingBind` | Opnum 6 for two tasks, see [Task Scheduler RPC](#task-scheduler-rpc); the hosting service binary isn't known |
+| RPC server of the Task Scheduler service (`ITaskSchedulerSvcRpc`, dynamic LRPC endpoint) | `RpcBindingCreateW` / `RpcBindingBind` | Opnum 6 for two tasks, see [Task Scheduler RPC](#task-scheduler-rpc); served by [TaskSchedulerSvc.dll](../libraries/taskschedulersvc.md#rpc) |
 
 ### Parameters
 
@@ -124,7 +124,7 @@ It's called twice, with these GUIDs:
 | Address | GUID |
 |---------|------|
 | 0x1005010 | `{F9EC1267-D85B-49E6-864D-EE8C0709C338}` |
-| 0x1006B94 | `{3081686A-4C38-468B-83B9-AA6AEA939D4C}` |
+| 0x1006B94 | `{3081686A-4C38-468B-83B9-AA6AEA939D4C}`: the task `UpdateUEFIDb` of [TaskSchedulerSvc.dll](../libraries/taskschedulersvc.md#tasks-of-a-phone) (WNF trigger on 0x418A063EA3BC3875, `SHL` 7, shell ready; action: start `%systemdrive%\windows\system32\UpdateUEFIDb.exe`), i.e. the task that starts this program |
 
 The second call is made even if the first one fails: the result is ignored. `sub_1003CF0` catches RPC exceptions (`I_RpcExceptionFilter`) and turns them into an HRESULT. If the connection fails, opnum 6 isn't called. `RpcBindingFree` then frees the binding.
 

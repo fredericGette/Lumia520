@@ -246,10 +246,10 @@ At shell start-up (`sub_1009E0B8`), `sub_1003CE50` creates a Task Scheduler task
 | 0x04 | 0 (flags) |
 | 0x08 | `L"AlarmLockIconTask"` |
 | 0x2C | 1 |
-| 0x30 | → `{ 1, → WNF state 0x418A063EA3BC3875 }` (`SHL` 7, `WNF_SHL_START_READY`, see [wpcrdmp.sys](../drivers/wpcrdmp.md)): trigger ? |
-| 0x34 | → `{ 0, → { L"c:\Programs\Alarms\Alarms_NoUI.exe", L"c:\Programs\Alarms\Alarms_NoUI.exe UpdateLockAndStartInfo" } }`: action = start a program ? |
+| 0x30 | → `{ 1, → WNF state 0x418A063EA3BC3875 }` (`SHL` 7, `WNF_SHL_START_READY`, see [wpcrdmp.sys](../drivers/wpcrdmp.md)): the trigger, type 1 = [WNF state trigger](./taskschedulersvc.md#wnf-trigger) (the data starts with the state name) |
+| 0x34 | → `{ 0, → { L"c:\Programs\Alarms\Alarms_NoUI.exe", L"c:\Programs\Alarms\Alarms_NoUI.exe UpdateLockAndStartInfo" } }`: the action, type 0 = [start a process](./taskschedulersvc.md#actions) in the creator's chamber |
 
-In the reminder tasks of [ShellChromeAPI.dll](./shellchromeapi.md#reminders) +0x30 is 0 and +0x34 points to `{ 4, data }`: the first DWORD of +0x34 looks like the action type (0 = program, 4 = data ?) and +0x30 a list of WNF triggers ?
+In the reminder tasks of [ShellChromeAPI.dll](./shellchromeapi.md#reminders) +0x30 is 0 and +0x34 points to `{ 4, data }`: +0x30 is the trigger and +0x34 the action, each `{ type, data }`; no trigger means a one-shot time trigger at the start time, and action 4 publishes the data in a WNF state created for the task (see [TaskSchedulerSvc.dll](./taskschedulersvc.md#tasks)).
 
 #### Alarms_NoUI command lines
 

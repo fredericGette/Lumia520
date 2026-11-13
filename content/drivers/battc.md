@@ -155,7 +155,7 @@ Only a `BatteryInformation` failure fails the request; the other levels are opti
 
 ### IOCTL 0x294040 — IOCTL_BATTERY_QUERY_TAG
 
-This IOCTL is processed by Battc.sys (through `BatteryClassIoctl`)
+This IOCTL is processed by Battc.sys (through `BatteryClassIoctl`). Also sent by [BatteryLogger.exe](../applications/batterylogger.md#ioctls-sent)
 
 | Property | Value |
 |----------|-------|
@@ -238,7 +238,7 @@ Executed by the worker: `SetInformation(Context, Tag, Level, &Input[8])`. No `Se
 
 ### IOCTL 0x29404C — IOCTL_BATTERY_QUERY_STATUS
 
-This IOCTL is processed by Battc.sys
+This IOCTL is processed by Battc.sys. Also sent by [BatteryLogger.exe](../applications/batterylogger.md#ioctls-sent)
 
 | Property | Value |
 |----------|-------|

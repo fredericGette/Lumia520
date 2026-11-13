@@ -37,7 +37,7 @@ Files used other than the static imports.
 | File | How | Use |
 |------|-----|-----|
 | `<known folder {2856B913-7185-4C9D-9ACC-981269A83C14}>\Reminders\Images\{GUID}.png` | `DeleteFileW` ([ShellDismissReminder](#shelldismissreminder-sub_100025ac)) | Image of a dismissed reminder (copied there by [ShellChromeAPI.dll](./shellchromeapi.md#packed-reminder)) |
-| RPC server of the Task Scheduler service (`ITaskSchedulerSvcRpc`, dynamic LRPC endpoint) | `RpcBindingCreateW` / `RpcBindingBind` ([RPC](#rpc)) | Reminder data, dismiss and snooze; the hosting service binary isn't known |
+| RPC server of the Task Scheduler service (`ITaskSchedulerSvcRpc`, dynamic LRPC endpoint) | `RpcBindingCreateW` / `RpcBindingBind` ([RPC](#rpc)) | Reminder data, dismiss and snooze; served by [TaskSchedulerSvc.dll](./taskschedulersvc.md#rpc) |
 
 No DLL is loaded at run time and no process or COM server is started.
 
@@ -105,7 +105,7 @@ The WNF callback of every reminder state (`StateName`, `ChangeStamp`, `TypeId`, 
 5. Calls `ProcessReminder(reminder, flags, &stateName)` in ShellChrome.dll.
 6. Frees the reminder (`HeapFree`) and the RPC item (`FreeRpcItem`, `sub_10002744`); always returns 0.
 
-The meaning of opnum 5 (called with the reminder, whose first 16 bytes are its GUID) and of bit 0x10 is unknown. On the shell side, flag 0x800 shows the reminder without the time check and without timeout (see [ShellChrome.dll](./shellchrome.md#reminders), which also explains flags 0x1, 0x2 and 0x1000).
+Opnum 5 (called with the reminder, whose first 16 bytes are its GUID) returns the stored task ([TaskSchedulerSvc.dll](./taskschedulersvc.md#rpc)); the meaning of bit 0x10 of its flags (a flag the service accepts only for the tasks it reloads from the registry) is unknown. On the shell side, flag 0x800 shows the reminder without the time check and without timeout (see [ShellChrome.dll](./shellchrome.md#reminders), which also explains flags 0x1, 0x2 and 0x1000).
 
 ### Reminder data
 
@@ -174,11 +174,11 @@ Interface `{33D84484-3626-47EE-8C6F-E7E98B113BE1}` version 2.0 (client interface
 | 2 | `sub_100039CC` | Enumeration thread | `[out] context handle`, `[in,out]`, `[in,out]`, `[in,out]` item | Start the enumeration, first item |
 | 3 | `sub_10003A3C` | Enumeration thread | `[in] context handle`, same as opnum 2 | Next item |
 | 4 | `sub_10003AAC` | Enumeration thread | `[in,out] context handle` | End of the enumeration |
-| 5 | `sub_10003B0C` | `ReminderCallback` | `[in] GUID *`, `[in,out]`, `[in,out]` | ? (result +4 bit 0x10 → flag 0x800) |
+| 5 | `sub_10003B0C` | `ReminderCallback` | `[in] GUID *`, `[in,out]`, `[in,out]` | Get the task: item and runtime data ([server](./taskschedulersvc.md#rpc)); result +4 bit 0x10 → flag 0x800 |
 | 10 | `sub_10003B74` | `ShellSnoozeReminder` | `[in] GUID *`, `[in] long` | Snooze the reminder |
 | 11 | `sub_10003BD8` | Enumeration thread | `[in] GUID *`, `[in,out]` 8 bytes | WNF state name of the reminder |
 
-Every procedure returns a `long` (HRESULT). The other opnums (0, 6…9) aren't used. The server side (service DLL) isn't analysed. An enumerated item has a GUID pointer at +0x00 and a name at +0x08; it's freed by `sub_10003D40` (fields +0x00, +0x08, +0x30, +0x34).
+Every procedure returns a `long` (HRESULT). The other opnums (0, 6…9) aren't used. The server side is [TaskSchedulerSvc.dll](./taskschedulersvc.md#rpc). An enumerated item has a GUID pointer at +0x00 and a name at +0x08; it's freed by `sub_10003D40` (fields +0x00, +0x08, +0x30, +0x34).
 
 ### WNF states
 
