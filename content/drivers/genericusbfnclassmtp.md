@@ -95,7 +95,7 @@ InterfaceDescriptor:
 
 So the interface has 3 pipes (bulk IN, bulk OUT and interrupt IN, the third one being the difference with IP over USB), whose `PipeId`s are then used in the `IOCTL_GENERICUSBFN_TRANSFER_IN` / `_OUT` requests.
 
-On the observed phone `CurrentConfiguration` = `RetailConfig` (`InterfaceList` = `NCSd`) with `IncludeDefaultCfg` = 1, which probably means the `Default` configuration, and so MTP, is offered too ?
+On the observed phone `CurrentConfiguration` = `RetailConfig` (`InterfaceList` = `NCSd`) with `IncludeDefaultCfg` = 1: the `Default` configuration, and so MTP, is offered too; the [NCSd](./genericusbfnclass.md#ncsd-instance) instance ID `USBFN\NCSd\3&1d123fc3&0&03` shows it is appended after the `Default` interfaces as interface 3.
 
 ### IOCTLs
 

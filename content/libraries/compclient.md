@@ -4,7 +4,7 @@ The client side of the Windows Phone 8.1 compositor: it lets a process hand the 
 `CompClient.dll` is a small DLL (118 functions, all named from the PDB `compclient.pdb`, half of them CRT and a hash map). It talks to the compositor server over an ALPC port, `CompositorAlpcPort`, in the named object directory of `MobileUI` (see [ALPC](#alpc)). For each window, the server gives a "client map", a shared memory section with two frame slots, and two events. The client then presents frames by writing the slot and signalling the compose event, with no ALPC message (see [Shared state](#shared-state-and-presents)). The other exports send one ALPC request each: screenshot (into a file mapping of the caller, turned into a WIC bitmap), display topology (Miracast / USB projection) and "protected session".  
 Known users: [DWMCORE.DLL](./dwmcore.md#phone-swap-chain) (`FindSharedState`, `RegisterSurfaceIdentitiesForPresent`, phone swap chain), [ShellChrome.dll](./shellchrome.md) (`CaptureScreen`, `CreateCaptureScreenEvent`: screenshots) and [MirrorUX.dll](./mirrorux.md#display-topology) (`GetDisplayTopology`, `SetDisplayTopology`). The server is [CompServer.dll](./compserver.md), started in [MobileUI.exe](../applications/mobileui.md#startup) by `CompServer!InitializeCompositor`.
 
-Location on the phone: `C:\Windows\System32\CompClient.dll` ? (extracted with `CompServer.dll`, `DWMCORE.DLL`, `DWMAPI.DLL` and `DCOMP.DLL`).  
+Location on the phone: `C:\Windows\System32\CompClient.dll` ? (extracted with `CompServer.dll`, `DWMCORE.DLL`, `DWMAPI.DLL` and [DCOMP.DLL](./dcomp.md)).  
 
 ### Imports
 

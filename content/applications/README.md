@@ -6,6 +6,8 @@
 [DateTimeCPL.exe](./datetimecpl.md)  
 [MirrorCPL.exe](./mirrorcpl.md)  
 [MobileUI.exe](./mobileui.md)  
+[mwdbgsrv.exe](./mwdbgsrv.md)  
+[ncsdsvc.exe](./ncsdsvc.md)  
 [QcShutdownSvc8930.exe](./qcshutdownsvc8930.md)  
 [tracelog.exe](./tracelog.md)  
 [UpdateUEFIDb.exe](./updateuefidb.md)  

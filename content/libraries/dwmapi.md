@@ -2,7 +2,7 @@
 
 The Desktop Window Manager API of Windows Phone 8.1: a stub version of the desktop `dwmapi.dll`, kept so that code written for the desktop links and runs.  
 `DWMAPI.DLL` is tiny (27 functions, 8 of them non-CRT). It holds no state and talks to no compositor: every export returns a constant, apart from the two private security descriptor functions. Composition is always reported as enabled, `DwmSetWindowAttribute` and `DwmTetherContact` succeed without doing anything, and the other exports return `E_NOTIMPL`. The only real code builds the security descriptor of the compositor surface object, read from the SecurityManager store of [SecRuntime.dll](./secruntime.md#querytransientobjectsecuritydescriptor-0x10003c20) (loaded at run time) or, if that DLL can't be loaded, from a built-in SDDL string.  
-Its users weren't identified; the real compositor is in the sibling binaries [DWMCORE.DLL](./dwmcore.md) and `DWMMOBILE.DLL` (extracted with it, not analysed). DWMCORE.DLL loads it at run time only for `DwmIsCompositionEnabled` (and falls back to its own stub); it doesn't call `DwmpAllocateSecurityDescriptor`, so the caller of that one may be `DWMMOBILE.DLL`.
+Its users weren't identified; the real compositor is in the sibling binaries [DWMCORE.DLL](./dwmcore.md) and [DWMMOBILE.DLL](./dwmmobile.md) (extracted with it). DWMCORE.DLL loads it at run time only for `DwmIsCompositionEnabled` (and falls back to its own stub); it doesn't call `DwmpAllocateSecurityDescriptor`, and DWMMOBILE.DLL doesn't import DWMAPI.DLL either: the caller of that one is unknown.
 
 Location on the phone: `C:\Windows\System32\DWMAPI.DLL` ?  
 

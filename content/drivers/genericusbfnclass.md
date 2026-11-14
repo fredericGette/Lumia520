@@ -5,11 +5,12 @@ It is the KMDF function driver of a USB *function* (device-side) interface: it e
 The pipes and the interface GUID are not hardcoded: they are retrieved from the lower driver with [internal IOCTL 0x2AC022](#internal-ioctl-0x2ac022--ioctl_internal_usbfn_get_class_info) (`IOCTL_INTERNAL_USBFN_GET_CLASS_INFO`), i.e. from the USB function interface configuration of the class extension (registry `HKLM\SYSTEM\CurrentControlSet\Control\USBFN` ?).  
 It contains a statically linked copy of the Microsoft library `kusbfnclasslib` (`src\drivers\product\drivers\usbfn\lib\kusbfnclasslib\kusbfnclasslib.c`).  
 Built `Jan 23 2015 18:07:53`. PDB: `genericusbfnclass.pdb`.  
-The same binary (byte-identical, MD5 `add2618c05260684daabc0e0b5792cc0`) is also installed as [genericusbfnclassipoverusb.sys](./genericusbfnclassipoverusb.md) and [genericusbfnclassmtp.sys](./genericusbfnclassmtp.md), one service per USB function interface.  
+The same binary (byte-identical, MD5 `add2618c05260684daabc0e0b5792cc0`) is also installed as [genericusbfnclassipoverusb.sys](./genericusbfnclassipoverusb.md) and [genericusbfnclassmtp.sys](./genericusbfnclassmtp.md), one service per USB function interface. The service `genericusbfnclass` itself (this file name, Nokia INF `genericusbfnclass.inf`) serves the Nokia [NCSd](#ncsd-instance) interface.  
 It only imports `ntoskrnl.exe` (`RtlCopyUnicodeString`, `ExAllocatePoolWithTag`, `ExFreePoolWithTag`, `DbgPrint`, `_vsnwprintf`, `RtlGUIDFromString`) and `WDFLDR.SYS`. There's no ETW / WPP provider: all the traces are `DbgPrint` (prefix `GenericUsbFnClass`).
 
 There's no device name.  
 Symbolic link : `\DosDevices\GenericUsbFn_{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}` (one per instance, GUID = `InterfaceGuid` of the class information)  
+On the observed phone this service has one instance, `USBFN\NCSd\3&1d123fc3&0&03` → `\DosDevices\GenericUsbFn_{7eaff726-34cc-4204-b09d-f95471b873cf}`, see [NCSd instance](#ncsd-instance).  
 
 There's no parameters in the registry.  
 
@@ -136,6 +137,86 @@ Outputbuffer: [USBFN_CLASS_INFORMATION_PACKET](#usbfn_class_information_packet).
 
 A failure → "Failed to query for class information via IOCTL." and `EvtDevicePrepareHardware` fails with `STATUS_UNSUCCESSFUL`.
 
+### NCSd instance
+
+The service `genericusbfnclass` (this file, not a renamed copy) is the function driver of the `NCSd` USB function interface, the only interface of the `RetailConfig` configuration. NCSd is the Nokia Care Suite daemon channel: the service [ncsdsvc.exe](../applications/ncsdsvc.md) (service `ncsd`) opens `\\.\GenericUsbFn_{7eaff726-34cc-4204-b09d-f95471b873cf}`, sends 0x22C022, 0x22C02C and 0x22C036, reads JSON-RPC 2.0 requests (at most 16 KB) from the bulk OUT pipe with 0x22C016 and writes the responses to the bulk IN pipe with 0x22C00D. The requests are processed by [Ncsd.dll](../libraries/ncsd.md#transport-ncsdsvcexe): phone identity, NV items and EFS files, security mode, reboot to flash mode, factory reset… The PC tools that use it (Nokia Care Suite, Windows Device Recovery Tool, `thor2` ?) weren't analysed.
+
+Device instance `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USBFN\NCSd\3&1d123fc3&0&03` (e.g. observed on the phone, UTF-16 / FILETIME values decoded):  
+| Registry value / property | value | comment |
+|---------------------------|-------|---------|
+| DeviceDesc | `@genericusbfnclass.inf,%wdfsimpledevice.devicedesc%;NCSd` | |
+| HardwareID | `USBFN\NCSd` | CompatibleIDs empty |
+| LocationInformation | `USBFN` | |
+| ClassGUID | `{4d36e97d-e325-11ce-bfc1-08002be10318}` | Setup class "System" |
+| Driver | `{4d36e97d-e325-11ce-bfc1-08002be10318}\0074` | |
+| Service | `genericusbfnclass` | |
+| Mfg | `@genericusbfnclass.inf,%stdmfg%;(Standard system devices)` | |
+| ContainerID | e.g. `{27794f68-c4c1-11f0-84da-806e6f6e6963}` | |
+| Capabilities | 0x86 | CM_DEVCAP_REMOVABLE \| CM_DEVCAP_SILENTINSTALL \| CM_DEVCAP_SURPRISEREMOVALOK |
+| UINumber | 0x3 | Interface number 3 (instance ID `&03`) |
+| ConfigFlags | 0x0 | |
+| Device Parameters\WDF\IdleInWorkingState | 0x1 | Written by WDF (S0 idle enabled, see [WDF configuration](#wdf-configuration)) |
+| `{540b947e-8b40-45bc-a8a2-6a0b894cbda2}`,4 | `NCSd` | Bus reported device description ? |
+| `{540b947e-8b40-45bc-a8a2-6a0b894cbda2}`,7 | `genericusbfnclass.inf:USBFN\NCSd,UfnBus_Child_00` | Configuration ID ? |
+| `{83da6326-97a6-4088-9453-a1923f573b29}`,3 | `genericusbfnclass.inf:741f41b5817172ec:UfnBus_Child_00:15.58.28.310:USBFN\NCSd` | Driver node strong name ? |
+| `{83da6326-97a6-4088-9453-a1923f573b29}`,0xA | `ACPI\QCOM01C0\1` | Parent device: the USB function controller |
+| `{83da6326-97a6-4088-9453-a1923f573b29}`,0x64 / 0x65 / 0x66 | e.g. 2025-11-18 20:57:21 / 2025-11-18 20:57:21 / 2026-11-14 18:55:22 | Install date / first install date / last arrival date |
+| `{a8b865dd-2e3d-4094-ad97-e593a70c75d6}`,2 | 2015-01-28 | DriverDate |
+| `{a8b865dd-2e3d-4094-ad97-e593a70c75d6}`,3 | `15.58.28.310` | DriverVersion (Nokia build number, unlike the `1.1.0.0` of the Microsoft INFs of MTP / IpOverUsb) |
+| `{a8b865dd-2e3d-4094-ad97-e593a70c75d6}`,4 | `NCSd` | DriverDesc |
+| `{a8b865dd-2e3d-4094-ad97-e593a70c75d6}`,5 | `genericusbfnclass.inf` | DriverInfPath |
+| `{a8b865dd-2e3d-4094-ad97-e593a70c75d6}`,6 | `UfnBus_Child_00` | DriverInfSection |
+| `{a8b865dd-2e3d-4094-ad97-e593a70c75d6}`,8 | `USBFN\NCSd` | MatchingDeviceId |
+| `{a8b865dd-2e3d-4094-ad97-e593a70c75d6}`,9 | `Nokia` | DriverProvider |
+| `{a8b865dd-2e3d-4094-ad97-e593a70c75d6}`,0xE | 0x00FF0000 | DriverRank |
+| `{80497100-8c73-48b9-aad9-ce387e19c56e}`,6 | 0 | ? |
+
+The instance ID `&03` (interface number 3) while NCSd is the only interface of `RetailConfig` shows that, with `IncludeDefaultCfg` = 1, the interfaces of the `Default` configuration (MTP 0, IpOverUsb 1, VidStream 2) come first and NCSd is appended as interface 3 ?
+
+Key `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\USBFN\Interfaces\NCSd` (e.g. observed on the phone):  
+| Registry value | value | comment |
+|----------------|-------|---------|
+| InterfaceGUID | `{7eaff726-34cc-4204-b09d-f95471b873cf}` | REG_SZ. `InterfaceGuid` of the class information: symbolic link and device interface of this driver |
+| InterfaceDescriptor | `09 04 00 00 02 FF FF FF 00 07 05 81 02 00 02 00 07 05 02 02 00 02 00` | REG_BINARY, see below |
+| MSOSExtendedPropertyDescriptor | 142 bytes | REG_BINARY, sent to the host, see below |
+
+InterfaceDescriptor (identical to the one of [IpOverUsb](./genericusbfnclassipoverusb.md#usb-function-configuration)):  
+| Bytes | Value | Comment |
+|-------|-------|---------|
+| 00-08 | 09 04 00 00 02 FF FF FF 00 | `USB_INTERFACE_DESCRIPTOR`: bInterfaceNumber 0 (renumbered by [usbfnclx.sys](./usbfnclx.md#registry)), bAlternateSetting 0, bNumEndpoints 2, class/subclass/protocol 0xFF/0xFF/0xFF (vendor specific), iInterface 0 |
+| 09-0F | 07 05 81 02 00 02 00 | `USB_ENDPOINT_DESCRIPTOR`: endpoint 0x81 (IN 1), bulk, wMaxPacketSize 512, bInterval 0 |
+| 10-16 | 07 05 02 02 00 02 00 | `USB_ENDPOINT_DESCRIPTOR`: endpoint 0x02 (OUT 2), bulk, wMaxPacketSize 512, bInterval 0 |
+
+MSOSExtendedPropertyDescriptor (Microsoft OS 1.0 extended properties):  
+| Bytes | Value | Comment |
+|-------|-------|---------|
+| 00-03 | 0x8E | dwLength = 142 |
+| 04-05 | 0x0100 | bcdVersion |
+| 06-07 | 5 | wIndex (extended properties) |
+| 08-09 | 1 | wCount, 1 property |
+| 0A-0D | 0x84 | dwSize of the property = 132 |
+| 0E-11 | 1 | dwPropertyDataType = REG_SZ |
+| 12-13 | 0x28 | wPropertyNameLength = 40 |
+| 14-3B | `DeviceInterfaceGUID` | UTF-16, NUL-terminated |
+| 3C-3F | 0x4E | dwPropertyDataLength = 78 |
+| 40-8D | `{7eaff726-34cc-4204-b09d-f95471b873cf}` | UTF-16, NUL-terminated |
+
+So the PC finds the phone with the **same** GUID as the device side (IpOverUsb uses two different GUIDs), and no WinUSB idle property is set (no selective suspend on the host).
+
+Key `Control\USBFN\Configurations\RetailConfig`:  
+| Registry value | value | comment |
+|----------------|-------|---------|
+| InterfaceList | `NCSd` | REG_MULTI_SZ |
+| MSOSCompatIdDescriptor | `28 00 00 00 00 01 04 00 01 00 00 00 00 00 00 00 00 01 57 49 4E 55 53 42 00 00 00 …` | 40 bytes: dwLength 0x28, bcdVersion 0x0100, wIndex 4, bCount 1; function: bFirstInterfaceNumber 0, reserved 0x01, compatibleID `WINUSB`, no subCompatibleID. Merged with the compat IDs of `Default` by [usbfnclx.sys](./usbfnclx.md#registry) |
+
+On the PC, NCSd is therefore bound to WinUSB and opened with the device interface `{7eaff726-34cc-4204-b09d-f95471b873cf}`; the protocol on its two bulk pipes is JSON-RPC 2.0, one message per bulk transfer (at most 16 KB, no framing), see [ncsdsvc.exe](../applications/ncsdsvc.md#main-loop) and [Ncsd.dll](../libraries/ncsd.md#processrequest-sub_1000d974-vtable-0xfc).
+
 ### Interface GUID
 
 Device interface class GUID: not fixed, it's the `InterfaceGuid` returned by [internal IOCTL 0x2AC022](#internal-ioctl-0x2ac022--ioctl_internal_usbfn_get_class_info) (one per configured USB function interface).
+
+| Instance | Service | InterfaceGuid |
+|----------|---------|---------------|
+| `USBFN\MTP` | [genericusbfnclassmtp](./genericusbfnclassmtp.md) | `{61fd7822-e8d4-44c4-9065-aaad0a3beff0}` |
+| `USBFN\IpOverUsb` | [genericusbfnclassipoverusb](./genericusbfnclassipoverusb.md) | `{30613563-7df3-4afb-80e0-e8c427c7e9bf}` |
+| `USBFN\NCSd` | genericusbfnclass (this driver) | `{7eaff726-34cc-4204-b09d-f95471b873cf}` (also the host-side WinUSB GUID) |

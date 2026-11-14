@@ -72,7 +72,7 @@ The command line isn't used: `wWinMain` (0x1027A30) ignores its parameters and a
 
 `wWinMain`:
 1. `TelSetProcessFlags(TelGetProcessFlags() | 1)`, registers the ETW provider `Microsoft-WindowsPhone-MobileUI` `{F243DC34-205E-4D34-94CA-36E8C0859787}`.
-2. `CompServer!InitializeCompositor()`. The compositor runs in this process: [DWMCORE.DLL](../libraries/dwmcore.md#startup) accepts `mobileui.exe` as the DWM process (see [CompServer.dll](../libraries/compserver.md#initializecompositor-0x10017dc4): it registers the process with `minuser.dll` and plugs the compositor into the UIX render engine).
+2. `CompServer!InitializeCompositor()`. The compositor runs in this process: [DWMCORE.DLL](../libraries/dwmcore.md#startup) accepts `mobileui.exe` as the DWM process (see [CompServer.dll](../libraries/compserver.md#initializecompositor-0x10017dc4): it registers the process with [minuser.dll](../libraries/minuser.md) and plugs the compositor into the UIX render engine).
 3. `CreateRawShellButtonRouter` (0x100F078): creates the `RawShellButtonRouter` singleton and its thread (`RawShellButtonRouterThreadProc`), see [Hardware buttons](#hardware-buttons).
 4. `MobileUIRes!ApiSetSystemUiLoadedCallback(OnSystemUiLoaded)` and `ShellChrome!SetMobileUICallback(OnShellLoaded)`.
 5. `CoInitializeEx(NULL, COINIT_MULTITHREADED)`, `InitializeComSecurity` (0x1024D68), `RoInitialize(RO_INIT_MULTITHREADED)`; a failure ends in `UIXFailFastForHRESULT`.

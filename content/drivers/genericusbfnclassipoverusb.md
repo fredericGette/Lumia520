@@ -99,7 +99,7 @@ MSOSExtendedPropertyDescriptor (Microsoft OS 1.0 extended properties, `wIndex` 5
 | UserSetDeviceIdleEnabled | REG_DWORD | 1 | |
 
 The interface is part of the `Default` configuration (`Control\USBFN\Configurations\Default`, `InterfaceList` = `MTP`, `IpOverUsb`, `VidStream`). Its `MSOSCompatIdDescriptor` gives the compatible ID `MTP` to interface 0 and `WINUSB` to interfaces 1 (IpOverUsb) and 2 (VidStream): on the PC, IP over USB is bound to WinUSB.  
-On the observed phone `CurrentConfiguration` = `RetailConfig` (`InterfaceList` = `NCSd`) with `IncludeDefaultCfg` = 1, which probably means the `Default` configuration is offered too ?
+On the observed phone `CurrentConfiguration` = `RetailConfig` (`InterfaceList` = `NCSd`) with `IncludeDefaultCfg` = 1: the `Default` interfaces are offered too, and the [NCSd](./genericusbfnclass.md#ncsd-instance) instance ID `USBFN\NCSd\3&1d123fc3&0&03` shows it is appended after them as interface 3.
 
 Other interfaces declared in `Control\USBFN\Interfaces` (each is a `USBFN\<name>` child handled by its own function driver):  
 | Interface | InterfaceGuid | Configuration |
@@ -107,7 +107,7 @@ Other interfaces declared in `Control\USBFN\Interfaces` (each is a `USBFN\<name>
 | [MTP](./genericusbfnclassmtp.md) | `{61fd7822-e8d4-44c4-9065-aaad0a3beff0}` | Default |
 | IpOverUsb | `{30613563-7df3-4afb-80e0-e8c427c7e9bf}` | Default |
 | VidStream ([ufnvidstream.sys](./ufnvidstream.md), screen projection; the PC client finds the phone with this GUID) | `{31648E59-6FCB-4D81-9C97-D00999B0459A}` | Default, VidStream |
-| NCSd | `{7eaff726-34cc-4204-b09d-f95471b873cf}` | RetailConfig |
+| [NCSd](./genericusbfnclass.md#ncsd-instance) (service `genericusbfnclass`, Nokia INF; same GUID on the PC side, WinUSB; JSON-RPC server [ncsdsvc.exe](../applications/ncsdsvc.md) + [Ncsd.dll](../libraries/ncsd.md)) | `{7eaff726-34cc-4204-b09d-f95471b873cf}` | RetailConfig |
 | DIAG | `{3641691D-B4BD-4715-BB46-641FD214E147}` | RmNetCompositeConfig, SerialCompositeConfig |
 | NMEA_NET | `{AA557611-9DB7-4810-88E6-DD03614D1003}` | RmNetCompositeConfig |
 | MODEM_NET | `{22D4FC94-E43E-4FED-8057-729191CE71D5}` | RmNetCompositeConfig |

@@ -2,16 +2,16 @@
 
 The compositor server of Windows Phone 8.1: it runs in the shell process, combines the frames that the applications present into the image sent to the display, and handles screenshots, screen recording and the external display (Miracast / USB projection).  
 `CompServer.dll` is a C++ DLL (628 functions, all named from the PDB `compserver.pdb`) with a single export, `InitializeCompositor`, called by [MobileUI.exe](../applications/mobileui.md#startup) at startup. The work is done by a `Compositor` singleton that plugs into the UIX render engine ("Splash", `UIXRender.dll`): `UIXRender!SpSetCompositorMode` gives the engine the compositor callbacks, and the engine then hands it its Direct3D 11 device and calls it for every frame ([Compositor](#compositor)). The compositor is the server side of [CompClient.dll](./compclient.md): an ALPC port `CompositorAlpcPort` in the `MobileUI` named object directory ([ALPC server](#alpc-server)), and for each window a shared "client map" section with two events, through which the client presents its buffers without any message ([Clients](#clients-and-presents)). The frame is drawn with Direct3D 11 (own precompiled shaders) and given to the display through the phone DXGI swap chain, with hardware overlay planes when the scaler can do it. The external display is driven by a topology manager (`SetDisplayConfig`, `VidStream.dll` for USB), and screen recording by `ScreenRecorderImpl.dll`.  
-Related binaries not analysed: `UIXRender.dll`, `dwmmobile.dll` (`InitializeMinDWM`, foreground window), `CoreMessaging.dll` (window validator), `minuser.dll`, `ScreenRecorderImpl.dll`, `policymanager.dll`. [DWMCORE.DLL](./dwmcore.md) gives it the input hit test. [VidStream.dll](./vidstream.md) sends the USB mirroring frames.
+Related binaries not analysed: `UIXRender.dll`, `CoreMessaging.dll` (window validator), `ScreenRecorderImpl.dll`, `policymanager.dll`. [MinUser.dll](./minuser.md) is the window manager it registers the process with. [DWMMOBILE.DLL](./dwmmobile.md) (`InitializeMinDWM`, foreground window) shows the redirected windows. [DWMCORE.DLL](./dwmcore.md) gives it the input hit test. [VidStream.dll](./vidstream.md) sends the USB mirroring frames.
 
-Location on the phone: `C:\Windows\System32\CompServer.dll` ? (extracted with `CompClient.dll`, `DWMCORE.DLL`, `DWMAPI.DLL` and `DCOMP.DLL`).  
+Location on the phone: `C:\Windows\System32\CompServer.dll` ? (extracted with `CompClient.dll`, `DWMCORE.DLL`, `DWMAPI.DLL` and [DCOMP.DLL](./dcomp.md)).  
 
 ### Imports
 
 | DLL | Functions |
 |-----|-----------|
 | UIXRender.dll | `SpSetCompositorMode`, `SpRegisterWaitHandler`, `SpUnregisterWaitHandler` |
-| dwmmobile.dll | `InitializeMinDWM`, `IsHwndForeground`, `SetForegroundHwnd` |
+| [DWMMOBILE.DLL](./dwmmobile.md) | `InitializeMinDWM`, `IsHwndForeground`, `SetForegroundHwnd` |
 | [DWMCORE.DLL](./dwmcore.md) | `WpInputHitTestRequest` |
 | CoreMessaging.dll | `CoreUICreateWindowValidator` |
 | [ShellChromeAPI.dll](./shellchromeapi.md) | `Shell_IdleTimerReset` |
@@ -44,8 +44,8 @@ Files and named objects used other than the static imports.
 
 | File | How | Use |
 |------|-----|-----|
-| `minuser.dll` | `LoadLibraryExW`, `GetProcAddress` of `RegisterSessionProcess`, `RegisterSessionWorkerThread`, `SetNavigationServiceSid` ([InitializeCompositor](#initializecompositor-0x10017dc4)), `ModerncoreCreateSystemThreads` ([CreateSystemThreads](#alpc-requests)) | Registers the shell process with the window manager |
-| `gdi32.dll` | `LoadLibraryExW`, `D3DKMTSetProcessSchedulingPriorityClass` | GPU scheduling priority of the process (class 5, realtime ?) |
+| [minuser.dll](./minuser.md) | `LoadLibraryExW`, `GetProcAddress` of `RegisterSessionProcess`, `RegisterSessionWorkerThread`, `SetNavigationServiceSid` ([InitializeCompositor](#initializecompositor-0x10017dc4)), `ModerncoreCreateSystemThreads` ([CreateSystemThreads](#alpc-requests)) | Registers the shell process with the window manager (bare win32k system calls `NtModerncoreRegisterCompositorProcess`, `NtModerncoreIdleTimerThread`, `NtModerncoreSetNavigationServiceSid`, and `NtUserCallNoParam(0)`) |
+| [GDI32.DLL](./gdi32.md) | `LoadLibraryExW`, `D3DKMTSetProcessSchedulingPriorityClass` | GPU scheduling priority of the process (class 5, realtime ?) |
 | `api-ms-win-rtcore-session-l1-1-0.dll` | `LoadLibraryExW`, `RegisterCompositorPort` (else `RegisterSessionPort`) | Gives the ALPC port to the session ([ConnectAlpcServer](#compositor)) |
 | [`C:\Windows\System32\VidStream.dll`](./vidstream.md) | `LoadLibraryW`, `CreateUsbVidStreamService` | USB projection service ([Topology](#display-topology)) |
 | `ScreenRecorderImpl.dll` | delay-load: `GetSR`, `GetSRFrameListener`, `DestroySR` | Screen recorder ([Screen recording](#screen-recording)) |
@@ -74,8 +74,8 @@ Files and named objects used other than the static imports.
 2. `LoadLibraryExW(L"minuser.dll")`, `RegisterSessionProcess(0, 0)`.
 3. `LoadLibraryExW(L"gdi32.dll")`, `D3DKMTSetProcessSchedulingPriorityClass(GetCurrentProcess(), 5)`.
 4. `GetNavigationCapabilitySid` (0x10017F50): `GetCapabilitySids(L"ID_CAP_FOREGROUND_TASK_MANAGER")` → `ConvertStringSidToSidW` of the account SID, passed to `minuser!SetNavigationServiceSid`.
-5. If `minuser!RegisterSessionWorkerThread` exists, starts `PowerNotificationThread` (0x10018308), which only calls `RegisterSessionWorkerThread(0)` (the thread then belongs to the window manager: power notifications ?).
-6. `dwmmobile!InitializeMinDWM()`.
+5. If `minuser!RegisterSessionWorkerThread` exists, starts `PowerNotificationThread` (0x10018308), which only calls `RegisterSessionWorkerThread(0)`: in [minuser.dll](./minuser.md#exports) this export is the system call `ZwModerncoreIdleTimerThread` (0x10C8), so the thread is given to win32k (idle timer thread ?).
+6. [dwmmobile!InitializeMinDWM()](./dwmmobile.md#initializemindwm-0x10002afc--initializemindwmex-0x10005bb8): session port and MIL channel for the redirected windows.
 
 A missing `minuser.dll` / `gdi32.dll` gives `E_FAIL`. A missing `minuser` export or a failure of `RegisterSessionProcess`, of the GPU priority or of `SetNavigationServiceSid` is fatal: `GenerateKernelBugCheck` ([Forced crash](#forced-crash)) then a write to address 0.
 
@@ -100,7 +100,7 @@ A missing `minuser.dll` / `gdi32.dll` gives `E_FAIL`. A missing `minuser` export
 
 `OnDeviceCreationStatus(hr)` (0x100182E8): while the device creation fails, it notes the time of the first failure. After 5 s it writes the ETW event `DEVICE_CREATE_TIMEOUT` (once), after 30 s it crashes the phone ([Forced crash](#forced-crash)).  
 `CheckStatus` returns 0x88860005 when the display is lost (render engine then recreates the device ?).  
-`DwmInputHitTestRequest(hwnd, pt, &object)` (0x1000FED8) asks [DWMCORE!WpInputHitTestRequest](./dwmcore.md) only if `dwmmobile!IsHwndForeground(hwnd)`; otherwise `object` = NULL.  
+`DwmInputHitTestRequest(hwnd, pt, &object)` (0x1000FED8) asks [DWMCORE!WpInputHitTestRequest](./dwmcore.md) only if [dwmmobile!IsHwndForeground(hwnd)](./dwmmobile.md#ishwndforeground-0x100023b4) (the foreground window has a redirected visual); otherwise `object` = NULL.  
 `GetContentPrivacyLevel(name)` (0x10015880) returns a level from a table built on the first call (0 for any other name): 0x29 for `CallProgressHost` and `EmergencyDialerHost`, 0x21 for `AboveNormal`, `ContentSharingHost`, `LoadingResuming`, `LockElementHost`, `MessageToasts`, `PopupLayer`, `ReminderHost`, `SIMSecurityHost`, `SpeechUXHost`, `TaskSwitcherHost`, `Urgent`, `ActionCenterHost`, `OverlayApp`, `LockApp`. The names are shell layers / hosts; the meaning of the bits (hidden from screen capture or projection ?) isn't known.  
 `GetDisplayState` / `NotifyOnDisplayStateChange` / `OnDisplayStateChangeCompleted`: see [ALPC requests](#alpc-requests).
 
@@ -141,7 +141,7 @@ The types 1, 4, 6, 8, 10, 12, 14 and 16 are replies (decoder: `E_NOTIMPL`). Type
 
 `CompServer` keeps the clients in a map `HWND` → `CompPresentClient` (`m_mapClients`), the set of active windows, the buffer manager (swap buffers, client buffers pinned / purged, reconstruction of an application's last frame), the frame listeners and a swap queue. Per frame (`BeginRender` / `EndRender` / `Swap`) it decides from the active windows what goes on screen: an application in exclusive / primary mode can be shown directly on a plane (hardware scaler if `MatchesCurrentScalerConfiguration`), otherwise its buffer is composed by Direct3D with the shell content (`ConstructCompositeBuffer`, flags `AllowApplicationSurfaces`, `RequirePrimary`, `RequireScalerEmulation`, `AllowPreviousPrimary`).
 
-`SetActiveWindows(hwndForeground, hwnds, count, …)` (0x10011324): resizes the swap buffer pool (`IncreaseSwapBuffers` / `DecreaseSwapBuffers`), deactivates the windows that are no longer active (`OnWindowDeactivated`), un-occludes the new ones (client map +0x00 = 0) and, when the foreground window changes, calls `dwmmobile!SetForegroundHwnd` and the frame listeners.
+`SetActiveWindows(hwndForeground, hwnds, count, …)` (0x10011324): resizes the swap buffer pool (`IncreaseSwapBuffers` / `DecreaseSwapBuffers`), deactivates the windows that are no longer active (`OnWindowDeactivated`), un-occludes the new ones (client map +0x00 = 0) and, when the foreground window changes, calls [dwmmobile!SetForegroundHwnd](./dwmmobile.md#setforegroundhwnd-0x10002420) (moves the render target to the new window) and the frame listeners.
 
 `SwapWatcher` (`RunSwapWatcher`, 0x100162E4): thread at `THREAD_PRIORITY_TIME_CRITICAL` that waits for a swap, then polls the display (`CheckForSwapCompletion`, from the DXGI frame statistics) and `WaitForVBlank` until the swap is done, and signals the swap event; every 11 vblanks it calls `CompositorDisplay::CheckForSwapError` (0x1002139C).
 

@@ -47,7 +47,7 @@ Device key of the controller (`WdfDeviceOpenRegistryKey`, `PLUGPLAY_REGKEY_DEVIC
 |----------------|-------|---------|
 | SoftwareOnlyDriver | 0 | DWORD. ≠ 0: no P-state requests to the PEP and S0 idle disabled |
 
-The child PDOs are `USBFN\<interface name>` (DeviceID = HardwareID), InstanceID = interface number `%02d` (e.g. `USBFN\MTP\3&1d123fc3&0&00`, `USBFN\IpOverUsb\3&1d123fc3&0&01`), device text = interface name (0x409). Bus type GUID `GUID_DEVCLASS_USBFNBUS` `{17f99fe7-5ebe-49fe-a348-05be51fe7f08}`.
+The child PDOs are `USBFN\<interface name>` (DeviceID = HardwareID), InstanceID = interface number `%02d` (e.g. `USBFN\MTP\3&1d123fc3&0&00`, `USBFN\IpOverUsb\3&1d123fc3&0&01`, `USBFN\NCSd\3&1d123fc3&0&03` for the [NCSd](./genericusbfnclass.md#ncsd-instance) interface of `RetailConfig`, appended after the 3 `Default` interfaces because `IncludeDefaultCfg` = 1), device text = interface name (0x409). Bus type GUID `GUID_DEVCLASS_USBFNBUS` `{17f99fe7-5ebe-49fe-a348-05be51fe7f08}`.
 
 It communicates with the following devices:  
 | Device | Driver | Comment |

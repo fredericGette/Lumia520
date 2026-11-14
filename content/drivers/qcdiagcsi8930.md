@@ -134,7 +134,8 @@ File context of a handle (`DIAGCSI_FILE_CONTEXT`, 0x223C bytes):
 ### IOCTL 0x80092440
 
 This IOCTL is processed by Qcdiagcsi8930.sys  
-This IOCTL is also sent by [nokia_sec_driver.sys](./nokia_sec_driver.md#ioctl-0x80092440)
+This IOCTL is also sent by [nokia_sec_driver.sys](./nokia_sec_driver.md#ioctl-0x80092440)  
+This IOCTL is also sent by [Ncsd.dll](../libraries/ncsd.md#diag-flushnvdata) from user mode, with an event handle, flags 2 and types 7
 
 | Property | Value |
 |----------|-------|
@@ -170,7 +171,8 @@ NTSTATUS:
 ### IOCTL 0x80092444
 
 This IOCTL is processed by Qcdiagcsi8930.sys  
-This IOCTL is also sent by [nokia_sec_driver.sys](./nokia_sec_driver.md#ioctl-0x80092444) (EFS2 read of `/nv/item_files/modem/ssm_mode`, NV item 0x226)
+This IOCTL is also sent by [nokia_sec_driver.sys](./nokia_sec_driver.md#ioctl-0x80092444) (EFS2 read of `/nv/item_files/modem/ssm_mode`, NV item 0x226)  
+This IOCTL is also sent by [Ncsd.dll](../libraries/ncsd.md#diag-flushnvdata) (EFS2 hello, sync and sync status, 6176-byte output buffer)
 
 | Property | Value |
 |----------|-------|
@@ -199,7 +201,8 @@ NTSTATUS:
 
 ### IOCTL 0x80092448
 
-This IOCTL is processed by Qcdiagcsi8930.sys
+This IOCTL is processed by Qcdiagcsi8930.sys  
+This IOCTL is also sent by [Ncsd.dll](../libraries/ncsd.md#diag-flushnvdata) (waits until bit 1 is set)
 
 | Property | Value |
 |----------|-------|
