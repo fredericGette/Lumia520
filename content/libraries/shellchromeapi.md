@@ -355,7 +355,7 @@ All under `HKEY_LOCAL_MACHINE`:
 | `Software\Microsoft\Shell\LogicalResolution` | `Width`, `Height` (`REG_DWORD`) | `GetApplicationResolutionWidth` / `Height` (`sub_10007AD8`); if missing, `GetDeviceCaps(GetDC(NULL), HORZRES / VERTRES)` (`sub_1000B91C`) |
 | `Software\Microsoft\Shell\Disturb` | `Enabled` | Do not disturb (`sub_10009828`) |
 | `Software\Microsoft\Family\KidZone\Configuration` | `Enabled` (`REG_DWORD`) | Read by `Shell_IsKidZoneEnabled`; written by `Shell_SetKidZoneEnabled` (`RegCreateKeyExW`, `KEY_WRITE`, with a security descriptor built by `sub_1000C9DC`) when the value changes, then WNF `SHL` 19 |
-| `SOFTWARE\Microsoft\Shell\RetailDemo\OobeWrite` | `Enabled` | Retail demo (`sub_1000B4A8`) |
+| `SOFTWARE\Microsoft\Shell\RetailDemo\OobeWrite` | `Enabled` | Retail demo (`sub_1000B4A8`). Also read by [VidStream.dll](./vidstream.md#state-change), which then accepts a USB projection without dialog |
 | `SOFTWARE\Microsoft\Shell\RetailDemo\RdmActive` | `ProvisioningActive` | Read if `OobeWrite\Enabled` ≠ 0 (`sub_1000B9D8`): when set, the action dialogs fail with 0x86606012 |
 | `System\DevPlat` | `ShouldFailFast` (default 1) | `sub_1000C6A4`: on a fatal error of the button listener (ETW event 200), fail fast or not |
 
@@ -390,7 +390,7 @@ Errors: E_OUTOFMEMORY if the listener can't be created, E_INVALIDARG for a NULL 
 4. Creates the dialog object (`sub_100165D4`: 0x7C bytes, `sub_10014AB8`, two events; fails with 0x800704D6 if the global state `dword_1001E780` is 5), copies the config (`sub_1001860C`: 0x120-byte copy, `sub_10018270`).
 5. If `sub_1000C644(config +0x11C)` (not in do not disturb, or allowed, see [WNF](#wnf-states)): starts the dialog thread (`sub_1000E59C` → `sub_10017408`); otherwise calls the dialog method +0x18 (cancel ?) without showing it.
 
-The dialog thread connects to the CoreMessaging endpoint `L"System\\ActionDialogManagerEndpoint"` and sends the dialog (type 0/1/2 at +0x6C selects the message builder: full screen, partial screen, picker). The returned object is a COM-like interface (vtable `+4` AddRef, `+8` Release); its other methods aren't analysed.
+The dialog thread connects to the CoreMessaging endpoint `L"System\\ActionDialogManagerEndpoint"` and sends the dialog (type 0/1/2 at +0x6C selects the message builder: full screen, partial screen, picker). The returned object is a COM-like interface (vtable `+4` AddRef, `+8` Release); its other methods aren't analysed. [VidStream.dll](./vidstream.md#confirmation-dialog) uses +0x10 (show, returns an event signalled when the user answers ?), +0x14 (8-byte result, {0, 0} for the first button ?) and +0x18 (close / cancel ?).
 
 ### System wait cursor
 

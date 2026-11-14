@@ -4,9 +4,9 @@ The "Project my screen" page of the Windows Phone 8.1 settings: discovers Miraca
 `MirrorUX.dll` (139 264 bytes, 551 functions, many of them STL, `shared_ptr` and UIX object boilerplate) holds the code of the settings page that [MirrorCPL.exe](../applications/mirrorcpl.md) starts with `res://MirrorUX!mainpage.uix`. The UI strings are in a separate resource DLL, `MirrorUXres.dll`, and the markup files in the resources of this DLL (not extracted). It's a UIX schema (exports `UIXGetSchemaFactory` / `UIXSchemaUnloaded`, as in [DateTimeCPLdll.dll](./datetimecpldll.md#exports)) with three types: `MainPage`, `Device` and `AdvancedPage`.  
 It handles two kinds of projection:
 - **Miracast** over Wi-Fi Direct: the DLL finds the Miracast sinks with device queries (`CFGMGR32!DevCreateObjectQuery*`), pairs with them through the device association framework (`deviceassociation!Daf*`), then starts and stops the session with the `D3DKMTNetDisp*Miracast*` functions of `gdi32.dll` (the kernel side is in [Dxgkrnl.sys](../drivers/dxgkrnl.md)). It also listens to the WNF state `WNF_DX_NETWORK_DISPLAY_STATE_CHANGE_NOTIFICATION` published by Dxgkrnl.sys.
-- **USB**: it opens `\\.\UfnVidStream` ([Ufnvidstream.sys](../drivers/ufnvidstream.md)) and only waits for its state changes (IOCTL 0x22C344). It doesn't send any frames: that must be done by another component (the compositor ?).
+- **USB**: it opens `\\.\UfnVidStream` ([Ufnvidstream.sys](../drivers/ufnvidstream.md)) and only waits for its state changes (IOCTL 0x22C344). It doesn't send any frames: that's done by [VidStream.dll](./vidstream.md) in the compositor process, which also asks the user to confirm and sets the topology.
 
-For both, the display mode is set with `CompClient!SetDisplayTopology` (the compositor client), and the "advanced" settings (touch points shown on the external display, their colour and size, orientation) are kept under `HKLM\Software\Microsoft\Compositor`.  
+For both, the display mode is set with [CompClient.dll](./compclient.md#display-topology)`!SetDisplayTopology` (the compositor client), and the "advanced" settings (touch points shown on the external display, their colour and size, orientation) are kept under `HKLM\Software\Microsoft\Compositor`.  
 The DLL also exports five functions with no UI (`GetConnectedDisplayName`, `RegisterMirroringConnectionObserverCallback`, `StartDiscoveryAgentWithAutoreconnect`, `StopMirroringSession`, `UnRegisterMirroringConnectionObserverCallback`) that run their own copy of the Miracast and USB code on a private thread. None of the documented binaries imports them: their caller isn't known (a shell quick action or the system tray ?).
 
 Location on the phone: `C:\Windows\System32\MirrorUX.dll` ? (no path in the binary; it was extracted next to `MirrorCPL.exe`).  
@@ -15,7 +15,7 @@ Location on the phone: `C:\Windows\System32\MirrorUX.dll` ? (no path in the bina
 
 | DLL | Functions |
 |-----|-----------|
-| CompClient.dll | `GetDisplayTopology`, `SetDisplayTopology` |
+| [CompClient.dll](./compclient.md) | `GetDisplayTopology`, `SetDisplayTopology` |
 | deviceassociation.dll | `DafCreateAssociationContext`, `DafCloseAssociationContext`, `DafStartEnumCeremonies`, `DafSelectCeremony`, `DafStartWriteCeremonyData`, `DafStartFinalize`, `DafStartRemoveAssociation`, `DafStartDeviceStatusNotification` |
 | CFGMGR32.dll | `DevCreateObjectQuery`, `DevCreateObjectQueryEx`, `DevCloseObjectQuery`, `DevGetObjects`, `DevFreeObjects` |
 | IcsClient.dll | `IcsGetSharingState` |
@@ -262,12 +262,12 @@ So the USB connection is only shown: the stream itself (IOCTL 0x22C340, 0x22C349
 
 ### Display topology
 
-`CompClient!GetDisplayTopology` / `SetDisplayTopology` take an 8-byte structure; the DLL always reads it, changes one field and writes it back.
+`CompClient!GetDisplayTopology` / `SetDisplayTopology` take an 8-byte structure; the DLL always reads it, changes one field and writes it back. In [CompClient.dll](./compclient.md#display-topology), `SetDisplayTopology` sends it to the compositor (ALPC request 11), and `GetDisplayTopology` reads it from the registry: `HKLM\Software\Microsoft\Compositor\MirrorSettings` value `DisplayTopology` (default 0) and `HKLM\Software\Microsoft\Compositor` value `DisplayOrientation` (default 3).
 
 | Offset | Size | Comment |
 |--------|------|---------|
-| 0x00 | 4 | Mode: 0 = phone only (projection stopped) ?, 1 = Miracast, 2 = USB |
-| 0x04 | 4 | `DISPLAY_ORIENTATION` of the external display (`ExternalDisplayOrientation`) |
+| 0x00 | 4 | Mode: 0 = phone only (projection stopped), 1 = Miracast, 2 = USB; the compositor refuses higher values (it has a 3, test mode ?, see [CompServer.dll](./compserver.md#display-topology)) |
+| 0x04 | 4 | `DISPLAY_ORIENTATION` of the external display (`ExternalDisplayOrientation`), ≤ 4 |
 
 ### Clear connections
 

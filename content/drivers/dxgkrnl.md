@@ -90,7 +90,7 @@ It communicates with the following devices:
 | `\Device\PhysicalMemory` | ntoskrnl | `DpMapMemory` (`DxgkCbMapMemory`): user-mode mappings of physical memory use `ZwOpenSection` + `ZwMapViewOfSection`; kernel mappings use `MmMapIoSpace` |
 | UMDF Miracast device, interface `GUID_DEVINTERFACE_UMDF_MIRACAST_DIVICE_ARRIVAL` `{A6CB8452-09C2-46CB-A752-415392B3213B}` | ? | [IOCTL 0x230800…0x23080C](#ioctl-0x230800-0x230804-0x230808-0x23080c--miracast-user-mode-requests). Only with `PlatformSupportMiracast` ? |
 | `\Callback\PowerState` | ntoskrnl | `ExCreateCallback` + `ExRegisterCallback` (`DpiAcpiRegisterAcpiCallbacks`) |
-| win32k / cdd ? | ? | [internal IOCTLs 0x23E057, 0x23E05B, 0x23E05F, 0x23E067](#internal-ioctl-0x22c00b-0x23003f-0x230043-0x230047-0x232063-0x23e057-0x23e05b-0x23e05f-0x23e067--devicedxgkrnl), [GDO IOCTLs](#internal-ioctls-of-devicevideon) |
+| win32k ? / [cdd.dll](../libraries/cdd.md#dxgkrnl-cdd-interface) (0x23E05B) | ? | [internal IOCTLs 0x23E057, 0x23E05B, 0x23E05F, 0x23E067](#internal-ioctl-0x22c00b-0x23003f-0x230043-0x230047-0x232063-0x23e057-0x23e05b-0x23e05f-0x23e067--devicedxgkrnl), [GDO IOCTLs](#internal-ioctls-of-devicevideon) |
 
 ### Device objects
 
@@ -167,7 +167,7 @@ All are `METHOD_NEITHER`: the buffer is `Irp->UserBuffer` (same buffer for input
 | 0x230047 | 0x23 / 0x11 / ANY | IOCTL_VIDEO_DDI_FUNC_REGISTER (Win8) | — | ≥ 4 | Writes the address of `DpiInitializeWin8` (0x1B074 → `DpiInitializeInternal(…, 1)`) |
 | 0x232063 | 0x23 / 0x818 / ANY | Report software device | — | ≥ 4 | Writes the address of `DpiReportSoftwareDevice` (0xAAE70) |
 | 0x23E057 | 0x23 / 0x815 / READ_AND_WRITE | Win32k interface | ≥ 624 | ≥ 624 | `DxgkWin32kQueryInterface` fills `DXGKWIN32K_INTERFACE` |
-| 0x23E05B | 0x23 / 0x816 / READ_AND_WRITE | CDD interface | ≥ 204 | ≥ 204 | `DxgkCddQueryInterface` |
+| 0x23E05B | 0x23 / 0x816 / READ_AND_WRITE | CDD interface | ≥ 204 | ≥ 204 | `DxgkCddQueryInterface` (0x80530): checks size 0xCC / version 3 / adapter (+0x04), fills the 48 function pointers +0x0C…+0xC8 ([table](../libraries/cdd.md#dxgkrnl-cdd-interface)); sent by [cdd.dll](../libraries/cdd.md#dxgkrnl-cdd-interface) |
 | 0x23E05F | 0x23 / 0x817 / READ_AND_WRITE | Capture interface | ≥ 24 | ≥ 24 | `DxgkCaptureQueryInterface` |
 | 0x23E067 | 0x23 / 0x819 / READ_AND_WRITE | Win32k capabilities | ≥ 4 | — | Bit 0 of the input dword → `g_Win32kSupportsPathIndependentRotation` |
 

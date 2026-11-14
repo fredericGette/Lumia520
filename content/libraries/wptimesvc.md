@@ -229,7 +229,7 @@ Interface `{33D84484-3626-47EE-8C6F-E7E98B113BE1}` version 2.0 (stub descriptor 
 ### PDC activation
 
 A user-mode client of the power dependency coordinator, used only around the `W32TimeSync` call:
-- `sub_1000A000` allocates the client object (signature 0x41634450 `PDcA`, component id 0x44 at +0x0C) and connects (`sub_10007EC8`): `ZwAlpcConnectPort("\PdcPort")`, connection data `{ 0, 0x44, 2, … }` (component 0x44, client type 2 ?), then an ALPC completion on the thread pool (`TpAllocAlpcCompletion`, `sub_10008164` → `sub_100081E0` / `sub_10008350`: handles the messages sent by the PDC, disconnection on type 5).
+- `sub_1000A000` allocates the client object (signature 0x41634450 `PDcA`, component id 0x44 at +0x0C) and connects (`sub_10007EC8`): `ZwAlpcConnectPort("\PdcPort")`, connection message (0x18-byte `PORT_MESSAGE` header + 0x18 bytes) DWORD 6 = 0 (register), DWORD 7 = 0, DWORD 8 = 0x44 (component), DWORD 9 = 2 (client type), the register layout of [wppower.sys](../drivers/wppower.md#pdc-clients), then an ALPC completion on the thread pool (`TpAllocAlpcCompletion`, `sub_10008164` → `sub_100081E0` / `sub_10008350`: handles the messages sent by the PDC, disconnection on type 5).
 - `sub_1000A064(client, activate)` keeps a reference count; on the first activation / last release it sends a 0x30-byte ALPC request (`sub_100082DC`): message type 4, byte at +0x20 = 1 (activate) or 0 (release); the status comes back at +0x20.
 - `sub_1000A0F8` disconnects (`ZwAlpcDisconnectPort`, waits for the pending completions) and frees the object.
 

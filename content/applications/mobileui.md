@@ -2,7 +2,7 @@
 
 The shell process of Windows Phone 8.1: it hosts the Start screen / system UI, the system tray, the application bar, the hardware buttons and the system dialogs (low battery, weak charger, USB data, volume limit, SD card).  
 `MobileUI.exe` is a large program (~190 KB of code, 1171 functions, public symbols available). The UI itself is the UIX markup `res://MobileUIRes!Main.uix` run by [UIXMobile!RunApplication](../libraries/uixmobile.md#runapplication-0x1003152c); most of the chrome logic is in [ShellChrome.dll](../libraries/shellchrome.md), which MobileUI.exe loads (it's the "shell UI host" that the ShellChrome page couldn't identify) and starts with `LaunchShellChromeServer`. MobileUI.exe itself contains the glue: the navigation proxies (session manager, rotation manager), the **hardware button router** (raw button input → Start/Back/Search/Camera/Power/Volume actions, combos, OEM remapping, connected standby), the **shell events** thread (42 WNF states, phone, storage, battery → system tray data model and dialogs), the `AppChromeServer` endpoint and the COM security of the shell.  
-Related binaries not analysed here: `MobileUIRes.dll` (markup and `ApiSetSystemUiLoadedCallback`), `ShellFrameRes.dll` (strings), `CompServer.dll`, `CoreMessaging.dll` / `CoreUIComponents.dll`, `phoneom.dll`, `WPCOREUTIL.dll`, `EMSVCS.dll`.
+Related binaries not analysed here: `MobileUIRes.dll` (markup and `ApiSetSystemUiLoadedCallback`), `ShellFrameRes.dll` (strings), `CoreMessaging.dll` / `CoreUIComponents.dll`, `phoneom.dll`, `WPCOREUTIL.dll`, `EMSVCS.dll`.
 
 Location on the phone: `C:\Windows\System32\MobileUI.exe` ?  
 
@@ -11,7 +11,7 @@ Location on the phone: `C:\Windows\System32\MobileUI.exe` ?
 | DLL | Functions |
 |-----|-----------|
 | [UIXMobile.dll](../libraries/uixmobile.md) | `RunApplication`, `ThemeGetSystemHighContrast`, `ThemeSetSystemHighContrast`, `ThemeGetCurrentThemeAndAccent`, `ThemeRegisterThemeChangedCallback`, `ThemeUnregisterThemeChangedCallback` |
-| CompServer.dll | `InitializeCompositor` |
+| [CompServer.dll](../libraries/compserver.md) | `InitializeCompositor` |
 | MobileUIRes.dll | `ApiSetSystemUiLoadedCallback` |
 | CoreMessaging.dll | `CoreUICreate`, `CoreUIFailFastOOM` |
 | CoreUIComponents.dll | `CoreUIFactoryCreate`, `CoreUIClientCreate`, `MsgRelease` |
@@ -72,7 +72,7 @@ The command line isn't used: `wWinMain` (0x1027A30) ignores its parameters and a
 
 `wWinMain`:
 1. `TelSetProcessFlags(TelGetProcessFlags() | 1)`, registers the ETW provider `Microsoft-WindowsPhone-MobileUI` `{F243DC34-205E-4D34-94CA-36E8C0859787}`.
-2. `CompServer!InitializeCompositor()`.
+2. `CompServer!InitializeCompositor()`. The compositor runs in this process: [DWMCORE.DLL](../libraries/dwmcore.md#startup) accepts `mobileui.exe` as the DWM process (see [CompServer.dll](../libraries/compserver.md#initializecompositor-0x10017dc4): it registers the process with `minuser.dll` and plugs the compositor into the UIX render engine).
 3. `CreateRawShellButtonRouter` (0x100F078): creates the `RawShellButtonRouter` singleton and its thread (`RawShellButtonRouterThreadProc`), see [Hardware buttons](#hardware-buttons).
 4. `MobileUIRes!ApiSetSystemUiLoadedCallback(OnSystemUiLoaded)` and `ShellChrome!SetMobileUICallback(OnShellLoaded)`.
 5. `CoInitializeEx(NULL, COINIT_MULTITHREADED)`, `InitializeComSecurity` (0x1024D68), `RoInitialize(RO_INIT_MULTITHREADED)`; a failure ends in `UIXFailFastForHRESULT`.

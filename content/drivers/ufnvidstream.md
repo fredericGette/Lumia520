@@ -2,7 +2,7 @@
 
 USB function "video stream" class driver (Microsoft, `src\uxplat\vidstream\dev\ufnvidstream`): the phone side of the WP8.1 screen projection over USB ("Project My Screen").  
 It is the KMDF function driver of a USB *function* interface (a `USBFN\<interface>` child of the USB function controller `ACPI\QCOM01C0\1`, like [genericusbfnclass.sys](./genericusbfnclass.md) and [ufnserialclass.sys](./ufnserialclass.md)): the `VidStream` interface of the [USB function configuration](./genericusbfnclassipoverusb.md#usb-function-configuration). It is bound to WinUSB on the PC, and the PC client finds it by its interface GUID `{31648E59-6FCB-4D81-9C97-D00999B0459A}` (see [PC side](#pc-side-project-my-screen)). It implements a small private protocol itself: 4 class requests on the control endpoint drive a state machine, the user-mode client sends frames (512-byte header + screen image) on the bulk IN pipe and receives the [input messages](#input-message) of the PC (touch contacts and hardware button clicks made in the PC viewer, same header format) from the bulk OUT pipe. Everything goes to the lower driver (USB function class extension [usbfnclx.sys](./usbfnclx.md)) as `IOCTL_INTERNAL_USBFN_*` requests.  
-The client opens `\\.\UfnVidStream` and uses 8 private IOCTLs (all `FILE_DEVICE_UNKNOWN`, `FILE_READ_ACCESS | FILE_WRITE_ACCESS`). The settings page [MirrorUX.dll](../libraries/mirrorux.md#usb-agent) opens this device and shows the USB connection as connected in state 7. It only uses [IOCTL 0x22C344](#ioctl-0x22c344); the process that sends the frames isn't known.  
+The client opens `\\.\UfnVidStream` and uses 8 private IOCTLs (all `FILE_DEVICE_UNKNOWN`, `FILE_READ_ACCESS | FILE_WRITE_ACCESS`). The settings page [MirrorUX.dll](../libraries/mirrorux.md#usb-agent) opens this device and shows the USB connection as connected in state 7. It only uses [IOCTL 0x22C344](#ioctl-0x22c344). The frames are sent by [VidStream.dll](../libraries/vidstream.md#streamer-thread), loaded by the compositor ([CompServer.dll](../libraries/compserver.md#display-topology)): it uses IOCTL 0x22C340, 0x22C344, 0x22C349, 0x22C34C, 0x22C354 and 0x22C3B8, shows a confirmation dialog when the driver enters state 6 and injects the [input messages](#input-message) into the phone.  
 PDB: `ufnvidstream.pdb` (no path). The PE timestamp (0x3CAE9F26) is not a build date. KMDF 1.11. Imports only `ntoskrnl.exe` (`_vsnwprintf`, `RtlCopyUnicodeString`) and `WDFLDR.SYS`. MD5 `1e8b249cb92532786eeb924655775537`, 36864 bytes.  
 Pool tag `UfnV` (0x566E6655) for the driver (`DriverPoolTag`) and its `WdfMemoryCreate` buffers. Device context type `UFN_VIDSTREAM_CONTEXT` (0x538 bytes). Source files named in the binary: `ufnhelper.cpp`, `ufnreceive.cpp`.
 
@@ -167,6 +167,7 @@ Hardware button event (type 1), when a click (state 2) starts or ends on one of 
 ### IOCTL 0x22C340
 
 This IOCTL is processed by Ufnvidstream.sys
+This IOCTL is sent by [VidStream.dll](../libraries/vidstream.md#ioctls) (`Start` / `SetDisplaySize` of the service: bpp = `OutputBpp`, bytes per line 0, display size, capture size, orientation 0, flag 0)
 
 | Property | Value |
 |----------|-------|
@@ -201,6 +202,7 @@ Initialises the [frame header](#frame-header): magic, version 2, total size = `b
 
 This IOCTL is processed by Ufnvidstream.sys
 This IOCTL is sent by [MirrorUX.dll](../libraries/mirrorux.md#usb-agent) (overlapped, in a loop, to follow the state of the USB projection)
+This IOCTL is sent by [VidStream.dll](../libraries/vidstream.md#state-change) (overlapped, always pending; state 6 → confirmation dialog)
 
 | Property | Value |
 |----------|-------|
@@ -230,6 +232,7 @@ Both sizes must be exactly 4 (`STATUS_INVALID_BUFFER_SIZE`). If the input differ
 ### IOCTL 0x22C349
 
 This IOCTL is processed by Ufnvidstream.sys
+This IOCTL is sent by [VidStream.dll](../libraries/vidstream.md#streamer-thread) (one per frame, overlapped, up to two in flight)
 
 | Property | Value |
 |----------|-------|
@@ -256,6 +259,7 @@ Then it sends the 512-byte header on the bulk IN pipe (`IOCTL_INTERNAL_USBFN_TRA
 ### IOCTL 0x22C34C
 
 This IOCTL is processed by Ufnvidstream.sys
+This IOCTL is sent by [VidStream.dll](../libraries/vidstream.md#streamer-thread) (when the orientation of the frame given by the compositor changes)
 
 | Property | Value |
 |----------|-------|
@@ -271,7 +275,7 @@ This IOCTL is processed by Ufnvidstream.sys
 Inputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | ? | Screen orientation, stored at header offset 0x28 (format bytes 10-13) and sent with the next frames. 0 = default (portrait), 1 = portrait, 2 = landscape towards the Back key, 4 = portrait upside down, 8 = landscape towards the Search key (4 from the touch coordinate rotation of the official PC app, the others from WinPhoneProjection) |
+| 00-03 | ? | Screen orientation, stored at header offset 0x28 (format bytes 10-13) and sent with the next frames. 0 = default (portrait), 1 = portrait, 2 = landscape towards the Back key, 4 = portrait upside down, 8 = landscape towards the Search key (4 from the touch coordinate rotation of the official PC app, the others from WinPhoneProjection). On the phone, [CompServer.dll](../libraries/compserver.md#display-topology) computes it from the present rotation (`VidStream::ComputeDisplayOrientation`, see [VidStream.dll](../libraries/vidstream.md#compositor-side)) |
 
 No state check. Input size other than 4 → `STATUS_INVALID_BUFFER_SIZE`.
 
@@ -280,6 +284,7 @@ No state check. Input size other than 4 → `STATUS_INVALID_BUFFER_SIZE`.
 ### IOCTL 0x22C354
 
 This IOCTL is processed by Ufnvidstream.sys
+This IOCTL is sent by [VidStream.dll](../libraries/vidstream.md#input-injection) (output 192 bytes, always pending; touch and button events are injected into the phone)
 
 | Property | Value |
 |----------|-------|
@@ -346,6 +351,7 @@ Same handler as [IOCTL 0x22C3AC](#ioctl-0x22c3ac), METHOD_IN_DIRECT variant.
 ### IOCTL 0x22C3B8
 
 This IOCTL is processed by Ufnvidstream.sys
+This IOCTL is sent by [VidStream.dll](../libraries/vidstream.md#streamer-thread) (stop of the service and when the state leaves 7, with the 24-byte format as input, ignored)
 
 | Property | Value |
 |----------|-------|

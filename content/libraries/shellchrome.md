@@ -25,7 +25,7 @@ Location on the phone: `C:\Windows\System32\ShellChrome.dll` ? (the analysed fil
 | PhoneAudio.dll, phoneom.dll | Volume and mute, call state |
 | eventsnd.dll, WINMMBASE.dll | `PlayEventSound`, `PlayEventSoundWithEventSettings`, `StopEventSounds`, `PlaySoundExW` |
 | wpSensors.dll | `SensorOpen`, `SensorStart`, `SensorGetData`, … (proximity ?) |
-| CompClient.dll | `CaptureScreen`, `CreateCaptureScreenEvent` (screenshots) |
+| [CompClient.dll](./compclient.md) | `CaptureScreen`, `CreateCaptureScreenEvent` (screenshots, see [CaptureScreen](./compclient.md#capturescreen-0x100037ac)) |
 | ZMediaqueueClient.dll, zmedialib_client.dll, MediaService.dll | Media queue and library |
 | ARLens.dll, SpeechUXStub.dll, ChamberProf.dll, dsclient.dll, XmlLite.dll | Lens picker, Cortana toasts, chamber paths, shared files, toast XML |
 | WPCOREUTIL.dll | `SHGetKnownFolderPath`, `SHGetSpecialFolderPathW`, `ResetPhone` |

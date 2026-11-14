@@ -134,7 +134,7 @@ The SID lists (`ServiceSids`, `RequiredCapabilitySIDs`, `UnionRequired…`) are 
 
 ### QueryTransientObjectSecurityDescriptor (0x10003C20)
 
-Gives the security descriptor that a named object must have; the servers set it on their objects and the clients pass it as `ServerSecurityDescriptor` to check the server (see [ReminderEvents.dll](./reminderevents.md#rpc), [ShellChromeAPI.dll](./shellchromeapi.md), [w32time.dll](./w32time.md)).
+Gives the security descriptor that a named object must have; the servers set it on their objects and the clients pass it as `ServerSecurityDescriptor` to check the server (see [ReminderEvents.dll](./reminderevents.md#rpc), [ShellChromeAPI.dll](./shellchromeapi.md), [w32time.dll](./w32time.md); [DWMAPI.DLL](./dwmapi.md#dwmpallocatesecuritydescriptor-0x10001354) asks for `(1, L"WindowManager\Compositor.Surface")`, [CompClient.dll](./compclient.md#alpc) for `(8, L"MobileUI\Compositor.AlpcPort\Server")`, `(5, L"MobileUI\ScreenCap.Map")` and `(1, L"MobileUI\ScreenCap.Evt")`).
 
 1. `sub_10003A78(objectType)` gives the prefix (`E_INVALIDARG`-like 0xC000000D for another type):
 

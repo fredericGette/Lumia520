@@ -195,7 +195,7 @@ The kernel implements WNF (`Nt*WnfState*` system calls, `ExpWnf*`, kernel subscr
 | 0x0296003DA3BC1875 `WNF_PNPC_CONTAINER_CONFIG_REQUESTED` | `PNPC`, 3 | system | `PiDcGenerateContainerConfigRequiredNotification` |
 | 0x41C61D3DA3BC0875 `WNF_PS_WAKE_CHARGE_RESOURCE_POLICY` | `PS`, 1 | system | `PspSendNoWakeChargeLimitNotification`, `PspClearNoWakeChargeLimitNotification` |
 | 0x41C60320A3BC0875 `WNF_MM_BAD_MEMORY_PENDING_REMOVAL` | `MM`, 1 | system | `MmMarkPhysicalMemoryAsBad` |
-| 0x41C6013DA3BC0875 `WNF_PO_SCENARIO_CHANGE` | `PO`, 1 | system | `PopDiagNextSleepStudySession` |
+| 0x41C6013DA3BC0875 `WNF_PO_SCENARIO_CHANGE` | `PO`, 1 | system | `PopDiagNextSleepStudySession` (read by [cdd.dll](./cdd.md#wnf-states): GUID `GUID_SPM_LOW_POWER_CS` = low-power connected standby) |
 | 0x0C960C38A3BC1075 `WNF_UBPM_CONSOLE_MONITOR` | `UBPM`, 2 | system | `PopUpdateConsoleDisplayState` |
 | 0x41950C3EA3BC0875 `WNF_SBS_UPDATE_AVAILABLE` | `SBS`, 1 | system | `SepSecureBootCheckForUpdates` |
 | 0x41940B3AA3BC0875 `WNF_WER_SERVICE_START` | `WER`, 1 | system | `DbgkpStartSystemErrorHandler` |

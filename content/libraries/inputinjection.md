@@ -2,6 +2,7 @@
 
 Client library to inject hardware button, keyboard and touch events into the Windows Phone 8.1 input stack.  
 `InputInjection.dll` is a small DLL (32 768 bytes, 82 functions, a third of them CRT and ETW boilerplate). It doesn't inject anything itself: `ApiInjectInitialize` starts a worker thread that opens a CoreMessaging context (`CoreUICreate`) and connects to the endpoint `L"IRemoteInputInjectionApi"` (`CoreUIFactoryCreate`), then every `ApiInject*` call is copied into a 0x220-byte message, queued, and forwarded by the worker thread to a method of the remote interface `{9978C53C-56B6-4C55-BA5F-5495E889E2FE}`. The process that implements the endpoint isn't known (no documented binary names it).  
+The same client code (adapter, worker, queue, ETW provider) is statically linked in [VidStream.dll](./vidstream.md#input-injection), which injects the touch / button input of the USB projection viewer.  
 It's imported by [qcremoteatsrvc8930.dll](./qcremoteatsrvc8930.md) (`AT+CKPD` and `AT+CTSA`), which uses `ApiInjectInitialize`, `ApiInjectUninitialize`, `ApiInjectButtonEvent` and `ApiInjectTouchEvent`. `ApiInjectEnableExclusive` isn't used by the documented binaries.
 
 Location on the phone: `C:\Windows\System32\InputInjection.dll` ? (the extracted file has no notes).  
@@ -91,11 +92,11 @@ The worker thread turns the button code into a virtual key and calls the remote 
 | Button | Virtual key | Button of [qcremoteatsrvc8930.dll](./qcremoteatsrvc8930.md#ckpd-sub_1000108c) |
 |--------|-------------|---------------|
 | 0 | 0x7C (`VK_F13`) | `P` (power ?) |
-| 1, 7 | 0x71 (`VK_F2`) | |
+| 1, 7 | 0x71 (`VK_F2`) | 1 = Windows (Start) button of the PC viewer in [VidStream.dll](./vidstream.md#input-injection) |
 | 2 | 0x78 (`VK_F9`) | `U` (volume up ?) |
 | 3 | 0x79 (`VK_F10`) | `D` (volume down ?) |
-| 5 | 0x1B (`VK_ESCAPE`) | |
-| 6 | 0x72 (`VK_F3`) | |
+| 5 | 0x1B (`VK_ESCAPE`) | Back button of the PC viewer in [VidStream.dll](./vidstream.md#input-injection) |
+| 6 | 0x72 (`VK_F3`) | Search button of the PC viewer in [VidStream.dll](./vidstream.md#input-injection) |
 | 8 | 0x76 (`VK_F7`) | |
 | 9 | 0x77 (`VK_F8`) | |
 | 10 | 0x7A (`VK_F11`) | |
@@ -103,7 +104,7 @@ The worker thread turns the button code into a virtual key and calls the remote 
 | 13 | 0x87 (`VK_F24`) | |
 | 4, 11, 14, 15 | 0 | |
 
-The physical buttons behind the codes aren't named in the binary (5 → `VK_ESCAPE` is probably Back ?).
+The physical buttons behind the codes aren't named in the binary. [VidStream.dll](./vidstream.md#input-injection) maps the Back / Windows / Search buttons of the projection viewer to 5 / 1 / 6, so 5 (`VK_ESCAPE`) is Back, 1 (`VK_F2`) Start and 6 (`VK_F3`) Search. It uses flags 1 (pressed) and 4 (released).
 
 ### ApiInjectTouchEvent (0x10001C30)
 
@@ -119,7 +120,7 @@ Only these fields are checked by the DLL; the rest is passed unchanged to the re
 | 0x04 | 4 | Logged by ETW events 916 / 917 (time stamp ?, [qcremoteatsrvc8930.dll](./qcremoteatsrvc8930.md#touch-thread-sub_10001c34) puts `GetTickCount()` there) |
 | 0x13 | 1 | 1 to 10 (number of contacts ?) |
 
-With 0x14 bytes of header, 0x48 and 0x21C are exactly 1 and 10 contacts of 0x34 bytes (?).
+With 0x14 bytes of header, 0x48 and 0x21C are exactly 1 and 10 contacts of 0x34 bytes. [VidStream.dll](./vidstream.md#touch-structure) builds it that way: size = 0x14 + 0x34 × count, `GetTickCount()` at +0x04, count at +0x13, and contacts with the id at +0x00, flags at +0x02 (0x09 new contact, 0x0A moved, 0x08 / 0x0C hover, 0x1000 / 0x1004 removed), X at +0x04, Y at +0x06, the rest 0.
 
 > [!NOTE]
 > [qcremoteatsrvc8930.dll](./qcremoteatsrvc8930.md#touch-thread-sub_10001c34) (`EmulateTouch`, `sub_10001638`) writes a DWORD 1 at +0x10 (`STR`, 4 bytes), so the byte at +0x13 is 0 and every `ApiInjectTouchEvent` call of that service fails here with `E_INVALIDARG` (0x80070057). Its 0x8C-byte structure was probably written for another version of this API (at least the count field has moved).

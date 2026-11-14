@@ -67,6 +67,7 @@ The clients:
 | 4 | 0 | `PdcN` | `sub_10001000` | Notification client, registered in `DriverEntry`. Callbacks `sub_1000161C` (notification) and `sub_100016E4` (completion: if the status is negative, completes the pending notification with `STATUS_SUCCESS`) |
 | 0x411 | 5 | `Pdcs` | `sub_10001350` | Activation reference, taken in `EvtDriverDeviceAdd` and released when the WNF state `{75 38 bc a3 3e 06 8a 41}` becomes 1 |
 
+The 0x411 client is the PDC "scenario client" library: `sub_10001350` and the activation function `sub_100013D0` (reference count, message 8 only on the first activation / last release) are the same code as `PdcScenarioClientRegister` / `PdcScenarioClientRequest` in [DWMCORE.DLL](../libraries/dwmcore.md#pdc-scenarios), whose symbols give the names; the compositor registers client type 5 for components 0x400, 0x407, 0x40A and 0x40B (full-screen video / overlay content, animation and touch measurements) over the ALPC port `\PdcPort`.  
 The meaning of component 4 and 0x411 is unknown. The notification argument is 1 ("enter") or 0 ("exit") (screen off / screen on ?).
 
 `sub_1000161C` (notification callback):
