@@ -1,7 +1,7 @@
 ## Ncsd.dll
 
 Nokia Care Suite daemon ("NCSd for WP8"): the JSON-RPC 2.0 server that the PC care/recovery tools talk to over the NCSd USB interface.  
-`Ncsd.dll` is a C++ library (281 992 bytes, 931 functions, most of them the statically linked jsoncpp library and STL code). It doesn't do any USB I/O. It takes one JSON-RPC request as a string and returns the JSON response string. In between it dispatches on `method` to about 85 methods, which read the phone identity (IMEI, MEID, BT/WLAN addresses, product code, service tag…), read and write modem NV items and EFS files, read the security logs, change the security mode, reboot the phone into flash/test mode or factory-reset it. Most of them go through Nokia's security library `npetsec.dll` (`NPETSEC_*`). The rest read the registry, the battery driver, a Qualcomm DIAG channel (`\\.\DiagCSI`) and a cellular COM object.  
+`Ncsd.dll` is a C++ library (281 992 bytes, 931 functions, most of them the statically linked jsoncpp library and STL code). It doesn't do any USB I/O. It takes one JSON-RPC request as a string and returns the JSON response string. In between it dispatches on `method` to about 85 methods, which read the phone identity (IMEI, MEID, BT/WLAN addresses, product code, service tag…), read and write modem NV items and EFS files, read the security logs, change the security mode, reboot the phone into flash/test mode or factory-reset it. Most of them go through Nokia's security library [npetsec.dll](./npetsec.md) (`NPETSEC_*`). The rest read the registry, the battery driver, a Qualcomm DIAG channel (`\\.\DiagCSI`) and a cellular COM object.  
 It is loaded by the service executable [ncsdsvc.exe](../applications/ncsdsvc.md) (service `ncsd`), which opens the NCSd USB function interface `\\.\GenericUsbFn_{7eaff726-34cc-4204-b09d-f95471b873cf}` of [genericusbfnclass.sys](../drivers/genericusbfnclass.md#ncsd-instance), reads requests from the bulk OUT pipe, passes them to the DLL and writes the responses to the bulk IN pipe, see [Transport](#transport-ncsdsvcexe).
 
 Location on the phone: ? ([ncsdsvc.exe](../applications/ncsdsvc.md) loads it with `LoadLibraryExW(L"Ncsd.dll", NULL, 0)`, so it's next to the service or in the system path).  
@@ -11,7 +11,7 @@ Build: "Jan 28 2015", PDB `E:\build_e\subtask\9BE7887C_98\output\ncsd\fre\Ncsd.p
 
 | DLL | Functions |
 |-----|-----------|
-| npetsec.dll | `NPETSEC_Init`, `NPETSEC_Deinit`, `NPETSEC_LastErrorStr`, `NPETSEC_ReadBtId`, `NPETSEC_ReadWlanId`, `NPETSEC_ReadPublicId`, `NPETSEC_ReadImeiRaw`, `NPETSEC_ReadImeiStr`, `NPETSEC_ReadMeidRaw`, `NPETSEC_ReadMeidStr`, `NPETSEC_ReadServiceTagSize`, `NPETSEC_ReadServiceTag`, `NPETSEC_DppItemSize`, `NPETSEC_GetProductionData`, `NPETSEC_GetSimlockStatus`, `NPETSEC_RdcPhoneReq`, `NPETSEC_GetSecurityMode`, `NPETSEC_SetSecurityMode`, `NPETSEC_RebootDevice`, `NPETSEC_QcNvSpcUnlock`, `NPETSEC_QcNvItemIndexedRead`, `NPETSEC_QcNvItemWrite`, `NPETSEC_QcEfsFileRead`, `NPETSEC_QcEfsFileWrite`, `NPETSEC_QcEfsItemFileWrite`, `NPETSEC_QcEfsDataFileWrite`, `NPETSEC_QcEfsFileDelete`, `NPETSEC_GetSecurityLogFileSize`, `NPETSEC_ReadSecurityLogFile`, `NPETSEC_DeleteSecurityLogFile`, `NPETSEC_SetDriverLogging`, `NPETSEC_RegItemValueWrite`, `NPETSEC_IsProductionDone`, `NPETSEC_ReadSecFeaSize`, `NPETSEC_ReadSecFea`, `NPETSEC_GetUefiCertStates`, `NPETSEC_ReadManufacturingData` |
+| [npetsec.dll](./npetsec.md) | `NPETSEC_Init`, `NPETSEC_Deinit`, `NPETSEC_LastErrorStr`, `NPETSEC_ReadBtId`, `NPETSEC_ReadWlanId`, `NPETSEC_ReadPublicId`, `NPETSEC_ReadImeiRaw`, `NPETSEC_ReadImeiStr`, `NPETSEC_ReadMeidRaw`, `NPETSEC_ReadMeidStr`, `NPETSEC_ReadServiceTagSize`, `NPETSEC_ReadServiceTag`, `NPETSEC_DppItemSize`, `NPETSEC_GetProductionData`, `NPETSEC_GetSimlockStatus`, `NPETSEC_RdcPhoneReq`, `NPETSEC_GetSecurityMode`, `NPETSEC_SetSecurityMode`, `NPETSEC_RebootDevice`, `NPETSEC_QcNvSpcUnlock`, `NPETSEC_QcNvItemIndexedRead`, `NPETSEC_QcNvItemWrite`, `NPETSEC_QcEfsFileRead`, `NPETSEC_QcEfsFileWrite`, `NPETSEC_QcEfsItemFileWrite`, `NPETSEC_QcEfsDataFileWrite`, `NPETSEC_QcEfsFileDelete`, `NPETSEC_GetSecurityLogFileSize`, `NPETSEC_ReadSecurityLogFile`, `NPETSEC_DeleteSecurityLogFile`, `NPETSEC_SetDriverLogging`, `NPETSEC_RegItemValueWrite`, `NPETSEC_IsProductionDone`, `NPETSEC_ReadSecFeaSize`, `NPETSEC_ReadSecFea`, `NPETSEC_GetUefiCertStates`, `NPETSEC_ReadManufacturingData` |
 | PHONEINFO.dll | `GetPhoneVersion` |
 | WPCOREUTIL.dll | `ResetPhone` |
 | api-ms-win-core-registry-l1-1-0.dll | `RegOpenKeyExW`, `RegQueryValueExW`, `RegCreateKeyExW`, `RegSetValueExW`, `RegCloseKey` |
@@ -138,7 +138,7 @@ The handlers catch the `CNcsdException` thrown by the backend (HRESULT + message
 | ReadUefiSecureBootEnabled | `sub_10009B10` (+0x9C) | → `UefiSecureBootEnabled` (bool) | `NPETSEC_GetUefiCertStates` (`sub_100168A4`) |
 | ReadManufacturingData | `sub_10009C78` (+0xA0) | → `ManufacturingData` | `NPETSEC_ReadManufacturingData` (`sub_100169F8`) |
 | ReadHVBatteryAuthSuccessCount, ReadHVBatteryAuthFailedCount, ReadHVBatteryAuthMaxTriesCount, ReadHVBatteryUID | +0xA4…+0xB0 | → `AuthSucceessCount` (sic), `AuthFailedCount`, `AuthMaxTriesCount`, `BatteryUID` | Registry `NokiaBIFDriver` (battery authentication, [Registry](#registry)) |
-| GetUefiCertificateStatus | `sub_1000A6F8` (+0xB4) | → `Pk`, `Kek`, `Db`, `Dbx`, `BootPolicy` = "NA" / "Unknown" / "Unsecure" / "SecureRD" / "SecureProduction" | `NPETSEC_GetUefiCertStates` (`sub_10016C20`, names from `sub_10016B34`) |
+| GetUefiCertificateStatus | `sub_1000A6F8` (+0xB4) | → `Pk`, `Kek`, `Db`, `Dbx`, `BootPolicy` = "NA" / "Unknown" / "Unsecure" / "SecureRD" / "SecureProduction" | `NPETSEC_GetUefiCertStates` (`sub_10016C20`, names from `sub_10016B34`; values 1 = matches no file, 2 = variable empty, 3 = R&D file, 4 = production file, see [npetsec.dll](./npetsec.md#uefi-certificates)) |
 | ResetPhone | `sub_1000B380` (+0xB8) | → | `WPCOREUTIL!ResetPhone(0, 0, 0)` (factory reset ?); its error is returned as is |
 | ReadProcessCount | `sub_1000B4F4` (+0xBC) | → `ProcessCount` | `K32EnumProcesses` |
 | SetConfigAccessMode / SetConfigurationAccessMode | `sub_1000A8D8` (+0xC0) / `sub_1000ABE8` (+0xC8) | `Mode` / `ConfigurationAccessMode` = "Restricted" / "Open" (/ "Maintenance") → | `NPETSEC_SetSecurityMode` ("Open" = Maintenance ?) |
@@ -152,9 +152,9 @@ The read/write handlers of the security log, NV, EFS, mode and reboot families a
 
 ### Security mode
 
-`npetsec.dll` keeps a security mode: 0 = "SwUpdate", 1 = "Restricted", 2 = "Maintenance" (names of `sub_100143D0`). The mode limits what the PC tool can change:
+`npetsec.dll` keeps a security mode: 0 = "SwUpdate", 1 = "Restricted", 2 = "Maintenance" (names of `sub_100143D0`); npetsec.dll also accepts 3 ("AllowDiag" in its log), see [npetsec.dll security mode](./npetsec.md#security-mode). The mode limits what the PC tool can change:
 
-- `SetSecurityMode` accepts only "Restricted" (1) and "Maintenance" (2), anything else → "Invalid security mode" (0x80070057). How `npetsec.dll` authorises the change is not visible here (npetsec.dll not analysed).
+- `SetSecurityMode` accepts only "Restricted" (1) and "Maintenance" (2), anything else → "Invalid security mode" (0x80070057). `npetsec.dll` doesn't authorise the change itself: it sends the mode to the security driver ([IOCTL 0x9C412438](../drivers/nokia_sec_driver.md#ioctl-0x9c412438--nokiasecssmmodemmode)) and reads it back from the modem EFS file `/nv/item_files/modem/ssm_mode`.
 - `UnlockNvSpc` and `WriteNVData` (whitelisted items): when the mode is 1, the backend switches to mode 0 with `NPETSEC_SetSecurityMode(0)`, does the operation, then restores mode 1.
 
 ### NV and EFS firewall
@@ -254,7 +254,7 @@ The byte values written aren't documented here.
 | +0x44 / +0x48 | `NPETSEC_QcEfsFileWrite` / `NPETSEC_QcEfsFileRead` | +0x90 | `NPETSEC_GetUefiCertStates` |
 | +0x4C | `NPETSEC_QcEfsItemFileWrite` | +0x94 | `NPETSEC_ReadManufacturingData` |
 
-`NPETSEC_QcEfsFileWrite` (+0x44) is imported but not used by any handler. The NV/EFS functions of `npetsec.dll` presumably go through [nokia_sec_driver.sys](../drivers/nokia_sec_driver.md), which talks to the modem through `\Device\DiagCSI` (npetsec.dll not analysed).
+`NPETSEC_QcEfsFileWrite` (+0x44) is imported but not used by any handler. The NV/EFS functions of `npetsec.dll` don't go through the security driver: npetsec.dll sends the DIAG commands itself on `\\.\DiagCSI` ([npetsec.dll DIAG client](./npetsec.md#diag-client)), with no whitelist of its own.
 
 ### Registry
 

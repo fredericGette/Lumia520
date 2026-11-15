@@ -66,3 +66,5 @@
 [GDI32.DLL](./gdi32.md)  
 [MinUser.dll](./minuser.md)  
 [Ncsd.dll](./ncsd.md)  
+[ScreenRecorderImpl.dll](./screenrecorderimpl.md)  
+[npetsec.dll](./npetsec.md)  

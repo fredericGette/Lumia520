@@ -210,7 +210,7 @@ These values are written by the compositor ([CompServer!UpdateTopology](./compse
 ### Sessions
 
 The session handle is a `CompositorAlpcClient` (one ALPC connection), released by `SrStopSession` / `StopProtectedSession` (`Release`, vtable +4).
-- `SrStartSession(&session)` only opens the connection. `SrProcessCommand(session)` sends request 9; the server status 0xCFFF0001 is turned into `E_ACCESSDENIED` (0x80070005). "Sr" is probably screen recording ?
+- `SrStartSession(&session)` only opens the connection. `SrProcessCommand(session)` sends request 9; the server status 0xCFFF0001 is turned into `E_ACCESSDENIED` (0x80070005). "Sr" is screen recording: the server hands the request to the recorder of [ScreenRecorderImpl.dll](./screenrecorderimpl.md#processcommand-sub_100025a0), which reads the command from the caller's `ScreenRecorderMetaData` section.
 - `StartProtectedSession(&session, …)` opens the connection and sends request 15 `SetProtectedStatus`: while the connection is open the client is "protected" (protected content, no screen capture ?).
 
 The callers of these exports aren't known.

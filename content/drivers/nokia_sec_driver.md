@@ -26,7 +26,7 @@ It communicates with the following devices:
 | \Device\DiagCSI | [qcdiagcsi8930.sys](./qcdiagcsi8930.md) | MODEM file system and NV items through DIAG commands. [IOCTL 0x80092440](#ioctl-0x80092440), [IOCTL 0x80092444](#ioctl-0x80092444) |
 | \Device\SSM | [qcssm8930.sys](./qcssm8930.md) | Secure Services Module. [IOCTL 0x80092408](#ioctl-0x80092408), [IOCTL 0x80092414](#ioctl-0x80092414), [IOCTL 0x8009241C](#ioctl-0x8009241c) |
 
-No client of this device has been found in the documented drivers, libraries and applications yet.
+The user-mode client of this device is [npetsec.dll](../libraries/npetsec.md) (opened with `CreateFileA("\\.\NokiaSec")`, every IOCTL serialised by the mutex `NokiaSecDrvSvcLib`), used by [Ncsd.dll](../libraries/ncsd.md); see [IOCTLs to the security driver](../libraries/npetsec.md#ioctls-to-the-security-driver).
 
 ### Start-up
 
@@ -793,8 +793,7 @@ This IOCTL is processed by Nokia_sec_driver.sys
 Inputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | ? | ? |
-| 04-07 | ? | ? |
+| 00-07 | e.g. `GSM` | ESN name in ASCII, zero padded: `GSM` (IMEI), `MEID`, `BT_ID`, `WLAN_ID`, `WLAN2ID`, `WLAN3ID`, `WLAN4ID` (sent by [npetsec.dll](../libraries/npetsec.md#identity)) |
 
 Outputbuffer:  
 | Bytes | Value | Comment |

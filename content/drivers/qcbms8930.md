@@ -93,6 +93,7 @@ It communicates with the following devices (all found with `IoRegisterPlugPlayNo
 | ACPI node of the device | acpi.sys | `IOCTL_ACPI_EVAL_METHOD` `PMCF` |
 | `\Device\Harddisk0`…`5` | disk.sys | `IOCTL_DISK_GET_DRIVE_LAYOUT_EX` (0x70050) to find the EFIESP partition |
 | — | [NokiaEnergyDriver.sys](./nokiaenergydriver.md) | Consumer of the `IOCTL_BMS_*` controls below: it opens this driver's interface `{23B7D0DD-…}` and sends `GET_BATTERY_CURRENT`, `GET_PERCENT_CHARGE`, `SET_CHARGING_STATE`, `SET_SYSTEM_INFO` and `SET_XOADC_CAL_VAL` |
+| — | [npetsec.dll](../libraries/npetsec.md#battery-level) | User-mode consumer (same interface) when no battery class device exists: `SET_SYSTEM_INFO` (`{30000, 30000, BATT_ID}`) then `GET_PERCENT_CHARGE` |
 | — | [qcbattmngr8930.sys](./qcbattmngr8930.md) | Other consumer (same interface): `GET_BATTERY_CURRENT`, `GET_PERCENT_CHARGE`, `SET_CHARGING_STATE`, `SET_SYSTEM_INFO`, `FORCE_OCV` and `SET_XOADC_CAL_VAL`, see [Gauge back-ends](./qcbattmngr8930.md#gauge-back-ends) |
 
 When all three companion interfaces are present, the driver brings the chip online (`PmicBmsProbeAndInitializeChip`: `IOCTL_PM_GAUGE_BMS_CONFIGURE`, CCADC init, `IOCTL_PM_GAUGE_ENABLE_BMS`), loads the persisted accumulator, reads the registry values, starts the 30-minute accumulator timer, then publishes its own device interface.

@@ -2,7 +2,7 @@
 
 The compositor server of Windows Phone 8.1: it runs in the shell process, combines the frames that the applications present into the image sent to the display, and handles screenshots, screen recording and the external display (Miracast / USB projection).  
 `CompServer.dll` is a C++ DLL (628 functions, all named from the PDB `compserver.pdb`) with a single export, `InitializeCompositor`, called by [MobileUI.exe](../applications/mobileui.md#startup) at startup. The work is done by a `Compositor` singleton that plugs into the UIX render engine ("Splash", `UIXRender.dll`): `UIXRender!SpSetCompositorMode` gives the engine the compositor callbacks, and the engine then hands it its Direct3D 11 device and calls it for every frame ([Compositor](#compositor)). The compositor is the server side of [CompClient.dll](./compclient.md): an ALPC port `CompositorAlpcPort` in the `MobileUI` named object directory ([ALPC server](#alpc-server)), and for each window a shared "client map" section with two events, through which the client presents its buffers without any message ([Clients](#clients-and-presents)). The frame is drawn with Direct3D 11 (own precompiled shaders) and given to the display through the phone DXGI swap chain, with hardware overlay planes when the scaler can do it. The external display is driven by a topology manager (`SetDisplayConfig`, `VidStream.dll` for USB), and screen recording by `ScreenRecorderImpl.dll`.  
-Related binaries not analysed: `UIXRender.dll`, `CoreMessaging.dll` (window validator), `ScreenRecorderImpl.dll`, `policymanager.dll`. [MinUser.dll](./minuser.md) is the window manager it registers the process with. [DWMMOBILE.DLL](./dwmmobile.md) (`InitializeMinDWM`, foreground window) shows the redirected windows. [DWMCORE.DLL](./dwmcore.md) gives it the input hit test. [VidStream.dll](./vidstream.md) sends the USB mirroring frames.
+Related binaries not analysed: `UIXRender.dll`, `CoreMessaging.dll` (window validator), `policymanager.dll`. [ScreenRecorderImpl.dll](./screenrecorderimpl.md) is the screen recorder. [MinUser.dll](./minuser.md) is the window manager it registers the process with. [DWMMOBILE.DLL](./dwmmobile.md) (`InitializeMinDWM`, foreground window) shows the redirected windows. [DWMCORE.DLL](./dwmcore.md) gives it the input hit test. [VidStream.dll](./vidstream.md) sends the USB mirroring frames.
 
 Location on the phone: `C:\Windows\System32\CompServer.dll` ? (extracted with `CompClient.dll`, `DWMCORE.DLL`, `DWMAPI.DLL` and [DCOMP.DLL](./dcomp.md)).  
 
@@ -16,7 +16,7 @@ Location on the phone: `C:\Windows\System32\CompServer.dll` ? (extracted with `C
 | CoreMessaging.dll | `CoreUICreateWindowValidator` |
 | [ShellChromeAPI.dll](./shellchromeapi.md) | `Shell_IdleTimerReset` |
 | policymanager.dll | `PolicyManager_GetExperiencePolicy_AllowScreenCapture` |
-| ScreenRecorderImpl.dll (delay-load) | `GetSR`, `GetSRFrameListener`, `DestroySR` |
+| [ScreenRecorderImpl.dll](./screenrecorderimpl.md) (delay-load) | `GetSR`, `GetSRFrameListener`, `DestroySR` |
 | [SecRuntime.dll](./secruntime.md) | `QueryTransientObjectSecurityDescriptor`, `FreeTransientObjectSecurityDescriptor`, `BuildSecurityDescriptorForSharingAccess`, `CapabilityCheck`, `GetCapabilitySids` |
 | ntdll.dll | `NtAlpcCreatePort`, `NtAlpcAcceptConnectPort`, `NtAlpcSendWaitReceivePort`, `NtAlpcCancelMessage`, `NtAlpcImpersonateClientOfPort`, `AlpcInitializeMessageAttribute`, `AlpcGetMessageAttribute`, `RtlGetAppContainerNamedObjectPath`, `RtlInitUnicodeString`, `RtlFreeUnicodeString`, `NtClose`, `WinSqmStartSession`, `WinSqmEndSession`, `WinSqmIncrementDWORD`, `WinSqmSetIfMaxDWORD` |
 | ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll (delay-load) | `SetDisplayConfig`, `QueryDisplayConfig`, `GetDisplayConfigBufferSizes`, `EnumDisplayDevicesW`, `EnumDisplaySettingsW` |
@@ -48,7 +48,7 @@ Files and named objects used other than the static imports.
 | [GDI32.DLL](./gdi32.md) | `LoadLibraryExW`, `D3DKMTSetProcessSchedulingPriorityClass` | GPU scheduling priority of the process (class 5, realtime ?) |
 | `api-ms-win-rtcore-session-l1-1-0.dll` | `LoadLibraryExW`, `RegisterCompositorPort` (else `RegisterSessionPort`) | Gives the ALPC port to the session ([ConnectAlpcServer](#compositor)) |
 | [`C:\Windows\System32\VidStream.dll`](./vidstream.md) | `LoadLibraryW`, `CreateUsbVidStreamService` | USB projection service ([Topology](#display-topology)) |
-| `ScreenRecorderImpl.dll` | delay-load: `GetSR`, `GetSRFrameListener`, `DestroySR` | Screen recorder ([Screen recording](#screen-recording)) |
+| [ScreenRecorderImpl.dll](./screenrecorderimpl.md) | delay-load: `GetSR`, `GetSRFrameListener`, `DestroySR` | Screen recorder ([Screen recording](#screen-recording)) |
 | Resources of `CompServer.dll` | `FindResourceExW(type 10 RT_RCDATA, id 100, 200…203, 304, 305)` (`CompositorGraphics::LoadPrecompiledShaderResource`, 0x1001744C) | Precompiled vertex / pixel shaders (id 100 is used for the input layout `POSITION` / `TEXCOORD` ?) |
 | ALPC port `<session BNO>\CompositorAlpcPort` | `NtAlpcCreatePort` ([ALPC server](#alpc-server)) | Requests of [CompClient.dll](./compclient.md#alpc) |
 | Event `Compositor{<server id>}.ComposeEvent` | `CreateEventW` ([CompServer::Create](#compserver)) | Signalled by the clients when they present |
@@ -192,10 +192,10 @@ When the client sets `fInPresent` and signals the compose event, `HandlePresent`
 
 `Compositor::SrProcessCommand(context, allowed)` (0x1002604C), only while no teardown is in progress (else 0x8000000E):
 1. First call: remembers the connection, `ScreenRecorderImpl!GetSR(&recorder)`, `GetSRFrameListener(&listener)`, `recorder->OpenHandles(context)`, passes `allowed` to the recorder, and registers the listener as a frame listener of the compositor.
-2. The recorder's window must be valid for the caller (unless `allowed`), and the connection must be the one of step 1 (else `E_ACCESSDENIED`).
+2. `ValidateWindowAndOwner(<window recorded by the recorder>, caller pid)` must succeed (unless `allowed`), and the connection must be the one of step 1 (else `E_ACCESSDENIED`). `Decode_SrProcessCommand` passes the client token at +0x0C of the `CallerContextInfo`, used by the recorder to open the caller's named objects.
 3. `recorder->ProcessCommand()`.
 
-If the command fails or the recorder says it's finished, `StartScreenRecorderTearDown`: unregisters the listener and calls `ScreenRecorderImpl!DestroySR` (in a new thread when called from the connection close). "Sr" is the screen recorder.
+If the command fails or the recorder says it's finished, `StartScreenRecorderTearDown`: unregisters the listener and calls `ScreenRecorderImpl!DestroySR` (in a new thread when called from the connection close). "Sr" is the screen recorder: the commands, the shared section `ScreenRecorderMetaData` and the frame copy are described on the [ScreenRecorderImpl.dll](./screenrecorderimpl.md#recorder) page.
 
 ### Display topology
 

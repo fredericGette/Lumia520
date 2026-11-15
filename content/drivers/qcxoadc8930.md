@@ -27,7 +27,7 @@ It communicates with the following devices:
 | ACPI (own device `\_SB.ADC1`) | acpi.sys | `IOCTL_ACPI_EVAL_METHOD` (0x32C004) on the default I/O target, see [ACPI configuration](#acpi-configuration) |
 | Power framework (PEP) | [qcpep8930.sys](./qcpep8930.md#3404daac-set-p-state) | `PoFxRegisterDevice` (1 component) + `PoFxPowerControl` `{3404DAAC-…}`: vote for the XO/CXO clock around every conversion, see [XO vote](#xo-vote) |
 
-Clients of its interface `{10542F20-…}` (IOCTLs `0x8ADC2000` / `0x8ADC2004`): [NokiaEnergyDriver.sys](./nokiaenergydriver.md#adc-channels), [qcbattmngr8930.sys](./qcbattmngr8930.md), [qcepm8930.sys](./qcepm8930.md), [qcpep8930.sys](./qcpep8930.md#thermal-zones), [qcq6ad8930.sys](./qcq6ad8930.md#battery-temperature), [NokiaThermSensorDriver.sys](./nokiathermsensordriver.md), [NokiaDataLoggerDriver.sys](./nokiadataloggerdriver.md). No documented driver sends the BTM IOCTL `0x8ADC2008`.
+Clients of its interface `{10542F20-…}` (IOCTLs `0x8ADC2000` / `0x8ADC2004`): [NokiaEnergyDriver.sys](./nokiaenergydriver.md#adc-channels), [qcbattmngr8930.sys](./qcbattmngr8930.md), [qcepm8930.sys](./qcepm8930.md), [qcpep8930.sys](./qcpep8930.md#thermal-zones), [qcq6ad8930.sys](./qcq6ad8930.md#battery-temperature), [NokiaThermSensorDriver.sys](./nokiathermsensordriver.md), [NokiaDataLoggerDriver.sys](./nokiadataloggerdriver.md); in user mode [npetsec.dll](../libraries/npetsec.md#battery-level) opens `\\.\QCOM_XoAdc` for the `BATT_ID` channel. No documented driver sends the BTM IOCTL `0x8ADC2008`.
 
 ### Startup
 
