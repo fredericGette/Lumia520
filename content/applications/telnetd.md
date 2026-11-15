@@ -5,7 +5,7 @@ Minimal telnet server: it gives a remote command prompt (any console program giv
 Everything is asynchronous on the Win32 thread pool (`CreateThreadpoolIo` on the listening socket and on each client socket, `TpAllocIoCompletion` on the ConDrv server handle).
 
 Location on the phone: ? (no path string in the binary).  
-Started by: ? (no caller found among the analysed binaries; meant to be started by hand, e.g. `telnetd.exe cmd.exe`).
+Started by: ? (no caller found among the analysed binaries; meant to be started by hand, e.g. `telnetd.exe cmd.exe`, see [cmd.exe](./cmd.md)).
 
 ### Imports
 
@@ -137,4 +137,27 @@ Console APIs served (layer 1 / layer 2; minimal input size in brackets):
 | 1 | 0 `SrvGetConsoleCP` (8), 1 `SrvGetConsoleMode` (4), 2 `SrvSetConsoleMode` (4), 3 `SrvGetConsoleNumberOfInputEvents` (4), 4 `SrvGetConsoleInput` (8), 5 `SrvReadConsole` (0x14), 6 `SrvWriteConsole` (8), 7–9 `SrvNotSupported` |
 | 2 | 0 `SrvFillConsoleOutput`, 1 `SrvGenerateConsoleCtrlEvent`, 2 `SrvSetConsoleActiveScreenBuffer`, 3 `SrvFlushConsoleInputBuffer`, 4 `SrvSetConsoleCP`, 5 `SrvGetConsoleCursorInfo`, 6 `SrvSetConsoleCursorInfo`, 7 `SrvGetConsoleScreenBufferInfo` (0x5C), 8 `SrvGenerateConsoleCtrlEvent` (0x5C, `SetConsoleScreenBufferInfoEx` slot ?), 9 `SrvSetConsoleScreenBufferSize`, 10 `SrvSetConsoleCursorPosition`, 11 `SrvGetLargestConsoleWindowSize`, 12 `SrvScrollConsoleScreenBuffer`, 13 `SrvSetConsoleTextAttribute`, 14 `SrvSetConsoleWindowInfo`, 15 `SrvReadConsoleOutputString`, 16 `SrvWriteConsoleInput`, 17 `SrvWriteConsoleOutput`, 18 `SrvWriteConsoleOutputString`, 19 `SrvReadConsoleOutput`, 20 `SrvGetConsoleTitle`, 21 `SrvSetConsoleTitle` |
 
-Layer 3 (aliases, history, fonts, display mode…) isn't served. Line input (`ENABLE_LINE_INPUT`) is edited by telnetd.exe itself, with a history (`CspAddHistoryEntry`, `CspUseHistory`). Ctrl+C / Ctrl+Break (`CspGenerateControlEvent`, 0x405EE4) start `KernelBase!CtrlRoutine` in every connected process with `RtlCreateUserThread`, parameter = the event type.
+Layer 3 (aliases, history, fonts, display mode…) isn't served. Line input (`ENABLE_LINE_INPUT`) is edited by telnetd.exe itself, with a history, see [Line input](#line-input). Ctrl+C / Ctrl+Break (`CspGenerateControlEvent`, 0x405EE4) start `KernelBase!CtrlRoutine` in every connected process with `RtlCreateUserThread`, parameter = the event type.
+
+### Line input
+
+`SrvReadConsole` (0x40432C) queues the read request. `CspHandleLineRead` (0x4059C8) builds the line from the key events, which come from the telnet bytes (see [Telnet protocol](#telnet-protocol)). The line buffer (`CspInitializeLineBuffer`, 0x405934) is at least 512 bytes. It starts with the client's initial characters, read from the request (`InitialNumBytes` at offset 0x6C of the message, after the executable name).
+
+`CspProcessKey` (0x405828) handles each key:
+
+| Key | Effect |
+|---|---|
+| Character below 0x20 whose bit is set in `CtrlWakeupMask` (offset 0x70 of the message) | Checked first. The character is added to the buffer without echo and the read completes. `ControlKeyState` (offset 0x74) is returned. This is how [cmd.exe](./cmd.md#line-input) gets Tab for file name completion |
+| Without `ENABLE_PROCESSED_INPUT` (mode bit 0x1) | Characters are stored without editing or echo; the read ends on Enter |
+| Backspace, Left arrow | Erase the last character (`CdpEraseString`, 0x403404) |
+| Escape | Erases the whole line |
+| Up / Down | Previous / next history entry (`CspUseHistory`, 0x4057B4) |
+| Page Up / Page Down | Oldest / newest history entry |
+| Enter | Ends the line. The line is added to the history, CR LF is stored when `ENABLE_PROCESSED_INPUT` is set and LF is echoed when `ENABLE_ECHO_INPUT` is set |
+| Other keys | Character added (if not 0) and echoed when `ENABLE_ECHO_INPUT` is set (`CspEchoInputString`, 0x40337C) |
+
+There's no cursor movement inside the line (Right, Home and End do nothing useful), no insert / overwrite mode and no F7 / F8 / F9.
+
+History (`CspAddHistoryEntry`, 0x4056F4): the line without its CR is added on Enter. It's added only when echo is on, the line has more than one character, and it differs from the newest entry. At most 20 entries are kept (the oldest is freed), and the history is shared by all the programs of the console. Recalling an entry replaces the line; with echo on, the old line is erased on the screen and the entry is echoed.
+
+Key events are generated without modifier state (except Ctrl+C and the enhanced keys), so a program never sees `SHIFT_PRESSED`: cmd.exe completion can only go forwards. Shift+Tab (`ESC [ Z`) isn't decoded. It's replayed as Escape, `[`, `Z`, so it clears the line and leaves `[Z`.

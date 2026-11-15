@@ -3,6 +3,7 @@
 [AppVerif.exe](./appverif.md)  
 [audiodg.exe](./audiodg.md)  
 [BatteryLogger.exe](./batterylogger.md)  
+[cmd.exe](./cmd.md)  
 [DateTimeCPL.exe](./datetimecpl.md)  
 [MirrorCPL.exe](./mirrorcpl.md)  
 [MobileUI.exe](./mobileui.md)  
