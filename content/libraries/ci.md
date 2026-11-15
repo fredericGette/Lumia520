@@ -32,7 +32,7 @@ Files used other than the static imports.
 | `\SystemRoot\System32\CodeIntegrity\driver.stl` | `MinCrypK_LoadRevocationList` (`CipLoadAndValidateRevocationList`) | Revocation list (revoked certificates / hashes) |
 | `<package root>\<package full name>\AppxMetadata\CodeIntegrity.cat` | `CipGetAppxCatalog` | Catalog of an Appx package, used for the files of that package |
 | `\SystemRoot\System32\Drivers\PEAuth.sys` | `I_PEVerifyAndLogPEAuthCerts` | Its certificates are checked for the Protected Environment |
-| `\??\<DataPath>\Active.GRL` (`DataPath` value of `HKLM\System\CurrentControlSet\Services\PEAuth`) | `GetGRLFileName` + `ReadFromFile` (`MFGetGRL`) | Global Revocation List of the Protected Environment |
+| `\??\<DataPath>\Active.GRL` (`DataPath` value of `HKLM\System\CurrentControlSet\Services\PEAuth`) | `GetGRLFileName` + `ReadFromFile` (`MFGetGRL`) | Global Revocation List of the Protected Environment (also read in user mode by [VideoSink.dll](./videosink.md#protected-content) to check certificate chains) |
 | Every boot driver of the loader list | `ZwCreateFile` (`I_PEVerifyBootDrivers`) | Hashed again for the PE trust state |
 | Volumes backed by a WIM | FSCTL 0x9031F (`CipLoadWimIdentities`) | Identities of the WIM files, recorded in the file cache EA |
 

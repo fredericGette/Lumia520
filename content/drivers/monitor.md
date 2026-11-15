@@ -299,7 +299,7 @@ Inputbuffer:
 | 00 | ? | Brightness percentage |
 | 01-03 | ? | Ignored |
 
-Handled only when a brightness interface or ACPI brightness is present, otherwise forwarded to the lower driver. Stores the percentage and runs `ProcessBrightness` — this is the path that actually changes the panel brightness. Caller ? (presumably the power manager, in response to the ALPC messages).
+Handled only when a brightness interface or ACPI brightness is present, otherwise forwarded to the lower driver. Stores the percentage and runs `ProcessBrightness` — this is the path that actually changes the panel brightness. Sent by [win32k.sys](./win32k.md#internal-ioctl-0x232433--set-brightness) (`DrvSetMonitorBrightness`) to the top of the monitor stack, on power events and brightness power-setting changes (`GUID_DEVICE_POWER_POLICY_VIDEO_BRIGHTNESS`) relayed by the power manager.
 
 ---
 

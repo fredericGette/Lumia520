@@ -9,6 +9,7 @@
 [mwdbgsrv.exe](./mwdbgsrv.md)  
 [ncsdsvc.exe](./ncsdsvc.md)  
 [QcShutdownSvc8930.exe](./qcshutdownsvc8930.md)  
+[telnetd.exe](./telnetd.md)  
 [tracelog.exe](./tracelog.md)  
 [UpdateUEFIDb.exe](./updateuefidb.md)  
 [WININIT.EXE](./wininit.md)  

@@ -106,7 +106,7 @@ Files used other than the static imports.
 | 2663 | `RegisterCompositorPort` | 0x10001690 | system call `NtModerncoreRegisterCompositorPort` (0x10CA) |
 | 2668, 2722 | `RegisterSessionPort`, `UnregisterSessionPort` | 0x100017B8, 0x100017D8 | system calls `ZwUserRegisterSessionPort` (0x10EF), `ZwUserUnregisterSessionPort` (0x10F3) |
 | 2664, 2719 | `RegisterNavigationWindowHandle`, `UnregisterNavigationWindowHandle` | 0x100016A0, 0x100016B8 | system calls 0x10CC, 0x10CF |
-| 2671 | `RegisterSharedInputGlobal` | 0x100016A8 | system call `NtModerncoreRegisterSharedInputGlobal` (0x10CD) |
+| 2671 | `RegisterSharedInputGlobal` | 0x100016A8 | system call `NtModerncoreRegisterSharedInputGlobal` (0x10CD); called by [UIXRender.dll](./uixrender.md#input-devices) through `api-ms-win-rtcore-session-l1-1-0.dll` |
 | 2522, 2532 | `CreateDCompositionHwndTarget`, `DestroyDCompositionHwndTarget` | 0x10001778, 0x10001780 | system calls 0x10E7, 0x10E8 |
 | 2544 | `EnumDisplayMonitors` | 0x10001098 | system call `ZwUserEnumDisplayMonitors` (0x100B), the monitor callback comes back through the [kernel callback table](#startup) |
 

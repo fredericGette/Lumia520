@@ -16,7 +16,7 @@ Location on the phone: `C:\Windows\System32\BtServ.dll` ? (the extracted file ha
 | ESENT (delay-load) | `JetCreateInstanceA`, `JetSetSystemParameterA/W`, `JetGetSystemParameterW`, `JetInit2`, `JetTerm2`, `JetBeginSessionA`, `JetEndSession`, `JetCreateDatabaseW`, `JetAttachDatabaseW`, `JetDetachDatabaseA/W`, `JetOpenDatabaseW`, `JetCloseDatabase`, `JetCreateTableColumnIndexA`, `JetOpenTableA`, `JetCloseTable`, `JetGetTableColumnInfoA`, `JetBeginTransaction`, `JetCommitTransaction(2)`, `JetRollback`, `JetPrepareUpdate`, `JetSetColumns`, `JetUpdate`, `JetDelete`, `JetRetrieveColumn`, `JetEnumerateColumns`, `JetSetCurrentIndexA`, `JetMakeKey`, `JetSeek`, `JetMove`, `JetGotoBookmark`, `JetGetErrorInfoW` |
 | CommsPlatformHelperUtil | `DefaultMakeHresultFromJetError`, `JetReallocMethod`, `FreeEnumColumn` |
 | CommsNetworkHelperUtil | `CreateConnAPI`, `IsDpuStateSatisfied` |
-| EMSVCS | `CreateExecutionManager`, `CreateAIMProxy` |
+| [EMSVCS](./emsvcs.md) | `CreateExecutionManager`, `CreateAIMProxy` |
 | dsclient | `DSCopyFromSharedFile`, `DSMoveToSharedFile`, `DSGetSharingTokenOwner`, `DSRemoveSharingToken`, `DSFreeString` |
 | [SecRuntime](./secruntime.md) | `QueryTransientObjectSecurityDescriptor`, `FreeTransientObjectSecurityDescriptor`, `GetChamberSid` |
 | unistore | `GetUSDeviceStoreFolderPath` |
@@ -51,7 +51,7 @@ Files used other than the static imports.
 | Unified store folder (`GetUSDeviceStoreFolderPath`) and a known folder (`SHGetKnownFolderPath`) | `MoveFileExW`, `RecursiveRemoveDirectoryEx`, `RecursiveCreateDirectory` | Destination of a corrupted volume (`%s\%s`, `%X`) in `ReplaceVolume` |
 | Task Scheduler service ([TaskSchedulerSvc.dll](./taskschedulersvc.md#rpc)), interface `{33D84484-3626-47EE-8C6F-E7E98B113BE1}` v2.0 | RPC client ([Timers](#timers)) | Retry and self-stop timers (same interface as [WPTimeSvc.dll](./wptimesvc.md)) |
 | PacMan server [pacmanserver.dll](./pacmanserver.md), CLSID `{B9E511FC-E364-497A-A121-B7B3612CEDCE}` | `CoCreateInstance(…, CLSCTX_ALL, {698D57C2-292D-4CF3-B73C-D95A6922ED9A})` (`IPMEnumerationManager`) | Application of the caller ([Creating a request](#creating-a-request)) |
-| Execution manager, application instance manager (`EMSVCS`) | `CreateExecutionManager`, `CreateAIMProxy` | Foreground application, application of the caller, agent notifications |
+| Execution manager, application instance manager ([EMSVCS.dll](./emsvcs.md#createaimproxy-0x1000594c)) | `CreateExecutionManager`, `CreateAIMProxy` | Foreground application, application of the caller, agent notifications |
 
 ### Exports
 

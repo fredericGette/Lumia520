@@ -237,7 +237,7 @@ The exported ones (the name is the one in the PDB, `Nt`/`Zw` as given there):
 | 1023 | `NtUpdateInputSinkTransforms` | 0x10E5 | DWMCORE |
 | 1024 | `NtDCompositionDuplicateHandleToProcess` | 0x1028 | ? |
 | 1025 | `ZwDuplicateCompositionInputSink` | 0x104F | DWMCORE |
-| 1026 | `NtQueryCompositionInputQueueAndTransform` | 0x10D4 | ? |
+| 1026 | `NtQueryCompositionInputQueueAndTransform` | 0x10D4 | [UIXRender.dll](./uixrender.md#input-devices) (input transform of the touch contacts) |
 | 510 | `ZwTokenManagerOpenEvent` | 0x10E1 | DWMCORE |
 | 511 | `ZwTokenManagerThread` | 0x10E3 | DWMCORE |
 | 512 | `NtTokenManagerGetOutOfFrameDirectFlipSurfaceUpdates` | 0x10E0 | DWMCORE |

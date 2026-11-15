@@ -188,7 +188,7 @@ The message processor dequeues the messages one by one (critical section held on
 
 ### ETW
 
-Provider `{ED07CE1C-CEE3-41E0-93E2-EEB312301848}`, registered by a C++ initialiser (`McGenEventRegister`, context `unk_10004010`, enable callback `ETW_EnableCallback` 0x10001CB8, enable bits in `dword_10004280`).
+Provider `{ED07CE1C-CEE3-41E0-93E2-EEB312301848}` (`MICROSOFT_WINDOWSPHONE_INPUT`, also registered by [UIXRender.dll](./uixrender.md#etw)), registered by a C++ initialiser (`McGenEventRegister`, context `unk_10004010`, enable callback `ETW_EnableCallback` 0x10001CB8, enable bits in `dword_10004280`).
 
 | Event | Level | Opcode, task | Keyword | Enable bit | Written when |
 |-------|-------|--------------|---------|------------|--------------|

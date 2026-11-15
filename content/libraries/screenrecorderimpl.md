@@ -11,7 +11,7 @@ Location on the phone: `C:\Windows\System32\ScreenRecorderImpl.dll` ? (delay-loa
 | DLL | Functions |
 |-----|-----------|
 | [ShellChromeAPI.dll](./shellchromeapi.md) | `Shl::ActionDialog::ActionDialog::Create` (`ACTION_DIALOG_PARTIAL_SCREEN_CONFIG` overload) |
-| EMSVCS.dll | `CreateExecutionManager` |
+| [EMSVCS.dll](./emsvcs.md) | `CreateExecutionManager` |
 | ChamberProf.dll | `GetChamberRegistryLocation` |
 | [SecRuntime.dll](./secruntime.md) | `QueryExecutableProperties`, `ReleaseExecutableProperties` |
 | phoneom.dll | `PhoneGetCallCounts` |
@@ -40,7 +40,7 @@ Files and named objects used other than the static imports.
 | `ScreenRecorderImpl.dll.mui` (the DLL only has an `MUI` resource, language `en-US`) | `LoadStringW(hInstance, 101…104)`, `FindResourceExW(RT_STRING)` on the ATL resource modules | Title, text and the two buttons of the [consent dialog](#consent-thread-sub_10002788); not analysed |
 | Section `<caller's AppContainer named objects>\ScreenRecorderMetaData` | `OpenFileMappingW(FILE_MAP_READ \| FILE_MAP_WRITE)`, `MapViewOfFile(…, 0x1C)` ([OpenHandles](#openhandles-sub_10002ca8)) | Commands and status, see [Shared section](#shared-section) |
 | Events `<…>\ScreenRecorderCommandCompleted`, `<…>\ScreenRecorderSampleReady` | `OpenEventW(EVENT_MODIFY_STATE)` | Signalled to the application: status written / frame copied |
-| Execution manager (`EMSVCS`) | `CreateExecutionManager`, method +0x0C | Product ID of the recording process |
+| Execution manager ([EMSVCS.dll](./emsvcs.md#createexecutionmanager-0x10008000)) | `CreateExecutionManager`, method +0x0C (AppX execution RPC opnum 1 on `AppXExecutionSvc\Server`) | Product ID of the recording process |
 | PacMan server [pacmanserver.dll](./pacmanserver.md), CLSID `{B9E511FC-E364-497A-A121-B7B3612CEDCE}` | `CoCreateInstance(…, CLSCTX_ALL (0x17), {698D57C2-292D-4CF3-B73C-D95A6922ED9A})` (`IPMEnumerationManager`) | Title and SID of the application ([Application identity](#application-identity-sub_1000264c)) |
 | Chamber registry of the application, `ChamberReadOnly\CaptureConsent` | `GetChamberRegistryLocation`, `RegOpenKeyW` / `RegCreateKeyExW` | Consent already given |
 | Server of `System\ActionDialogManagerEndpoint` | through [ShellChromeAPI.dll](./shellchromeapi.md#action-dialogs) `Shl::ActionDialog::Create` | Consent dialog |

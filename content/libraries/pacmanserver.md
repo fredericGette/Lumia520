@@ -15,7 +15,7 @@ Location on the phone: `C:\Windows\System32\pacmanserver.dll` ? (the extracted f
 | ChamberProf | `CreateChamberProfile`, `UpdateChamberProfile`, `DeleteChamberProfile`, `DeleteChamberProfileAfterMove`, `ApplyCodeFolderACL`, `GetChamberFolderPath` |
 | PreAuthz | `AddTrustedExecutable`, `AddTrustedExecutableFromCatalog`, `AddTrustedPreInstalledExecutable` |
 | WPTrust | `SV_AuthenticateAppXSignatureFile`, `SV_AuthenticateEmbeddedSignedFile`, `SV_DeallocateSignedFileInfoMember` |
-| EMSVCS | `CreateExecutionManager`, `CreateDebugManager`, `CreateBackgroundWorkerManager` |
+| [EMSVCS](./emsvcs.md) | `CreateExecutionManager`, `CreateDebugManager`, `CreateBackgroundWorkerManager` |
 | EMCLIENT | `RmAccessCheck`, `CancelAgentRequests` |
 | WpnPhoneExt | `DeliverPhoneLegacyTileNotification` |
 | InvalidLicenseUX | `LicenseInvalidDialog` |

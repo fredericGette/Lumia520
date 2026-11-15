@@ -18,7 +18,7 @@ Location on the phone: `C:\Windows\System32\ShellChrome.dll` ? (the analysed fil
 | ntdll.dll | WNF (`RtlSubscribeWnfStateChangeNotification`, `RtlUnsubscribeWnfStateChangeNotification`, `RtlUnsubscribeWnfNotificationWaitForCompletion`, `RtlQueryWnfStateData`, `NtQueryWnfStateData`, `RtlPublishWnfStateData`), ALPC (`ZwAlpcConnectPort`, `ZwAlpcSendWaitReceivePort`, …), `WinSqm*`, `RtlNtStatusToDosError` |
 | UIXn.dll, [UIXMobile.dll](./uixmobile.md) | `UIXGetServices`; themes (`ThemeSetThemeOverride`, `ThemeSetHighContrastOverride`, `ThemeGetSystemScreenSize`, …), `GetResolutionWidth/Height` |
 | CoreMessaging.dll, CoreUIComponents.dll | `CoreUICreate`, `CoreUIClientCreate`, `CoreUIFactoryCreate`, `MsgStringCreateShared`, `MsgRelease` |
-| EMCLIENT.dll, EMSVCS.dll | `ExecutionModel::ApplicationUri`, `Rm*` resource manager, `CreateExecutionManager`, `CreateBackgroundWorkerManager` |
+| EMCLIENT.dll, [EMSVCS.dll](./emsvcs.md) | `ExecutionModel::ApplicationUri`, `Rm*` resource manager, `CreateExecutionManager`, `CreateBackgroundWorkerManager` |
 | NotificationQueueManager.dll | `NQM_Create`, `NQM_SendTileNotificationRequest`, `NQM_RemoveTile`, … |
 | LASS_PROXY.dll | `LASSGetLockSettings`, `LASSProcessUserAuthentication`, `LASSProcessChangeCredential`, … (PIN / password of the lock screen) |
 | policymanager.dll | `PolicyManager_GetDeviceLockPolicy_*`, `PolicyManager_GetExperiencePolicy_AllowScreenCapture`, `…_AllowCopyPaste` |

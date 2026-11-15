@@ -68,3 +68,8 @@
 [Ncsd.dll](./ncsd.md)  
 [ScreenRecorderImpl.dll](./screenrecorderimpl.md)  
 [npetsec.dll](./npetsec.md)  
+[EMSVCS.dll](./emsvcs.md)  
+[UIXRender.dll](./uixrender.md)  
+[VideoSink.dll](./videosink.md)  
+[VideoSink_RT.dll](./videosink_rt.md)  
+[VideoSinkOTA.dll](./videosinkota.md)  

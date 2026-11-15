@@ -12,7 +12,7 @@ Device name : `\Device\Video<n>` (`FILE_DEVICE_VIDEO`, kernel-only SDDL, class G
 Symbolic link : `\DosDevices\DISPLAY<n+1>`  
 
 > [!NOTE]
-> Every device object of dxgkrnl is kernel-only. User mode never opens them: it goes through the `D3DKMT*` system calls (win32k → dxgkrnl), and the miniport only through the `DXGKRNL_INTERFACE` callbacks.
+> Every device object of dxgkrnl is kernel-only. User mode never opens them: it goes through the `D3DKMT*` system calls ([win32k.sys](./win32k.md) → dxgkrnl), and the miniport only through the `DXGKRNL_INTERFACE` callbacks.
 
 Registries of the driver:  
 `HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\services\DXGKrnl`  
@@ -90,7 +90,7 @@ It communicates with the following devices:
 | `\Device\PhysicalMemory` | ntoskrnl | `DpMapMemory` (`DxgkCbMapMemory`): user-mode mappings of physical memory use `ZwOpenSection` + `ZwMapViewOfSection`; kernel mappings use `MmMapIoSpace` |
 | UMDF Miracast device, interface `GUID_DEVINTERFACE_UMDF_MIRACAST_DIVICE_ARRIVAL` `{A6CB8452-09C2-46CB-A752-415392B3213B}` | ? | [IOCTL 0x230800…0x23080C](#ioctl-0x230800-0x230804-0x230808-0x23080c--miracast-user-mode-requests). Only with `PlatformSupportMiracast` ? |
 | `\Callback\PowerState` | ntoskrnl | `ExCreateCallback` + `ExRegisterCallback` (`DpiAcpiRegisterAcpiCallbacks`) |
-| win32k ? / [cdd.dll](../libraries/cdd.md#dxgkrnl-cdd-interface) (0x23E05B) | ? | [internal IOCTLs 0x23E057, 0x23E05B, 0x23E05F, 0x23E067](#internal-ioctl-0x22c00b-0x23003f-0x230043-0x230047-0x232063-0x23e057-0x23e05b-0x23e05f-0x23e067--devicedxgkrnl), [GDO IOCTLs](#internal-ioctls-of-devicevideon) |
+| win32k (0x23E057, 0x23E067, GDO IOCTLs, OPM IOCTLs of the monitor PDO) / [cdd.dll](../libraries/cdd.md#dxgkrnl-cdd-interface) (0x23E05B) | [win32k.sys](./win32k.md#internal-ioctl-0x23e057-0x23e067--devicedxgkrnl) | [internal IOCTLs 0x23E057, 0x23E05B, 0x23E05F, 0x23E067](#internal-ioctl-0x22c00b-0x23003f-0x230043-0x230047-0x232063-0x23e057-0x23e05b-0x23e05f-0x23e067--devicedxgkrnl), [GDO IOCTLs](#internal-ioctls-of-devicevideon) |
 
 ### Device objects
 
@@ -166,10 +166,10 @@ All are `METHOD_NEITHER`: the buffer is `Irp->UserBuffer` (same buffer for input
 | 0x230043 | 0x23 / 0x10 / ANY | KMDOD initialize | — | ≥ 4 | Writes the address of `DpiKmdDodInitialize` (0x28DDC), for display-only drivers |
 | 0x230047 | 0x23 / 0x11 / ANY | IOCTL_VIDEO_DDI_FUNC_REGISTER (Win8) | — | ≥ 4 | Writes the address of `DpiInitializeWin8` (0x1B074 → `DpiInitializeInternal(…, 1)`) |
 | 0x232063 | 0x23 / 0x818 / ANY | Report software device | — | ≥ 4 | Writes the address of `DpiReportSoftwareDevice` (0xAAE70) |
-| 0x23E057 | 0x23 / 0x815 / READ_AND_WRITE | Win32k interface | ≥ 624 | ≥ 624 | `DxgkWin32kQueryInterface` fills `DXGKWIN32K_INTERFACE` |
+| 0x23E057 | 0x23 / 0x815 / READ_AND_WRITE | Win32k interface | ≥ 624 | ≥ 624 | `DxgkWin32kQueryInterface` fills `DXGKWIN32K_INTERFACE`; sent by [win32k.sys](./win32k.md#internal-ioctl-0x23e057-0x23e067--devicedxgkrnl) (size 624 / version 1 in the first dword) |
 | 0x23E05B | 0x23 / 0x816 / READ_AND_WRITE | CDD interface | ≥ 204 | ≥ 204 | `DxgkCddQueryInterface` (0x80530): checks size 0xCC / version 3 / adapter (+0x04), fills the 48 function pointers +0x0C…+0xC8 ([table](../libraries/cdd.md#dxgkrnl-cdd-interface)); sent by [cdd.dll](../libraries/cdd.md#dxgkrnl-cdd-interface) |
 | 0x23E05F | 0x23 / 0x817 / READ_AND_WRITE | Capture interface | ≥ 24 | ≥ 24 | `DxgkCaptureQueryInterface` |
-| 0x23E067 | 0x23 / 0x819 / READ_AND_WRITE | Win32k capabilities | ≥ 4 | — | Bit 0 of the input dword → `g_Win32kSupportsPathIndependentRotation` |
+| 0x23E067 | 0x23 / 0x819 / READ_AND_WRITE | Win32k capabilities | ≥ 4 | — | Bit 0 of the input dword → `g_Win32kSupportsPathIndependentRotation`; sent by [win32k.sys](./win32k.md#internal-ioctl-0x23e057-0x23e067--devicedxgkrnl) with the value 1 |
 
 Errors: `0xC0000023` STATUS_BUFFER_TOO_SMALL (output < 4 or no buffer), `0xC0000206` STATUS_INVALID_BUFFER_SIZE (interface IOCTLs), `0xC0000010` STATUS_INVALID_DEVICE_REQUEST (unknown code). `Irp->IoStatus.Information` = 4 for the function-pointer IOCTLs.  
 [qcdxkm8930.sys](./qcdxkm8930.md#internal-ioctl-0x230047--ioctl_video_ddi_func_register) sends 0x230047 and calls the returned function with its `DRIVER_INITIALIZATION_DATA` (`DxgkInitialize`).
@@ -178,21 +178,21 @@ Errors: `0xC0000023` STATUS_BUFFER_TOO_SMALL (output < 4 or no buffer), `0xC0000
 
 ### Internal IOCTLs of `\Device\Video<n>`
 
-These IOCTLs are processed by Dxgkrnl.sys (`DpiGdoDispatchInternalIoctl` 0x75140), all Device 0x23, FILE_ANY_ACCESS, METHOD_NEITHER. They are the WDDM versions of the legacy video port IOCTLs (function `0x800 + n`), sent by win32k ?
+These IOCTLs are processed by Dxgkrnl.sys (`DpiGdoDispatchInternalIoctl` 0x75140), all Device 0x23, FILE_ANY_ACCESS, METHOD_NEITHER. They are the WDDM versions of the legacy video port IOCTLs (function `0x800 + n`), sent by [win32k.sys](./win32k.md#internal-ioctls-sent-to-devicevideon)
 
 | IOCTL | Function | Name | Buffer | Comment |
 |-------|----------|------|--------|---------|
 | 0x23200F | 0x803 | IOCTL_VIDEO_SET_OUTPUT_DEVICE_POWER_STATE | Type3Input: ULONG `VIDEO_POWER_STATE` | For a state > 1 calls `MonitorEnableDisableMonitor` first. For each monitor child: sends [internal IOCTL 0x23242F](#internal-ioctl-0x23242f--set-monitor-power-state) (4 bytes = state) to the top of the child's stack (`IoGetAttachedDeviceReference`); if that fails, sets the PDO power directly (`DpiPdoSetDevicePower`). Then waits for the power IRPs (10 tries, 1 s × number of children). For state 1 (on) calls `MonitorEnableDisableMonitor` at the end |
 | 0x232013 | 0x804 | IOCTL_VIDEO_GET_OUTPUT_DEVICE_POWER_STATE | — | Returns STATUS_SUCCESS, does nothing |
 | 0x23201B | 0x806 | IOCTL_VIDEO_ENUM_MONITOR_PDO | UserBuffer: pointer | Allocates (tag `'Dxgk'`) an array of 12-byte entries terminated by a zero entry and returns its address: `00-03` flags (`0x20000000` \| 1 if the path is in the client VidPn), `04-07` monitor PDO, `08` 1 = internal output |
-| 0x23201F | 0x807 | IOCTL_VIDEO_INIT_WIN32K_CALLBACKS | Type3Input: `VIDEO_WIN32K_CALLBACKS` (20 bytes) | Stores the callback (`+00`), returns `+08` bACPI, `+0C` physical device object, `+10` dual-view flags (`0x20000000` added for the primary view) |
+| 0x23201F | 0x807 | IOCTL_VIDEO_INIT_WIN32K_CALLBACKS | Type3Input: `VIDEO_WIN32K_CALLBACKS` (20 bytes) | Stores the structure (`+00` PhysDisp = win32k `GRAPHICS_DEVICE`, `+04` callout = win32k `VideoPortCallout`), returns `+08` bACPI, `+0C` physical device object, `+10` dual-view flags (`0x20000000` added for the primary view) |
 | 0x23202B | 0x80A | IOCTL_VIDEO_USE_DEVICE_IN_SESSION | Type3Input ≥ 8: `bEnable`, `bSuccess` | Binds the GDO to the caller's session id (enable) or releases it (disable); `bSuccess` = 0 if another session owns it |
 | 0x232033 | 0x80C | ? | UserBuffer ≥ 20 | `00-03` device object of the adapter ?, `04-07` VidPn source id, `08-0B` `DXGADAPTER` pointer, `0C-13` adapter LUID ? |
 | 0x232037 | 0x80D | ? | — | Returns STATUS_SUCCESS |
 | 0x232043 | 0x810 | Get VSync ? | UserBuffer ≥ 8 | `00-03` current integer refresh rate of the source (`DmmGetCurrentIntegerVSyncFromClientVidPnSource`), `04` 1 if ? = 1 |
 
 Other codes: STATUS_NOT_SUPPORTED (0xC00000BB).  
-IOCTLs (`IRP_MJ_DEVICE_CONTROL`, `DpiGdoDispatchIoctl`): `0x230020` IOCTL_VIDEO_HANDLE_VIDEOPARAMETERS (`DpiGdoHandleVideoParameters`, TV-out `VIDEOPARAMETERS`) and `0x23048C` IOCTL_VIDEO_SWITCH_DUALVIEW (function 0x123, METHOD_BUFFERED, 1-byte input: view enabled → `DmmSetViewState`, then child relations are invalidated). Anything else: STATUS_NOT_SUPPORTED.
+IOCTLs (`IRP_MJ_DEVICE_CONTROL`, `DpiGdoDispatchIoctl`): `0x230020` IOCTL_VIDEO_HANDLE_VIDEOPARAMETERS (`DpiGdoHandleVideoParameters`, TV-out `VIDEOPARAMETERS`) and `0x23048C` IOCTL_VIDEO_SWITCH_DUALVIEW (function 0x123, METHOD_BUFFERED, 1-byte input: view enabled → `DmmSetViewState`, then child relations are invalidated), both sent by [win32k.sys](./win32k.md#internal-ioctls-sent-to-devicevideon). Anything else: STATUS_NOT_SUPPORTED.
 
 ---
 
@@ -234,7 +234,7 @@ These IOCTLs are processed by Dxgkrnl.sys (`DpiPdoDispatchInternalIoctl` 0x75414
 | 0x23242F | 0x90B | [Set monitor power state](#internal-ioctl-0x23242f--set-monitor-power-state) | ≥ 4 | 0 | `DpiPdoSetDevicePower` |
 | 0x232443 | 0x910 | I²C transmit to display | ≥ 12 | 0 | Miniport `DxgkDdiI2CTransmitDataToDisplay` (adapter `+0x39C`) |
 | 0x232447 | 0x911 | I²C receive from display | ≥ 8 | 1-64 | Miniport `DxgkDdiI2CReceiveDataFromDisplay` (adapter `+0x3A0`) |
-| 0x232483 … 0x2324A3 | 0x920 … 0x928 | OPM (9 codes) | | | `DpiPdoHandleOpmIoctls` (0xD3420) → miniport `DxgkDdiOPM*` |
+| 0x232483 … 0x2324A3 | 0x920 … 0x928 | OPM (9 codes) | | | `DpiPdoHandleOpmIoctls` (0xD3420) → miniport `DxgkDdiOPM*`; sent by [win32k.sys](./win32k.md#internal-ioctl-0x232483--0x2324a3--opm) |
 
 Other codes go to `MonitorHandleInternalIOCtrl` → `DXGMONITOR::_DispatchInternalIOCtrl`, which returns STATUS_NOT_SUPPORTED for unknown codes (the [monitor.sys](./monitor.md) private IOCTLs such as `0x232433` never reach the PDO with a meaning).
 

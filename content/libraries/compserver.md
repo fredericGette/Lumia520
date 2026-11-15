@@ -2,7 +2,7 @@
 
 The compositor server of Windows Phone 8.1: it runs in the shell process, combines the frames that the applications present into the image sent to the display, and handles screenshots, screen recording and the external display (Miracast / USB projection).  
 `CompServer.dll` is a C++ DLL (628 functions, all named from the PDB `compserver.pdb`) with a single export, `InitializeCompositor`, called by [MobileUI.exe](../applications/mobileui.md#startup) at startup. The work is done by a `Compositor` singleton that plugs into the UIX render engine ("Splash", `UIXRender.dll`): `UIXRender!SpSetCompositorMode` gives the engine the compositor callbacks, and the engine then hands it its Direct3D 11 device and calls it for every frame ([Compositor](#compositor)). The compositor is the server side of [CompClient.dll](./compclient.md): an ALPC port `CompositorAlpcPort` in the `MobileUI` named object directory ([ALPC server](#alpc-server)), and for each window a shared "client map" section with two events, through which the client presents its buffers without any message ([Clients](#clients-and-presents)). The frame is drawn with Direct3D 11 (own precompiled shaders) and given to the display through the phone DXGI swap chain, with hardware overlay planes when the scaler can do it. The external display is driven by a topology manager (`SetDisplayConfig`, `VidStream.dll` for USB), and screen recording by `ScreenRecorderImpl.dll`.  
-Related binaries not analysed: `UIXRender.dll`, `CoreMessaging.dll` (window validator), `policymanager.dll`. [ScreenRecorderImpl.dll](./screenrecorderimpl.md) is the screen recorder. [MinUser.dll](./minuser.md) is the window manager it registers the process with. [DWMMOBILE.DLL](./dwmmobile.md) (`InitializeMinDWM`, foreground window) shows the redirected windows. [DWMCORE.DLL](./dwmcore.md) gives it the input hit test. [VidStream.dll](./vidstream.md) sends the USB mirroring frames.
+Related binaries not analysed: `CoreMessaging.dll` (window validator), `policymanager.dll`. [UIXRender.dll](./uixrender.md#compositor-mode) is the render engine it plugs into. [ScreenRecorderImpl.dll](./screenrecorderimpl.md) is the screen recorder. [MinUser.dll](./minuser.md) is the window manager it registers the process with. [DWMMOBILE.DLL](./dwmmobile.md) (`InitializeMinDWM`, foreground window) shows the redirected windows. [DWMCORE.DLL](./dwmcore.md) gives it the input hit test. [VidStream.dll](./vidstream.md) sends the USB mirroring frames.
 
 Location on the phone: `C:\Windows\System32\CompServer.dll` ? (extracted with `CompClient.dll`, `DWMCORE.DLL`, `DWMAPI.DLL` and [DCOMP.DLL](./dcomp.md)).  
 
@@ -10,7 +10,7 @@ Location on the phone: `C:\Windows\System32\CompServer.dll` ? (extracted with `C
 
 | DLL | Functions |
 |-----|-----------|
-| UIXRender.dll | `SpSetCompositorMode`, `SpRegisterWaitHandler`, `SpUnregisterWaitHandler` |
+| [UIXRender.dll](./uixrender.md) | `SpSetCompositorMode`, `SpRegisterWaitHandler`, `SpUnregisterWaitHandler` |
 | [DWMMOBILE.DLL](./dwmmobile.md) | `InitializeMinDWM`, `IsHwndForeground`, `SetForegroundHwnd` |
 | [DWMCORE.DLL](./dwmcore.md) | `WpInputHitTestRequest` |
 | CoreMessaging.dll | `CoreUICreateWindowValidator` |
