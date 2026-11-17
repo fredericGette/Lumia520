@@ -155,7 +155,7 @@ Only a `BatteryInformation` failure fails the request; the other levels are opti
 
 ### IOCTL 0x294040 — IOCTL_BATTERY_QUERY_TAG
 
-This IOCTL is processed by Battc.sys (through `BatteryClassIoctl`). Also sent by [BatteryLogger.exe](../applications/batterylogger.md#ioctls-sent)
+This IOCTL is processed by Battc.sys (through `BatteryClassIoctl`). Also sent by [BatteryLogger.exe](../applications/batterylogger.md#ioctls-sent) and [cad.sys](./cad.md#ioctl-0x294040--ioctl_battery_query_tag)
 
 | Property | Value |
 |----------|-------|
@@ -184,7 +184,7 @@ Queued, `STATUS_PENDING`. Completed by `BattCCheckTagQueue` with the tag as soon
 
 ### IOCTL 0x294044 — IOCTL_BATTERY_QUERY_INFORMATION
 
-This IOCTL is processed by Battc.sys
+This IOCTL is processed by Battc.sys. Also sent by [cad.sys](./cad.md#ioctl-0x294044--ioctl_battery_query_information)
 
 | Property | Value |
 |----------|-------|
@@ -212,7 +212,7 @@ Executed by the worker: `QueryInformation(Context, Tag, Level, AtRate, OutputBuf
 
 ### IOCTL 0x298048 — IOCTL_BATTERY_SET_INFORMATION
 
-This IOCTL is processed by Battc.sys
+This IOCTL is processed by Battc.sys. Also sent by [cad.sys](./cad.md#ioctl-0x298048--ioctl_battery_set_information) (`BatteryChargingSource`, `BatteryChargerId`)
 
 | Property | Value |
 |----------|-------|
@@ -238,7 +238,7 @@ Executed by the worker: `SetInformation(Context, Tag, Level, &Input[8])`. No `Se
 
 ### IOCTL 0x29404C — IOCTL_BATTERY_QUERY_STATUS
 
-This IOCTL is processed by Battc.sys. Also sent by [BatteryLogger.exe](../applications/batterylogger.md#ioctls-sent)
+This IOCTL is processed by Battc.sys. Also sent by [BatteryLogger.exe](../applications/batterylogger.md#ioctls-sent) and [cad.sys](./cad.md#ioctl-0x29404c--ioctl_battery_query_status)
 
 | Property | Value |
 |----------|-------|

@@ -2,7 +2,7 @@
 
 USB function class extension (`UsbFnClx`, Microsoft, WP8.1).  
 It is a KMDF class library (`WdfRegisterClassLibrary`, control device `\Device\UsbFn`) loaded in the stack of the USB function controller `ACPI\QCOM01C0\1` (`\_SB.UFN1`). The controller driver [usbfnchipidea.sys](./usbfnchipidea.md) binds to it with `WdfVersionBindClass` and gets its [6 exported functions](#exported-functions). UsbFnClx is the hardware-independent part of the USB device stack: it reads the USB configuration from the registry (`HKLM\SYSTEM\CurrentControlSet\Control\USBFN`), builds the device/configuration/string/MS OS descriptors, answers the standard requests on EP0, owns the USB device state machine, enumerates one child PDO `USBFN\<interface>` per interface of the active configuration (function drivers [genericusbfnclass.sys](./genericusbfnclass.md), [ufnserialclass.sys](./ufnserialclass.md), [ufnvidstream.sys](./ufnvidstream.md), …), dispatches bus events to them, and forwards their transfers to the endpoint queues of the controller driver.  
-It also tells the charging arbitration driver how much current can be drawn ([IOCTL 0x29C4C0](#ioctl-0x29c4c0--charging-notification)), drives the low-power filter [qcusbfnfilter8930.sys](./qcusbfnfilter8930.md) and sets the P-state of the controller through the PEP.  
+It also tells the charging arbitration driver [cad.sys](./cad.md) how much current can be drawn ([IOCTL 0x29C4C0](#ioctl-0x29c4c0--charging-notification)), drives the low-power filter [qcusbfnfilter8930.sys](./qcusbfnfilter8930.md) and sets the P-state of the controller through the PEP.  
 PDB: `usbfnclx.pdb`. Pool tags `Uclx`, `UBus`. Full symbols (function names below are those of the binary).
 
 Device name : `\Device\UsbFn` (control device of the class library, SDDL `D:P`, kernel only)  
@@ -54,7 +54,7 @@ It communicates with the following devices:
 |--------|--------|---------|
 | Controller driver (same FDO, function table given at registration) | [usbfnchipidea.sys](./usbfnchipidea.md) | [Client callbacks](#client-callbacks); transfers are forwarded (`WdfRequestForwardToIoQueue`) to its endpoint queues |
 | Lower device of the controller stack (`WdfDeviceGetIoTarget`) | [qcusbfnfilter8930.sys](./qcusbfnfilter8930.md) | [internal IOCTL 0x2AC03A](#internal-ioctl-0x2ac03a--ioctl_internal_usbfn_set_power_filter_state), [internal IOCTL 0x2AC03E](#internal-ioctl-0x2ac03e--exit-low-power-mode) |
-| Interface `{ec0a1cc9-4294-43fb-bf37-b850ce95f337}` (`GUID_DEVINTERFACE_CHARGING_ARBITRATION`, `IoRegisterPlugPlayNotification`) | ? (charging arbitration driver) | [IOCTL 0x29C4C0](#ioctl-0x29c4c0--charging-notification) |
+| Interface `{ec0a1cc9-4294-43fb-bf37-b850ce95f337}` (`GUID_DEVINTERFACE_CHARGING_ARBITRATION`, `IoRegisterPlugPlayNotification`) | [cad.sys](./cad.md) | [IOCTL 0x29C4C0](#ioctl-0x29c4c0--charging-notification) |
 | Power framework (`PoFxPowerControl`) | [qcpep8930.sys](./qcpep8930.md) | `{3404daac-8e2c-41e4-8458-3158e5ad442b}` set P-state, see [Power management](#power-management) |
 | Interface `{a437e7be-7175-4d69-9d30-f82efd144b5a}` (`GUID_DEVINTERFACE_USBFNTEST_POWER_TEST`) | test driver ? | Query interface `{688e49d4-1563-446b-838b-11287a4d0445}` (`GUID_USBFN_INTERFACE_POWER_TEST`, 20 bytes) |
 
@@ -224,7 +224,8 @@ This internal IOCTL is sent by Usbfnclx.sys to the lower device of the controlle
 
 ### IOCTL 0x29C4C0 — Charging notification
 
-This IOCTL is sent by Usbfnclx.sys (`NotifyCad`) to the device that registered `GUID_DEVINTERFACE_CHARGING_ARBITRATION` (target opened on interface arrival). Asynchronous, no output.
+This IOCTL is sent by Usbfnclx.sys (`NotifyCad`) to the device that registered `GUID_DEVINTERFACE_CHARGING_ARBITRATION` (target opened on interface arrival), i.e. [cad.sys](./cad.md#internal-ioctl-0x29c4c0--charging-source-notification). Asynchronous, no output.  
+cad.sys only handles this code in its `EvtIoInternalDeviceControl` (as a normal IOCTL it returns `STATUS_NOT_SUPPORTED`), so it is an internal IOCTL.
 
 | Property | Value |
 |----------|-------|
@@ -240,10 +241,10 @@ This IOCTL is sent by Usbfnclx.sys (`NotifyCad`) to the device that registered `
 Inputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-03 | 02 00 00 00 | Version / type ? |
+| 00-03 | 02 00 00 00 | Charging source type: 2 USB (3 = wireless in cad.sys) |
 | 04-07 | e.g. DC 05 00 00 | Current in mA (0, or ≥ 500) |
 | 08 | 00/01 | 1 = USB connected |
-| 0C-0F | e.g. 02 00 00 00 | Port type |
+| 0C-0F | e.g. 02 00 00 00 | Port type (kept by cad.sys, not forwarded to the battery) |
 
 ---
 

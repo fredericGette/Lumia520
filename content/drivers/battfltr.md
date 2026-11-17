@@ -41,6 +41,7 @@ It communicates with the following devices:
 | Device | Driver | Comment |
 |--------|--------|---------|
 | Battery device (lower device, `WdfDeviceGetIoTarget`) | [nokiaenergydriver.sys](./nokiaenergydriver.md) + [battc.sys](./battc.md) | Class upper filter: all battery requests are forwarded to it |
+| — | [cad.sys](./cad.md#battery-devices) | Opens every battery device by symbolic link, so its `IOCTL_BATTERY_*` requests (`QUERY_TAG`, `QUERY_INFORMATION`, `QUERY_STATUS`, `SET_INFORMATION`, `CHARGING_SOURCE_CHANGE` 0x294050) go through this filter first |
 | Root PDO of `Root\Battfltr\0000` (lower device) | PnP manager | Second instance of the filter, no battery traffic |
 | `\??\C:\Dpp\Microsoft\BatteryFixedPercent.txt` | file system | Existence test only (see below) |
 
@@ -103,7 +104,7 @@ Inputbuffer (same layout as `BATTERY_STATUS`):
 | 04-07 | | Capacity returned by `IOCTL_BATTERY_QUERY_STATUS` (same unit as FullChargedCapacity, mWh, **not** a percentage) |
 | 08-0F | | Ignored (Voltage, Rate) |
 
-Stores the values in the context (+10, +0C) and sets the override flag (+14). It's completed at once with `STATUS_SUCCESS` and 0 bytes. There's no way to clear the override except restarting the device. Input < 16 bytes → the `STATUS_BUFFER_TOO_SMALL` from `WdfRequestRetrieveInputBuffer`.  
+Stores the values in the context (+10, +0C) and sets the override flag (+14). It's completed at once with `STATUS_SUCCESS` and 0 bytes. There's no way to clear the override except restarting the device. [cad.sys](./cad.md#ioctl-0x29c480--block-charging) uses the same code on its own interface (block charging); it never sends it to a battery. Input < 16 bytes → the `STATUS_BUFFER_TOO_SMALL` from `WdfRequestRetrieveInputBuffer`.  
 The status waits queued by battc aren't completed when this IOCTL is received: the new values appear at the next `QUERY_STATUS` answer.
 
 ---

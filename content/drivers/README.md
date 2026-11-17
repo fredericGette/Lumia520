@@ -115,3 +115,5 @@
 [usbfnchipidea.sys](./usbfnchipidea.md)  
 [usbfnclx.sys](./usbfnclx.md)  
 [win32k.sys](./win32k.md)  
+[cad.sys](./cad.md)  
+[cellmux.sys](./cellmux.md)  
