@@ -226,7 +226,7 @@ Read with `NtOpenKey(KEY_READ)` / `NtQueryValueKey` (`GetRegistryKeyValue`, 0x10
 
 | Key | Value | Use |
 |-----|-------|-----|
-| `HKLM\Software\Microsoft\Windows\Tablet PC` | `IsTabletPC` (DWORD) | `SM_TABLETPC` (86): TRUE if `value & 0xD` and `value & 0x80`; `SM_DIGITIZER` (94): `value & 0xCF`; `SM_MAXIMUMTOUCHES` (95): bits 8…23 |
+| `HKLM\Software\Microsoft\Windows\Tablet PC` | `IsTabletPC` (DWORD) | `SM_TABLETPC` (86): TRUE if `value & 0xD` and `value & 0x80`; `SM_DIGITIZER` (94): `value & 0xCF`; `SM_MAXIMUMTOUCHES` (95): bits 8…23. Written by [tchhid.sys](../drivers/tchhid.md) (Contact Count Maximum `<< 8`) |
 | `HKLM\Software\Microsoft\Windows\CurrentVersion\Media Center` | `Ident` (string, `_wtoi`) | `SM_MEDIACENTER` (87): TRUE if ≥ 5 |
 
 ### ETW

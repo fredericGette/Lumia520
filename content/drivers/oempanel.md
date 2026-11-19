@@ -2,7 +2,7 @@
 
 Nokia Panel Driver (service `NOKIA_PANEL`, ACPI device `ACPI\NOKIA_PANEL\0` = `\_SB.DISP` (`_CID` `ACPINOKIA_PANEL`, `_DEP` on `\_SB.PEP0`, `\_SB.PRXY`, `\_SB.HWN0`, `\_SB.PMIC`, `\_SB.GPU0`), KMDF, build `E:\build_e\subtask\BE09332C_98\output\display\fre\oempanel.pdb`, "Jan 28 2015").  
 It is the display "brain" of the Nokia phones: it knows the panel models, builds the MIPI DCS command sequences (power on/off, brightness, CABC, gamma/colour) that the Qualcomm display driver [qcdxkm8930.sys](./qcdxkm8930.md) sends to the panel, and it computes the backlight level from the ambient light sensor (auto-brightness, Lux→Nit tables), the user settings and the battery/power-save state.  
-It also drives a few GPIOs (through the resource hub), the capacitive key LEDs (through `hwnled`) and, on some panels only, the PMIC WLED backlight block of [qcpmic8930.sys](./qcpmic8930.md). The colour calibration is read from `C:\Windows\System32\DRIVERS\ColorData.bin`.  
+It also drives a few GPIOs (through the resource hub), the capacitive key LEDs (through [hwnled.sys](./hwnled.md)) and, on some panels only, the PMIC WLED backlight block of [qcpmic8930.sys](./qcpmic8930.md). The colour calibration is read from `C:\Windows\System32\DRIVERS\ColorData.bin`.  
 Most of the work is done by a dedicated system thread: IOCTLs, timers, registry notifications and power events are posted to it as internal "messages" (`process_ioctl` → `PanelWorkerThread` 0x417434 → `process_type` 0x416C14) and the caller waits for the result.
 
 There's no named `\Device\` object and no symbolic link: the device is opened through its device interface, e.g. `\\?\ACPI#NOKIA_PANEL#0#{0d4a3f63-0d08-49a1-b91c-c60576894174}` (see [Interface GUID](#interface-guid)).
@@ -28,7 +28,7 @@ Registry key `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NOKIA_PANEL\P
 | LIGHT_CAbcLevel_Vendor_0/1 | 0 | CABC level per panel vendor: bits 0–2 = level, top byte also kept (purpose unknown). `CAbcLevel_Vendor_0` is written back with 2 when it is missing |
 | LIGHT_GlassDampingCompensationFactor | 0x64 | Percent applied to the ALS reading ? |
 | LIGHT_LedBoostBrightness_1 | 0x16D | ? |
-| LIGHT_LedGroup0_Pct … LIGHT_LedGroup3_Pct | 0 | Intensity of the 4 key-LED groups. All 0 on a Lumia 520 (no lit keys), so nothing is sent to `hwnled` |
+| LIGHT_LedGroup0_Pct … LIGHT_LedGroup3_Pct | 0 | Intensity of the 4 key-LED groups. All 0 on a Lumia 520 (no lit keys), so nothing is sent to [hwnled.sys](./hwnled.md) |
 | LIGHT_LedBackButton, LIGHT_LedWinButton, LIGHT_LedSearchButton | 0xF | Key → LED group mapping ? |
 | LIGHT_AssertiveDisplayEnabled | (absent) | Assertive Display on/off. When 0 (or when `AD_RegsInUse` is 0) the `AD_*` values are not read. Forced off when `ManufacturingOS\ManufacturingMode` can be read |
 | AD_RegsInUse, AD_MaxIterations, AD_TFilterControl, AD_StrengthLimit, AD_CalibrationA…D | e.g. 0, 0x40, 5, 0x80, 0x12, 0x5F, 0, 0 | Assertive Display parameters, each kept as one byte |
@@ -59,7 +59,7 @@ It communicates with the following devices:
 |--------|--------|---------|
 | — | [qcdxkm8930.sys](./qcdxkm8930.md) | Display miniport. Registers itself with [IOCTL 0x83214000](#ioctl-0x83214000--display-driver-registration) (sent as `0x4000`) and exchanges function-pointer tables: oempanel sends its DCS command sequences through them (`call_qcdxkm8930` 0x405FAC) |
 | Interface `{5B9DF049-70D3-4698-8E48-85B26C1AA59F}` | [qcpmic8930.sys](./qcpmic8930.md) | PMIC. `IOCTL_PM_WLED_CONFIG`, `IOCTL_PM_WLED_ENABLE`, `IOCTL_PM_WLED_CONFIG_ADDITIONAL_PARAM` (see below). Opened on interface arrival (`plugPlayCallbackDeviceInterfaceChange_qcpmic8930` 0x417828) |
-| Interface `{6B2A25E2-AAF5-482C-99A5-6205CDCC176A}` (`ACPI\QCOM0D50\0`) | hwnled | Hardware-notification LED driver, used for the key LEDs (IOCTL 0x228000). ACPI node `\_SB.HWN0`: its method `HWNL` returns `Package (10) { 0, 3, 0x0F, 0x14, 0, 3, 1, 4, 2, 5 }` (LED configuration, meaning ?) |
+| Interface `{6B2A25E2-AAF5-482C-99A5-6205CDCC176A}` (`ACPI\QCOM0D50\0`) | [hwnled.sys](./hwnled.md) | Hardware-notification LED driver, used for the key LEDs (IOCTL 0x228000). ACPI node `\_SB.HWN0`: its method `HWNL` returns `Package (10) { 0, 3, 0x0F, 0x14, 0, 3, 1, 4, 2, 5 }` (PMIC index, number of LEDs, 2 LUT parameters, then the RGB LED and LPG channels of each LED: see [hwnled.sys](./hwnled.md#initialization)) |
 | `\Device\RESOURCE_HUB\<connection id>` | GPIO controller | Two GPIO lines from the ACPI resources (IOCTL 0x480004 `IOCTL_GPIO_WRITE_PINS`) |
 | Interface `{30EBFBF8-DF5F-4D4D-9FC5-A26C7FD1DF4A}` | [msgpiowinphone.sys](./msgpiowinphone.md) | "GPIO Buttons" raw PDO ("TEST_PROXY"). Opened with `ZwOpenFile`; 2-byte button events are written to it with `ZwWriteFile` (see [Test proxy](#test-proxy)) |
 | `\BaseNamedObjects\AlsListenerOnOffEvent` | — | Notification event set when the ALS listening starts/stops (`IoCreateNotificationEvent`) |
@@ -98,7 +98,7 @@ GPIO connections of `\_SB.DISP` on the Lumia 520 (`_CRS` from the DSDT, all on t
 
 Worker message 0x21 (`process_type` → `_sub_402A2C` 0x402A2C) applies a pending light level. The level slots are 200 bytes apart from `ctx+0x1178` (pending flag `+0x1178`, level `+0x1194`):
 * slot 0: the level is posted as message `0x80000017` (display backlight ?);
-* the other slots: key lights ? The level is forced to 0 when `ctx+0x13AB` is clear, or `ctx+0x12F0` bit 0 is set, or one of `ctx+0x12E9`, `+0x13FE`, `+0x13F4` is 0. Then `call_KeWaitForSingleObject` (0x402DB8, misleading IDA name) applies it: under a mutex (`.data:0x4212A0`) it updates up to 4 LED levels (`ctx+0x13EC`, words) and queues a work item.
+* the other slots: key lights ? The level is forced to 0 when `ctx+0x13AB` is clear, or `ctx+0x12F0` bit 0 is set, or one of `ctx+0x12E9`, `+0x13FE`, `+0x13F4` is 0. Then `call_KeWaitForSingleObject` (0x402DB8, misleading IDA name) applies it: under a mutex (`.data:0x4212A0`), and only when the hwnled I/O target is open (`ctx+0x12A8`), it rewrites the settings of the [HWN set state buffer](#ioctl-0x228000--hwn-set-state-) (`ctx+0x129C`) for each LED group whose `LIGHT_LedGroupN_Pct` (`ctx+0x13EC`, words) is not 0: level ≠ 0 → mode 1 (on), intensity = `LIGHT_LedGroupN_Pct`, duty cycle = level; level 0 → mode 0 (off), intensity, period and duty cycle = 0. The work item (`EvtWdfWorkitem_sendHwnLedConfiguration`) is queued only when one of these fields changed. The level is also forced to 0 when `ctx+0x13FE` is 0, or when `ctx+0x12F0` bit 1 is set and `ctx+0x13FD` is 0.
 
 When `Flags` bit 0 is set and the key lights go from off to on (previous level 0, kept in `.data:0x421171`):
 1. `_sub_418700` reads `HKLM\SOFTWARE\OEM\Nokia\Touch\Improved\Enabled` and writes 0;
@@ -475,7 +475,7 @@ Sent by `WledPanelPowerOnConfig` (panels 198 and 204). 56-byte input: `10` = 7, 
 
 ### IOCTL 0x228000 — HWN set state ?
 
-This IOCTL is sent by Oempanel.sys to hwnled
+This IOCTL is sent by Oempanel.sys to [hwnled.sys](./hwnled.md#set-state) (received by its class extension [mshwnclx.sys](./mshwnclx.md), see [HWN set state](./mshwnclx.md#ioctl-0x228000--hwn-set-state))
 
 | Property | Value |
 |----------|-------|
@@ -490,7 +490,7 @@ Sent by `EvtWdfWorkitem_sendHwnLedConfiguration` (0x4088FC) to the interface `{6
 | 00-03 | 12 + 36×n | Size |
 | 04-07 | 01 00 00 00 | Version ? |
 | 08-0B | n | Number of LED groups with a non-zero percentage |
-| 0C + 36×i | | Group: `+00` LED group index (0–3), `+04` = 1 (type ?), `+08` = 100, `+10` = 100 when `ctx+0x38AC` (`HwPlatform`) = 1, other settings 0 |
+| 0C + 36×i | | Group: `+00` LED group index (0–3) = HwN Id, `+04` = 1 (type LED), `+08` intensity, `+10` duty cycle, `+20` mode. Initial values (`create_IoTarget_hwnled`): intensity 100, duty cycle 100 when `ctx+0x38AC` (`HwPlatform`) = 1, other settings 0. Before each send `call_KeWaitForSingleObject` (0x402DB8) sets mode 1, intensity = `LIGHT_LedGroupN_Pct` and duty cycle = key-light level, or mode 0 and all 0 when the level is 0 (see [Key lights and improved touch](#key-lights-and-improved-touch)) |
 
 ---
 
@@ -528,7 +528,7 @@ Thermal cooling interface exposed (`GUID_THERMAL_COOLING_INTERFACE`, `WdfDeviceA
 qcpmic8930 interface (target of the `IOCTL_PM_WLED_*` controls)  
 `{5B9DF049-70D3-4698-8E48-85B26C1AA59F}`
 
-hwnled interface  
+[hwnled.sys](./hwnled.md) interface  
 `{6B2A25E2-AAF5-482C-99A5-6205CDCC176A}`
 
 "TEST_PROXY" interface ("GPIO Buttons" raw PDO of [msgpiowinphone.sys](./msgpiowinphone.md))  

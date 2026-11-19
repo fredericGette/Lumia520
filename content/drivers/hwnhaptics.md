@@ -1,7 +1,7 @@
 ## Hwnhaptics.sys
 
 Haptic actuator driver for an I²C haptic controller.  
-Like [hwnvibradime.sys](./hwnvibradime.md), it is a client of the Microsoft Hardware Notification class extension `HwNClx` (`hwnclx.sys`): it has no IOCTL of its own, requests come in as `HWN_HEADER` / `HWN_SETTINGS` buffers through the `ClientSetState` / `ClientGetState` callbacks. It registers the same device interface as hwnvibradime, so an application such as [ShellChrome.dll](../libraries/shellchrome.md#haptic-feedback) doesn't need to know which of the two is present.  
+Like [hwnvibradime.sys](./hwnvibradime.md), it is a client of the Microsoft Hardware Notification class extension `HwNClx` ([mshwnclx.sys](./mshwnclx.md)): it has no IOCTL of its own, requests come in as `HWN_HEADER` / `HWN_SETTINGS` buffers through the `ClientSetState` / `ClientGetState` callbacks. It registers the same device interface as hwnvibradime, so an application such as [ShellChrome.dll](../libraries/shellchrome.md#haptic-feedback) doesn't need to know which of the two is present.  
 It powers the controller with a PMIC clock, a PMIC GPIO and 3 GPIO lines of the SoC, sends it a fixed 7-byte configuration over I²C, then switches the actuator on and off by writing one register. The intensity, the period and the duty cycle of the request are **ignored**: it is a pure on/off driver.  
 The board configuration comes from the ACPI method `HWNH` and the connection resources of the device. Up to 4 actuators are supported, one I²C connection each.  
 KMDF 1.11, PDB path `P:\hwnhaptics\rel\8.3\arm\release\hwnhaptics.pdb`. Pool tag `HNWH`.
@@ -275,7 +275,7 @@ Outputbuffer:
 
 ### Other GUID
 
-HwNClx device interface ? (passed to `HwNProcessAddDevicePostDeviceCreate`, same GUID as [hwnvibradime.sys](./hwnvibradime.md#other-guid))  
+HwNClx device interface (passed to `HwNProcessAddDevicePostDeviceCreate`, created by [mshwnclx.sys](./mshwnclx.md), same GUID as [hwnvibradime.sys](./hwnvibradime.md#other-guid))  
 `{825E8FD3-6467-4A5B-ABFB-BB010734FF4D}`
 
 qcpmic8930 interface used for the clocks  

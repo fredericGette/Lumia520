@@ -38,7 +38,7 @@ Files used other than the static imports.
 | File | How | Use |
 |------|-----|-----|
 | `\\.\Pipe\BtConnectionManager` | `CreateFileW` ([Pipe connection](#pipe-connection)) | Protocol of [BtConnectionManagerService.dll](./btconnectionmanagerservice.md#pipe-protocol) |
-| First device of the interface `GUID_BTHWP8_AUDIO_DEVICE_INTERFACE` `{5E1429D2-01B6-458D-8687-3F976014F4BB}` | `CM_Get_Device_Interface_List_ExW`, `CreateFileW` ([SCO audio](#sco-audio)) | Target of the `IOCTL_BTH_WP8_*`; the driver exposing it isn't known |
+| First device of the interface `GUID_BTHWP8_AUDIO_DEVICE_INTERFACE` `{5E1429D2-01B6-458D-8687-3F976014F4BB}` | `CM_Get_Device_Interface_List_ExW`, `CreateFileW` ([SCO audio](#sco-audio)) | Target of the `IOCTL_BTH_WP8_*`; exposed by [bthl2cap.sys](../drivers/bthl2cap.md#audio-device) |
 
 No DLL is loaded at run time, and no process or COM server is started.
 

@@ -105,7 +105,7 @@ It communicates with the following devices (found with `IoGetDeviceInterfaces` /
 | `{ABFE8B0D-5D26-4C5A-B5F2-1F33E47A4F65}` | [qcaudhwi8930.sys](./qcaudhwi8930.md) (`\_SB.AHWI`) | AFE port start / stop. Opened for each request. See [IOCTL 0x50032000 / 0x50032004](#ioctl-0x50032000--0x50032004--afe-port-start--stop) |
 | `{093C3754-B2D1-4AC7-B93E-A8FD62FDF7C3}` | [qcmbhcgpio8930.sys](./qcmbhcgpio8930.md) (`\_SB.MBGP`) | GPIO headset detection. Used when `GpioBasedHeadsetDetection` ≠ 0. `0x500A2800` |
 | `{790370AE-6E34-4800-8927-351A338FB740}` | [qcmbhc8930.sys](./qcmbhc8930.md) (`\_SB.MBHC`) | Codec (WCD93xx MBHC) headset detection. Used when `GpioBasedHeadsetDetection` = 0. `0x500A2800` |
-| `{BE446647-F655-4919-8BD0-125BA5D4CE65}` | Bluetooth HFP profile driver | `GUID_DEVINTERFACE_BLUETOOTH_HFP_SCO_HCIBYPASS`. SCO audio over HCI bypass. `IOCTL_BTHHFP_*` (`0x0022xxxx`) |
+| `{BE446647-F655-4919-8BD0-125BA5D4CE65}` | [bthl2cap.sys](./bthl2cap.md#audio-device) | `GUID_DEVINTERFACE_BLUETOOTH_HFP_SCO_HCIBYPASS`. SCO audio over HCI bypass. `IOCTL_BTHHFP_*` (`0x0022xxxx`) |
 | ACPI node of the device | acpi.sys | `IOCTL_ACPI_EVAL_METHOD` `_DEV` |
 
 ---
@@ -451,7 +451,7 @@ With the codec MBHC driver [qcmbhc8930.sys](./qcmbhc8930.md#mbhc_ioctlcommand-bu
 
 ### IOCTL 0x0022000B…0x0022002F — Bluetooth HFP
 
-These IOCTLs are sent by Qc8x60aud.sys to the Bluetooth HFP driver (interface `GUID_DEVINTERFACE_BLUETOOTH_HFP_SCO_HCIBYPASS`). The interface arrival (`sub_435B4C`) opens it (`sub_42966C`) and starts a system thread (`sub_429860`) that keeps a connection-status request pending. The names are guesses from the Microsoft `bthhfpddi.h` interface, matched by behaviour.
+These IOCTLs are sent by Qc8x60aud.sys to [bthl2cap.sys](./bthl2cap.md#ioctl-0x2200030x220033--ioctl_bthhfp_) (interface `GUID_DEVINTERFACE_BLUETOOTH_HFP_SCO_HCIBYPASS`). The interface arrival (`sub_435B4C`) opens it (`sub_42966C`) and starts a system thread (`sub_429860`) that keeps a connection-status request pending. The names are those of the debug strings of bthl2cap.sys (Microsoft `bthhfpddi.h` interface).
 
 | Property | Value |
 |----------|-------|
@@ -462,16 +462,16 @@ These IOCTLs are sent by Qc8x60aud.sys to the Bluetooth HFP driver (interface `G
 
 | Name | Device name | InputBuffer size | OutputBuffer Size |
 |------|-------------|------------------|-------------------|
-| 0x22000B IOCTL_BTHHFP_DEVICE_GET_DESCRIPTOR ? | interface `{BE446647-F655-4919-8BD0-125BA5D4CE65}` | 0 | 16 |
-| 0x22000F IOCTL_BTHHFP_DEVICE_REQUEST_CONNECT ? | interface `{BE446647-F655-4919-8BD0-125BA5D4CE65}` | 0 | 0 |
-| 0x220013 IOCTL_BTHHFP_DEVICE_REQUEST_DISCONNECT ? | interface `{BE446647-F655-4919-8BD0-125BA5D4CE65}` | 0 | 0 |
-| 0x220017 IOCTL_BTHHFP_DEVICE_GET_CONNECTION_STATUS_UPDATE ? | interface `{BE446647-F655-4919-8BD0-125BA5D4CE65}` | 4 | 4 |
-| 0x22002B IOCTL_BTHHFP_STREAM_OPEN ? | interface `{BE446647-F655-4919-8BD0-125BA5D4CE65}` | 0 | 0 |
-| 0x22002F IOCTL_BTHHFP_STREAM_CLOSE ? | interface `{BE446647-F655-4919-8BD0-125BA5D4CE65}` | 0 | 0 |
+| 0x22000B IOCTL_BTHHFP_DEVICE_GET_CONTAINERID | interface `{BE446647-F655-4919-8BD0-125BA5D4CE65}` | 0 | 16 |
+| 0x22000F IOCTL_BTHHFP_DEVICE_REQUEST_CONNECT | interface `{BE446647-F655-4919-8BD0-125BA5D4CE65}` | 0 | 0 |
+| 0x220013 IOCTL_BTHHFP_DEVICE_REQUEST_DISCONNECT | interface `{BE446647-F655-4919-8BD0-125BA5D4CE65}` | 0 | 0 |
+| 0x220017 IOCTL_BTHHFP_DEVICE_GET_CONNECTION_STATUS_UPDATE | interface `{BE446647-F655-4919-8BD0-125BA5D4CE65}` | 4 | 4 |
+| 0x22002B IOCTL_BTHHFP_STREAM_OPEN | interface `{BE446647-F655-4919-8BD0-125BA5D4CE65}` | 0 | 0 |
+| 0x22002F IOCTL_BTHHFP_STREAM_CLOSE | interface `{BE446647-F655-4919-8BD0-125BA5D4CE65}` | 0 | 0 |
 
-- 0x22000B (`sub_429D0C`): the 16 bytes are kept at `ctx+0x74`. 
+- 0x22000B (`sub_429D0C`): the 16 bytes (container id of the hands-free) are kept at `ctx+0x74`. 
 - 0x22000F / 0x220013 are sent by the "BTSCO Property Handler" (`sub_410570`) for `KSPROPSETID_BtAudio` (`{7FA06C40-B8F6-4C7E-8556-E8C33A12E54D}`) properties 0 (`ONESHOT_RECONNECT`) and 1 (`ONESHOT_DISCONNECT`). The same handler also answers `KSPROPSETID_Jack` (`{4509F757-…}`) properties 1, 2 and 4 (container id = 16 bytes from 0x22000B), and property 1 of `{7F50F0BE-8E26-4F96-A079-1CF84102B918}` (?).
-- 0x220017 (`sub_410944`): input = previous status, output = new status; the request stays pending until the status changes. It's cancelled with `IoCancelIrp` when the thread must stop. The status updates the jack "connected" field of the KS jack descriptions (`sub_429AD0`).
+- 0x220017 (`sub_410944`): input = previous status, output = new status; the request stays pending until the status changes (bthl2cap.sys treats the input as a `BOOL` "complete immediately": a non-zero previous status makes it return at once). It's cancelled with `IoCancelIrp` when the thread must stop. The status updates the jack "connected" field of the KS jack descriptions (`sub_429AD0`).
 - 0x22002B / 0x22002F are sent when the SCO stream starts / stops (`sub_429B6C` / `sub_429C3C`, only if not already open / open).
 
 ---

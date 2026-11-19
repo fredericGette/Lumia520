@@ -318,7 +318,7 @@ The DPP files are accessed through the driver ([IOCTL 0x9C412480](../drivers/nok
 | 0 | `\Microsoft\Microsoft.PVK` | n | y | y |
 | 1 | `\QCOM\BT.Provision` | y | y | y |
 | 2 | `\QCOM\WLAN.Provision` | y | y | y |
-| 3 | `\Nokia\CoverColor.txt` | y | y | y |
+| 3 | `\Nokia\CoverColor.txt` (read at first boot by [nrsdriver.sys](../drivers/nrsdriver.md#cover-colour-multivariant)) | y | y | y |
 | 4 | `\Nokia\customer_nvi_log.txt` | y | y | y |
 | 5 | `\Nokia\simlock\sign` | y | y | y |
 | 6 | `\Nokia\simlock\keys` | y | y | y |

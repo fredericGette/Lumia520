@@ -517,7 +517,8 @@ This IOCTL is processed by Qcpmic8930.sys
 | 0x800E0FA8 | 1002 | IOCTL_PM_CONFIGURE_LUT | 40 | 4 |
 | 0x800E0FAC | 1003 | IOCTL_PM_START_LUT | 16 | 4 |
 
-Output: error. Field offsets of the 40-byte inputs are not decoded (0x40E940 and 0x40EE90 don't decompile). From the trace strings, `PM_PWM_SELECT_LPG_PARAMETERS` programs in sequence: LPG selection, PWM clock rate, glitch removal, full scale, stagger, phase delay, bit mode, pre-divider, bypass, PWM value, LPG enable, PWM enable, PWM output enable. `PM_CONFIGURE_LUT` (0x40EFFC) programs: LUT enable, ramp, toggle, interval counter, low/high pause counters and enables, LUT values. `PM_START_LUT` (0x40F34C) input: `04` dword, `08` dword, `0C` byte.
+Output: error. Field offsets of the 40-byte inputs are not decoded (0x40E940 and 0x40EE90 don't decompile). From the trace strings, `PM_PWM_SELECT_LPG_PARAMETERS` programs in sequence: LPG selection, PWM clock rate, glitch removal, full scale, stagger, phase delay, bit mode, pre-divider, bypass, PWM value, LPG enable, PWM enable, PWM output enable. `PM_CONFIGURE_LUT` (0x40EFFC) programs: LUT enable, ramp, toggle, interval counter, low/high pause counters and enables, LUT values. `PM_START_LUT` (0x40F34C) input: `04` dword, `08` dword, `0C` byte.  
+All four are sent by [hwnled.sys](./hwnled.md#set-state) (except `IOCTL_PM_SET_PWM_VALUE`) to drive the LEDs, through the interface `{F9938F2D-3756-4760-A044-CB29AFBA5A69}`; the buffers it builds are described there.
 
 ---
 
@@ -572,6 +573,8 @@ This IOCTL is processed by Qcpmic8930.sys
 | IOCTL | Fn | Name | In | Out | Input (after PMIC index) | Output |
 |-------|----|------|----|-----|--------------------------|--------|
 | 0x80130FA0 | 1000 | IOCTL_PM_RGB_LED_ENABLE | 12 | 4 | `04` byte, `05` byte, `08` dword (colour mask, enable, source ?) | error |
+
+Sent by [hwnled.sys](./hwnled.md#ioctl-0x80130fa0--ioctl_pm_rgb_led_enable) with `04` = 0, `05` = enable, `08` = RGB LED channel of the LED (0–2 on the Lumia 520, from ACPI `HWNL`).
 
 ---
 
@@ -645,7 +648,7 @@ Slots:
 
 On a Lumia 520 none of the WLED IOCTLs are sent: only `PmWledInitFuncTable` and `PmWledResetDefaults` run (at start-up), and changing the screen brightness doesn't reach qcpmic8930. The WLED modulator, string currents and brightness are left as configured before Windows starts (UEFI ?), since `PmWledResetDefaults` doesn't touch them.
 
-The only client found is [oempanel.sys](./oempanel.md) (Nokia Panel Driver, service `NOKIA_PANEL`), through the interface `{5B9DF049-70D3-4698-8E48-85B26C1AA59F}` (#14 in [Interface GUID](#interface-guid)). It sends the WLED IOCTLs in two cases:  
+The only client found is [oempanel.sys](./oempanel.md) (Nokia Panel Driver, service `NOKIA_PANEL`), through the interface `{5B9DF049-70D3-4698-8E48-85B26C1AA59F}` (#14 in [Interface GUID](#interface-guid)). [hwnled.sys](./hwnled.md#wled-hwn-id-3) can also send `IOCTL_PM_WLED_CONFIG` / `DIMMING_CONFIG` / `ENABLE` for HwN Id 3, but the Lumia 520's ACPI `HWNL` declares only 3 LEDs (Id 0–2), so it never does. It sends the WLED IOCTLs in two cases:  
 | Case | Condition | IOCTLs |
 |------|-----------|--------|
 | Backlight current control (`sendIoctlQcpmic8930_LedCurrentMilliAmp`, oempanel 0x41789C) | Bit 2 of the registry value `Flags` is set | `IOCTL_PM_WLED_CONFIG` on panel on and on each brightness update (`UpdateWledCurrent`, oempanel 0x417BD0); `IOCTL_PM_WLED_ENABLE` with 1 at the end of the panel power-on sequence and with 0 at panel off |
@@ -828,7 +831,7 @@ Present only in the name table; sending them returns `STATUS_INVALID_DEVICE_REQU
 
 ### Interface GUID
 
-The driver creates 22 device interfaces on the same device, in this order (`RegisterDeviceInterfaces`, 0x407F44), presumably one per PMIC block. Only those used by [qcbms8930.sys](./qcbms8930.md), [oempanel.sys](./oempanel.md), [NokiaEnergyDriver.sys](./nokiaenergydriver.md) and [qcpep8930.sys](./qcpep8930.md#pmic-requests) are identified:  
+The driver creates 22 device interfaces on the same device, in this order (`RegisterDeviceInterfaces`, 0x407F44), presumably one per PMIC block. Only those used by [qcbms8930.sys](./qcbms8930.md), [oempanel.sys](./oempanel.md), [hwnled.sys](./hwnled.md), [NokiaEnergyDriver.sys](./nokiaenergydriver.md) and [qcpep8930.sys](./qcpep8930.md#pmic-requests) are identified:  
 | # | GUID | Comment |
 |---|------|---------|
 | 1 | `{50EC8626-F080-48E2-9076-025BBB44A1A0}` | ADC / XOADC / BTM (`0x8002`) and MPP (`0x8005`). Used by [qcxoadc8930.sys](./qcxoadc8930.md#pmic-ioctls) |
@@ -839,15 +842,15 @@ The driver creates 22 device interfaces on the same device, in this order (`Regi
 | 6 | `{A0A0CA65-C6CA-4215-B78B-5201087131BC}` | ? |
 | 7 | `{D87538A4-32C4-46D8-985E-F7CA7731BA27}` | PMIC LED (`0x800F`). Used by [qcpep8930.sys](./qcpep8930.md#pmic-requests) |
 | 8 | `{7C81CACE-8BB1-4C28-ABCF-58C09672CE71}` | ? |
-| 9 | `{2F706348-47C5-4873-A66C-6B6BC6B01698}` | ? |
+| 9 | `{2F706348-47C5-4873-A66C-6B6BC6B01698}` | ? Opened by [hwnled.sys](./hwnled.md), which sends nothing to it |
 | 10 | `{EF512E80-3E93-45D7-AF9D-D375D53596B8}` | PMIC MPP (`0x8005`). Used by [qcpep8930.sys](./qcpep8930.md#pmic-requests) for the `PMICMPP` resources |
 | 11 | `{61630799-922A-4980-99D9-90C39084A979}` | Used by qcbms8930 for `IOCTL_PM_RTC_GET_TIME` (RTC) |
 | 12 | `{248F196D-BB0A-4960-B11C-7EE9479B290F}` | ? |
 | 13 | `{A5B9E9A8-EE02-46DC-B9EF-562A78C3E5C9}` | VREG (`0x8006`). Used by [qcpep8930.sys](./qcpep8930.md#pmic-requests) for the `PMICVREGVOTE` resources of LDO16, LDO19, LDO26 and LDO27 (the other regulators are voted through the RPM) |
-| 14 | `{5B9DF049-70D3-4698-8E48-85B26C1AA59F}` | Used by [oempanel.sys](./oempanel.md) for the `IOCTL_PM_WLED_*` controls (WLED) |
+| 14 | `{5B9DF049-70D3-4698-8E48-85B26C1AA59F}` | Used by [oempanel.sys](./oempanel.md) and [hwnled.sys](./hwnled.md) for the `IOCTL_PM_WLED_*` controls (WLED) |
 | 15 | `{1CF4643A-F9BF-42D3-88E8-F37EE6C0677C}` | Used by [NokiaEnergyDriver.sys](./nokiaenergydriver.md) for the charger (`0x8008`) and `IOCTL_PM_IRQ_GET_INTERRUPTS_STATUS` (`0x8007`) IOCTLs |
 | 16 | `{1408ACF4-24D1-43AB-8F80-2F7D8AEDD372}` | Loudspeaker (`0x8012`). Used by [qcsitarcodec8930.sys](./qcsitarcodec8930.md#ioctl-0x80120fa0--0x80120fa4--0x80120fb0--pmic-loudspeaker) for `IOCTL_PM_SPEAKER_ENABLE` / `MUTE` / `CD_GAIN` |
-| 17 | `{F9938F2D-3756-4760-A044-CB29AFBA5A69}` | ? |
+| 17 | `{F9938F2D-3756-4760-A044-CB29AFBA5A69}` | Used by [hwnled.sys](./hwnled.md) for the RGB LED (`0x8013`) and PWM / LPG (`0x800E`) IOCTLs |
 | 18 | `{CF19BFD2-31C2-47FC-A334-B78F00A8292D}` | PMIC hardware info (`0x8015`). Used by [qcpep8930.sys](./qcpep8930.md#pmic-requests) |
 | 19 | `{FF22FC8B-383D-40D3-AFC0-2C37A30D060A}` | Used by [NokiaEnergyDriver.sys](./nokiaenergydriver.md) for the battery alarm (`0x801A`) IOCTLs |
 | 20 | `{51840099-5AD1-48EE-9176-BEA2990D2758}` | ? |

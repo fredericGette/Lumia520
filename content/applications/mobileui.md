@@ -199,8 +199,8 @@ The server endpoints are protected by the security descriptor of the SecRuntime 
 | Device | Opened by | IOCTL |
 |---|---|---|
 | GPIO buttons `{30EBFBF8-DF5F-4D4D-9FC5-A26C7FD1DF4A}` ([msgpiowinphone.sys](../drivers/msgpiowinphone.md)) | `OpenDriverByInterface` (kept open in the `ShellButtonRouter`, +0x68) | 0xB02A8 |
-| Vibrator `{825E8FD3-6467-4A5B-ABFB-BB010734FF4D}` ([hwnvibradime.sys](../drivers/hwnvibradime.md)) | `ShellButtonRouter::Vibrate` (0x10249C8), first interface, `CreateFileW(GENERIC_READ \| GENERIC_WRITE, share 3, OPEN_EXISTING)` | 0x228000 |
-| USB function `{1B0444ED-41E4-4900-8136-72AF43109A37}` (`UFX_DEVICE_INTERFACE`; owner not identified, it isn't the `{cec7d47f-…}` interface of [usbfnclx.sys](../drivers/usbfnclx.md), and no documented driver handles 0x2AC110) | `UsbDataAlertDialog::NotifyUsb` (0x10201F0), first interface, `CreateFileW(GENERIC_ALL, share 3, OPEN_EXISTING)`, kept open | 0x2AC110 |
+| Vibrator `{825E8FD3-6467-4A5B-ABFB-BB010734FF4D}` ([hwnvibradime.sys](../drivers/hwnvibradime.md), through [mshwnclx.sys](../drivers/mshwnclx.md)) | `ShellButtonRouter::Vibrate` (0x10249C8), first interface, `CreateFileW(GENERIC_READ \| GENERIC_WRITE, share 3, OPEN_EXISTING)` | 0x228000 |
+| USB function `{1B0444ED-41E4-4900-8136-72AF43109A37}` (`UFX_DEVICE_INTERFACE`, registered by [ufx01000.sys](../drivers/ufx01000.md#interface-guid) on the USB function controller FDO; it isn't the `{cec7d47f-…}` interface of [usbfnclx.sys](../drivers/usbfnclx.md)) | `UsbDataAlertDialog::NotifyUsb` (0x10201F0), first interface, `CreateFileW(GENERIC_ALL, share 3, OPEN_EXISTING)`, kept open | 0x2AC110 |
 
 #### IOCTL 0xB02A8 — Set button enabled on idle
 
@@ -222,7 +222,7 @@ Inputbuffer (8 bytes, no output):
 
 #### IOCTL 0x228000 — Vibrate
 
-Sent twice by `ShellButtonRouter::Vibrate`: on, `Sleep(50)`, off (a 50 ms pulse at 100 %).
+Sent twice by `ShellButtonRouter::Vibrate`: on, `Sleep(50)`, off (a 50 ms pulse at 100 %). Processed by [mshwnclx.sys](../drivers/mshwnclx.md#ioctl-0x228000--hwn-set-state), which forwards it to hwnvibradime.
 
 | Property | Value |
 |----------|-------|
@@ -245,7 +245,8 @@ Inputbuffer (48 bytes, `malloc` + `memset`; same layout as [hwnvibradime.sys](..
 
 #### IOCTL 0x2AC110 — USB data connection allowed ?
 
-Sent by `UsbDataAlertDialog::NotifyUsb(allow)`: with 1 when `PromptForDataConnection` is 0 (no dialog), otherwise with the choice of the USB data dialog. The result (`GetLastError` or 0) is kept but not used.
+Sent by `UsbDataAlertDialog::NotifyUsb(allow)`: with 1 when `PromptForDataConnection` is 0 (no dialog), otherwise with the choice of the USB data dialog. The result (`GetLastError` or 0) is kept but not used.  
+Processed by [ufx01000.sys](../drivers/ufx01000.md#ioctl-0x2ac110--enable-data-connection) (state machine event `DeviceEnableDataConnection`).
 
 | Property | Value |
 |----------|-------|
@@ -258,7 +259,7 @@ Inputbuffer (8 bytes, no output):
 | Bytes | Value | Comment |
 |-------|-------|---------|
 | 00-03 | 08 00 00 00 | Size of the structure |
-| 04 | 01 / 00 | 1 = data connection allowed ?, 0 = refused (charge only ?) |
+| 04 | 01 / 00 | 1 = data connection allowed, 0 = refused: [ufx01000.sys](../drivers/ufx01000.md#ioctl-0x2ac110--enable-data-connection) rejects any value ≠ 1 with `STATUS_NOT_SUPPORTED` and the phone stays charge-only |
 | 05-07 | 00 00 00 | |
 
 ### Registry
@@ -276,7 +277,7 @@ All keys are under `HKLM`.
 | `Software\Microsoft\Shell\OEM\SystemTray` | `IndicateConditionalCallForwarding` (DWORD) and other DWORDs (`GetMultivariantRegValue`, 0x1012D7C) | read | System tray options |
 | `Software\Microsoft\Shell\OEM\SystemTray\DataConnectionStrings` | 26 values `1XRTT_DEFAULT`, `1XRTT`, `EVDO_*`, `GSM_*`, `UMTS_*`, `LTE_DEFAULT`, `LTE_FDD`, `LTE_TDD`, `TDSCDMA_*` | read | Text shown for each data connection type (default 4 characters ?, `c_rgszDataConnectionTypeDefault`) |
 | `Software\Microsoft\Shell\OEM\SystemTray\CustomIcons` | `BaseDll`, `BaseId`, `RoamingIconId`, `DomesticRoamingIconId`, `CallForwardingIconId` | read | OEM system tray icons |
-| `System\CurrentControlSet\Control\Usbfn\Settings` | `PromptForDataConnection` (DWORD) | read | 0 = allow the USB data connection without asking |
+| `System\CurrentControlSet\Control\Usbfn\Settings` | `PromptForDataConnection` (DWORD) | read | 0 = allow the USB data connection without asking (also read by [ufx01000.sys](../drivers/ufx01000.md#registry)) |
 | `Software\Microsoft\Shell\USB` | `DisableUSBControlPanel` (DWORD) | write | 1 at startup, 0 at the first USB state event |
 | `Software\Microsoft\Shell\USB` | `NotifyOnWeakCharger` (DWORD) | read / write | Weak charger dialog enabled |
 | `SOFTWARE\Microsoft\Shell\VolumeLimit\` | `VolumeLimitWarningAccepted` (DWORD) | write (created) | Volume limit warning accepted |
@@ -294,11 +295,11 @@ Subscribed by `ShellEvents::Init` (`gc_rgEventInfo`, callback `ShellEventsWNFCal
 | SHL | `WNF_SHL_SYSTRAY_CLOCKINVISIBLE` (0x418A063EA3BC1075), `WNF_SHL_HARDWARE_BUTTON_STATE` (…4875, also read by `QueryWNFHardwareButtonStateInfo`), `WNF_SHL_SYSTEM_CLOCK_CHANGED` (…5875), `WNF_SHL_RINGER_VIBRATE_CHANGED` (…6C75), `WNF_SHL_SYSTRAY_TEST_EVENT` (…1875), `WNF_SHL_KIDZONE_ENABLED` (…9875), `WNF_SHL_SHOW_VOLUMELIMITWARNING` (…C875), `WNF_SHL_DRIVING_MODE_ACTIVE` (0x418A063EA3BD2075), `WNF_SHL_NOTIFICATIONS` (0x418A063EA3BD0875), `WNF_SHL_START_READY` (0x418A063EA3BC3875) |
 | NLS / TZ | `WNF_NLS_LOCALE_INFO_CHANGED` (0x41950223A3BC2875), `WNF_NLS_USER_DEFAULT_LOCALE_CHANGED` (0x41950223A3BC1875), `WNF_TZ_TIMEZONE_CHANGED` (0x41C61439A3BC0875) |
 | CELL | `WNF_CELL_SIGNAL_STRENGTH_BARS_CAN0/1` (0x0D8A0B2EA3BC1075 / …A3BD1075), `WNF_CELL_UICC_STATUS_SLOT0/1` (…A3BC2875 / …A3BD2875), `WNF_CELL_REGISTRATION_STATUS_CAN0/1` (…A3BC2075 / …A3BD2075), `WNF_CELL_POWER_STATE_MODEM0` (…A3BC0875), `WNF_CELL_CONFIGURED_LINES_CAN0/1` (…A3BDF475 / …A3BDFC75), `WNF_CELL_AIRPLANEMODE` (…A3BC3075), `WNF_CELL_RADIO_TYPE_MODEM0` (…A3BD0C75), `WNF_CELL_DATA_ENABLED_BY_USER_MODEM0` (…A3BC6475) |
-| CNET | `WNF_CNET_CELLULAR_CONNECTIONS_AVAILABLE` (0x1583002EA3BC4875), `WNF_CNET_WIFI_ACTIVITY` (…9075), `WNF_CNET_VPN_STATUS` (…7875) |
-| OS | `WNF_OS_BATTERY_PERCENTAGE_REMAINING` (0x41C61D22A3BC1875), `WNF_OS_BATTERY_STATE` (…2075), `WNF_OS_BATTERY_STRENGTH` (…1075), `WNF_OS_BATTERY_AC_ONLINE` (…2875), `WNF_OS_USER_PRESENCE` (…3075), `WNF_OS_MONITOR_ON` (…3875), `WNF_OS_BATTERY_SAVINGS_STATE` (…4075), `WNF_OS_USB_CHARGER_WEAK_SHOW` (…B075), `WNF_OS_USB_DEVICE_STATE` (…C075) |
+| CNET | `WNF_CNET_CELLULAR_CONNECTIONS_AVAILABLE` (0x1583002EA3BC4875), `WNF_CNET_WIFI_ACTIVITY` (…9075, published by [netact.sys](../drivers/netact.md)), `WNF_CNET_VPN_STATUS` (…7875) |
+| OS | `WNF_OS_BATTERY_PERCENTAGE_REMAINING` (0x41C61D22A3BC1875), `WNF_OS_BATTERY_STATE` (…2075), `WNF_OS_BATTERY_STRENGTH` (…1075), `WNF_OS_BATTERY_AC_ONLINE` (…2875), `WNF_OS_USER_PRESENCE` (…3075), `WNF_OS_MONITOR_ON` (…3875), `WNF_OS_BATTERY_SAVINGS_STATE` (…4075), `WNF_OS_USB_CHARGER_WEAK_SHOW` (…B075), `WNF_OS_USB_DEVICE_STATE` (…C075) (both published by [ufx01000.sys](../drivers/ufx01000.md#state-machine-events)) |
 | Others | `WNF_BLTH_BLUETOOTH_STATUS` (0x0992022FA3BC0875), `WNF_LFS_STATE` (0x41950821A3BC0875, location), `WNF_MS_PLAYING_COUNT` (0x41C61D20A3BC2075), `WNF_RW_DO_NOT_DISTURB_MODE` (0x41C6193FA3B96875), `WNF_DU_FEATUREDISCOVERY_COMPLETE` (0x41C61B29A3BC7875) |
 
-`gc_rgEventInfoAwakeOnlySubscribe` (only while the screen is on ?): `WNF_WIFI_CONNECTION_STATUS` (0x0880073AA3BC0875), `WNF_CNET_RADIO_ACTIVITY` (0x1583002EA3BC0875).
+`gc_rgEventInfoAwakeOnlySubscribe` (only while the screen is on ?): `WNF_WIFI_CONNECTION_STATUS` (0x0880073AA3BC0875), `WNF_CNET_RADIO_ACTIVITY` (0x1583002EA3BC0875, published by [netact.sys](../drivers/netact.md)).
 
 Also subscribed: `WNF_DEVM_PROVISIONING_COMPLETE` (0x0C900B29A3BC0875, `WaitForProvisioning`), `WNF_CELL_SYSTEM_CONFIG` (0x0D8A0B2EA3BCA475), the storage states of `StorageStateHandler::GetEvents` (built at run time).
 

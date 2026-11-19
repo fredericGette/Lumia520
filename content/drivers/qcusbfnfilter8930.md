@@ -107,7 +107,7 @@ Any failure is returned by `EvtDevicePrepareHardware` (the device doesn't start)
 ### internal IOCTL 0x2AC03A — IOCTL_INTERNAL_USBFN_SET_POWER_FILTER_STATE
 
 This internal IOCTL is processed by Qcusbfnfilter8930.sys (`EvtIoInternalDeviceControl`, `sub_4017FC`).  
-Kernel-mode only: it must be sent as `IRP_MJ_INTERNAL_DEVICE_CONTROL`. Not sent by the code of [usbfnchipidea.sys](./usbfnchipidea.md): it is sent by its class extension [usbfnclx.sys](./usbfnclx.md#internal-ioctl-0x2ac03a--ioctl_internal_usbfn_set_power_filter_state) from `EvtDeviceArmWakeFromS0`.
+Kernel-mode only: it must be sent as `IRP_MJ_INTERNAL_DEVICE_CONTROL`. Not sent by the code of [usbfnchipidea.sys](./usbfnchipidea.md): it is sent by its class extension [usbfnclx.sys](./usbfnclx.md#internal-ioctl-0x2ac03a--ioctl_internal_usbfn_set_power_filter_state) from `EvtDeviceArmWakeFromS0`. This IOCTL is also sent by [ufxchipidea.sys](./ufxchipidea.md#internal-ioctl-0x2ac03a--ioctl_internal_usbfn_set_power_filter_state) (UFX version of the controller driver), from its own `EvtDeviceArmWakeFromS0`.
 
 | Property | Value |
 |----------|-------|
@@ -124,7 +124,7 @@ Inputbuffer:
 | Bytes | Value | Comment |
 |-------|-------|---------|
 | 00-03 | 01 00 00 00 | Command, see below. `USBFN_POWER_FILTER_STATE.DeviceState` (`USBFN_DEVICE_STATE`: 1 = Attached, 2 = Default, 3 = Detached, 4 = Addressed, 5 = Configured, 6 = Suspended): the current device state of [usbfnclx.sys](./usbfnclx.md#state-machine) |
-| 04-07 | 00 00 00 00 | Not used. `USBFN_POWER_FILTER_STATE.PState` / `Reserved`, always 0 |
+| 04-07 | 00 00 00 00 | Not used. `USBFN_POWER_FILTER_STATE.PState` / `Reserved`, always 0 from usbfnclx.sys; the P-state (0-5) from [ufxchipidea.sys](./ufxchipidea.md#power-management) |
 
 | Command | Action | Information |
 |---------|--------|-------------|
@@ -142,7 +142,7 @@ An InputBuffer smaller than 8 bytes → the status of `WdfRequestRetrieveInputBu
 ### internal IOCTL 0x2AC03E
 
 This internal IOCTL is processed by Qcusbfnfilter8930.sys (`EvtIoInternalDeviceControl`, `sub_4017FC`).  
-Kernel-mode only: it must be sent as `IRP_MJ_INTERNAL_DEVICE_CONTROL`. Not sent by the code of [usbfnchipidea.sys](./usbfnchipidea.md): it is sent by its class extension [usbfnclx.sys](./usbfnclx.md#internal-ioctl-0x2ac03e--exit-low-power-mode) from `EvtDeviceD0Entry`.
+Kernel-mode only: it must be sent as `IRP_MJ_INTERNAL_DEVICE_CONTROL`. Not sent by the code of [usbfnchipidea.sys](./usbfnchipidea.md): it is sent by its class extension [usbfnclx.sys](./usbfnclx.md#internal-ioctl-0x2ac03e--exit-low-power-mode) from `EvtDeviceD0Entry`. This IOCTL is also sent by [ufxchipidea.sys](./ufxchipidea.md#internal-ioctl-0x2ac03e--exit-low-power-mode) from `EvtDeviceD0Entry` and after its first controller initialisation.
 
 | Property | Value |
 |----------|-------|

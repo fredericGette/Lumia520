@@ -115,7 +115,7 @@ All the local functions read the registry with `NtOpenKey(KEY_READ)` on `\REGIST
 
 | Key | Values read | Used by |
 |-----|-------------|---------|
-| `TransientObjects\<escaped name>` | `SecurityDescriptor` | [QueryTransientObjectSecurityDescriptor](#querytransientobjectsecuritydescriptor-0x10003c20) |
+| `TransientObjects\<escaped name>` | `SecurityDescriptor` | [QueryTransientObjectSecurityDescriptor](#querytransientobjectsecuritydescriptor-0x10003c20); also read in kernel mode by [filecrypt.sys](../drivers/filecrypt.md) (`%5C%5C.%5CPrivate%5CSDMOUNTPOINT`, SD card files) |
 | `Capabilities\<capability>` | `ApplicationCapabilitySID`, `ServiceCapabilitySID` | `CapabilityCheck`, `GetCapabilitySids` |
 | `Applications\<name>` | `ApplicationType` (DWORD), `ApplicationAccount`, `ApplicationSid`, `ApplicationBinaries`, `RequiredPrivileges`, `RequiredCapabilitySIDs`, `OEMExtensible`; value named after an executable path (data = application name) | [QueryExecutableProperties](#queryexecutableproperties-0x10004454), `GetInternalApplicationChamberIDs` |
 | `Applications\<name>\SignerCertificate` | `EnterpriseId`, `ThumbprintCNGHashAlgId`, `Thumbprint`, `SHA1Thumbprint` (20 bytes) | `QueryExecutableProperties` (mask 0x40, 0x80) |
@@ -128,7 +128,7 @@ All the local functions read the registry with `NtOpenKey(KEY_READ)` on `\REGIST
 | `CapabilityClasses\<class>` | `Inheritance` (MULTI_SZ of classes, recursive) | idem (`sub_100099A4`) |
 | `AuthorizationRules\Capability\<rule>` | `CapabilityClass`, `PrincipalClass` | idem (`sub_1000718C`, `sub_10006FD0`) |
 | `PrincipalClasses\<class>\<certificate>` | `Type` (`Root`, `Intermediate`, `Leaf`), `Eku`, `Alg` (`Sha256`, `Sha384`, `Sha512`), `Thumbprint` | idem |
-| `DeveloperUnlock` | `DeveloperUnlockState` (written only) | `SetDeveloperUnlockState` |
+| `DeveloperUnlock` | `DeveloperUnlockState` (written only; read in the kernel by [ksecext.sys](../drivers/ksecext.md#sequerysigningpolicyext-0x10004840)) | `SetDeveloperUnlockState` |
 
 The SID lists (`ServiceSids`, `RequiredCapabilitySIDs`, `UnionRequired…`) are a DWORD count followed by `count` entries of a DWORD (?) and a SID (`sub_1000622C`); the privilege lists are a DWORD count followed by `count` entries of 12 bytes whose LUID is at +4 (`sub_100067A8`).
 
@@ -254,7 +254,7 @@ Both functions open `\\.\SecMgr` (`CreateFileW(GENERIC_READ | GENERIC_WRITE, FIL
 | `UpdateKernelPrivilegeCache` | 0x0022E050 (device 0x22, function 0x814, `METHOD_BUFFERED`, `FILE_READ_ACCESS \| FILE_WRITE_ACCESS`) | `name` with its NUL | none |
 | `QueryKernelPrivilegeCache` | 0x00226054 (device 0x22, function 0x815, `METHOD_BUFFERED`, `FILE_READ_ACCESS`) | `name` with its NUL | 8 bytes |
 
-What `name` designates (principal or executable ?) and the meaning of the 8 bytes depend on the driver, not analysed. `UpdateKernelPrivilegeCacheEx` asks the service instead (RPC opnum 8).
+What `name` designates (principal or executable ?) and the meaning of the 8 bytes depend on the driver, not analysed. `QueryKernelPrivilegeCache` (0x00226054) is also sent by [ksecext.sys](../drivers/ksecext.md#ioctl-0x226054) to `\Device\SecMgr`, with the string SID of an AppContainer as `name`; it uses the 8 bytes as the privileges of the AppContainer (`AppContainerPrivilegesEnabledExt`). `UpdateKernelPrivilegeCacheEx` asks the service instead (RPC opnum 8).
 
 ### RPC
 

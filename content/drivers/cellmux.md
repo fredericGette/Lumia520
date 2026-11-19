@@ -4,7 +4,7 @@ Cellular pipe multiplexer (Microsoft, WP8.1 "cellcore", KMDF 1.11).
 It is a bus driver. Its FDO sits on one cellular **pipe**: a packet transport to the modem side, reached through the query-interface `{B9086F29-6065-4DBE-8C90-3CD560547957}` of the device below. It splits this pipe into up to 65536 numbered **queues**. Each queue gets a child PDO, created on request with [IOCTL 0x716D8004](#ioctl-0x716d8004--create-queue). Each queue PDO exposes the same pipe interface to the driver loaded on it, so a client sees an ordinary pipe. Every packet gets a 4-byte header (queue number + packet type). Each queue negotiates a protocol version with the other end, then runs credit-based flow control (window updates).  
 Source tree: `src\net\cellcore\product\emb\cellmux\` (`drivermain.c`, `muxbusfdo.c`, `queuepdo.c`) + `cellkernellib\` (`utility.c`, `synchronizer.c`). PDB: `cellmux.pdb`. Built Jan 23 2015 18:13:44. Driver pool tag `MdmM` (0x4D6D644D), allocations `Cell` (0x6C6C6543, NonPagedPoolNx, 5 tries before a fatal error). No hardware access.
 
-Same family (same pipe GUID, same `cellkernellib`, same ETW provider): `cellusermodeinterconnect.sys` (root bus `\??\UserModeInterconnectBus`, gives pipes to a user-mode process through ring buffers and doorbells), `cellnetmon.sys` (pipe filter that copies the traffic to a socket) and `msril.sys` (RIL driver, pipe client). The stack is probably `msril.sys` → cellmux queue PDO → cellmux FDO (→ `cellnetmon.sys`?) → `cellusermodeinterconnect.sys` PDO → user-mode modem adaptation. This order comes from the strings and GUIDs only; those three drivers aren't analysed yet.
+Same family (same pipe GUID, same `cellkernellib`, same ETW provider): [cellusermodeinterconnect.sys](./cellusermodeinterconnect.md) (root bus `\??\UserModeInterconnectBus`, gives pipes to a user-mode process through ring buffers and doorbells), [cellnetmon.sys](./cellnetmon.md) (pipe filter that copies the queue 1 traffic to ETW and to a TCP socket) and [msril.sys](./msril.md) (RIL driver, pipe client). The stack is probably [msril.sys](./msril.md) → cellmux queue PDO → cellmux FDO → [cellnetmon.sys](./cellnetmon.md) → [cellusermodeinterconnect.sys](./cellusermodeinterconnect.md) PDO → user-mode modem adaptation. Cellnetmon parses the mux header, so it is a lower filter of the cellmux FDO. The cellusermodeinterconnect PDO provides the pipe interface, and the hardware ID of that PDO is chosen by the user-mode process, so the driver loaded on it can't be confirmed from the binaries.
 
 There's no named `\Device\` object. The FDO registers the device interface `{2B70CD07-AED0-465B-A808-22C3CC914A30}` (no reference string) so that clients can open it and send [IOCTL 0x716D8004](#ioctl-0x716d8004--create-queue).
 
@@ -12,7 +12,7 @@ There's no parameters in the registry.
 
 GUID of the ETW provider:  
 `{3BBAB918-1710-4768-82B6-A2DC58D3D1EA}` (`Microsoft-WindowsPhone-Net-Debug`)  
-It is used only by the fatal error routine (`CellFatalError`, sub_100026D0, misnamed `McGenEventUnregister` by IDA). The provider is registered and unregistered around a single `EtwWrite` of `NET_FATAL_ERROR` (event 100, level 2, task 1, keyword 0x1) with the file name, line, API name and NTSTATUS. It is the shared provider of the `__FatalError` routines of the other cellcore drivers and of the Bluetooth binaries (`bthl2cap.sys`, [BtConnectionManagerService.dll](../libraries/btconnectionmanagerservice.md), …).  
+It is used only by the fatal error routine (`CellFatalError`, sub_100026D0, misnamed `McGenEventUnregister` by IDA). The provider is registered and unregistered around a single `EtwWrite` of `NET_FATAL_ERROR` (event 100, level 2, task 1, keyword 0x1) with the file name, line, API name and NTSTATUS. It is the shared provider of the `__FatalError` routines of the other cellcore drivers and of the Bluetooth binaries ([bthl2cap.sys](./bthl2cap.md), [BtConnectionManagerService.dll](../libraries/btconnectionmanagerservice.md), …).  
 Debug messages go to `DbgPrintEx` (component id 0x31 `DPFLTR_IHVDRIVER_ID`?, prefix `CellMux!`).
 
 > [!NOTE]
@@ -21,8 +21,8 @@ Debug messages go to `DbgPrintEx` (component id 0x31 `DPFLTR_IHVDRIVER_ID`?, pre
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| Parent device (lower stack of the FDO) | `cellusermodeinterconnect.sys` PDO ? (maybe through the `cellnetmon.sys` filter) | `WdfFdoQueryForInterface` `{B9086F29-6065-4DBE-8C90-3CD560547957}`, size 28, version 1, see [Pipe interface](#pipe-interface). IOCTLs other than 0x716D8004 sent to the FDO are forwarded to it unchanged (`WdfRequestSend`, `WDF_REQUEST_SEND_OPTION_SEND_AND_FORGET`) |
-| Queue PDOs (children) | `msril.sys` ? | The function driver loaded on a queue PDO queries `{B9086F29-…}` from it |
+| Parent device (lower stack of the FDO) | [cellnetmon.sys](./cellnetmon.md) filter, then [cellusermodeinterconnect.sys](./cellusermodeinterconnect.md) PDO ? | `WdfFdoQueryForInterface` `{B9086F29-6065-4DBE-8C90-3CD560547957}`, size 28, version 1, see [Pipe interface](#pipe-interface). IOCTLs other than 0x716D8004 sent to the FDO are forwarded to it unchanged (`WdfRequestSend`, `WDF_REQUEST_SEND_OPTION_SEND_AND_FORGET`), e.g. [IOCTL 0x6E800C](./cellnetmon.md#ioctl-0x6e800c--set-configuration) processed by cellnetmon.sys |
+| Queue PDOs (children) | [msril.sys](./msril.md) ? | The function driver loaded on a queue PDO queries `{B9086F29-…}` from it (msril.sys accepts the 0xC0000000 status too) |
 | — | ? (user mode, RIL / cellular service ?) | Opens interface `{2B70CD07-…}` and sends [IOCTL 0x716D8004](#ioctl-0x716d8004--create-queue) |
 
 ### Devices
@@ -165,7 +165,7 @@ Creates the queue PDO (see [Devices](#devices)), stores it in the queue table (w
 An input buffer smaller than 140 bytes ("IOCTL input buffer is too small") or a queue number that is out of range or in use ("Queue %d is out of range or in use") causes a `DbgBreak` followed by [`CellFatalError`](#guid-of-the-etw-provider) (bugcheck without a debugger). It isn't returned as an error status.  
 The sender isn't known. No analysed binary contains the code.
 
-All other IOCTL codes sent to the FDO are forwarded to the lower device.
+All other IOCTL codes sent to the FDO are forwarded to the lower device (e.g. [IOCTL 0x6E800C](./cellnetmon.md#ioctl-0x6e800c--set-configuration), processed by [cellnetmon.sys](./cellnetmon.md)).
 
 ---
 
@@ -176,5 +176,5 @@ Cellmux bus interface class GUID (opened to send [IOCTL 0x716D8004](#ioctl-0x716
 
 ### Other GUID
 
-Cellular pipe query-interface (consumed from the parent, exposed by every queue PDO; also used by `cellusermodeinterconnect.sys`, `cellnetmon.sys` and `msril.sys`)  
+Cellular pipe query-interface (consumed from the parent, exposed by every queue PDO; also used by [cellusermodeinterconnect.sys](./cellusermodeinterconnect.md), [cellnetmon.sys](./cellnetmon.md) and [msril.sys](./msril.md))  
 `{B9086F29-6065-4DBE-8C90-3CD560547957}`

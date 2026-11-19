@@ -21,10 +21,10 @@ Location on the phone: `C:\Windows\System32\ntoskrnl.exe` ? (the extracted file 
 | ext-ms-win-ntos-werkernel-l1-1-0 | `WerLiveKernelInitSystem`, `WerLiveKernelCreateReport`, `WerLiveKernelSubmitReport`, `WerLiveKernelCancelReport`, `WerLiveKernelOpenDumpFile`, `WerLiveKernelCloseHandle`: live kernel dumps |
 | ext-ms-win-ntos-kcminitcfg-l1-1-0 | `CmSetInitMachineConfig`, `CmCompleteInitMachineConfig` |
 | ext-ms-win-ntos-ksr-l1-1-0 | `KsrInitPageDatabase`, `KsrCleanupPageDatabase` (kernel soft restart) |
-| ext-ms-win-ntos-ksecurity-l1-1-1 | `AppContainerPrivilegesEnabledExt`, `QueryUpdateFileEaAllowedExt` |
-| ext-ms-win-ntos-ksigningpolicy-l1-1-0 | `SeQuerySigningPolicyExt` |
+| ext-ms-win-ntos-ksecurity-l1-1-1 | `AppContainerPrivilegesEnabledExt`, `QueryUpdateFileEaAllowedExt` (implemented by [ksecext.sys](../drivers/ksecext.md)) |
+| ext-ms-win-ntos-ksigningpolicy-l1-1-0 | `SeQuerySigningPolicyExt` (implemented by [ksecext.sys](../drivers/ksecext.md#sequerysigningpolicyext-0x10004840)) |
 
-The `ext-ms-win-*` names are API sets resolved by the boot loader; the module that implements each one on the phone isn't known from this binary (`tm.sys` and `clfs.sys` are in the list of [boot images](#dependencies)). The kernel has no CRT import: `memcpy`, `str*`, `wcs*`, `sprintf`… are part of it and exported.
+The `ext-ms-win-*` names are API sets resolved by the boot loader; the module that implements each one on the phone isn't known from this binary, except the two `ntos-ksecurity` / `ntos-ksigningpolicy` sets exported by [ksecext.sys](../drivers/ksecext.md) (`tm.sys` and `clfs.sys` are in the list of [boot images](#dependencies)). The kernel has no CRT import: `memcpy`, `str*`, `wcs*`, `sprintf`… are part of it and exported.
 
 ### Dependencies
 

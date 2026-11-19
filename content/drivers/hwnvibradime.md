@@ -1,7 +1,7 @@
 ## Hwnvibradime.sys
 
 Nokia vibrator driver ("Vibra Dime"). It's the vibrator of the Lumia 520.  
-It is a client of the Microsoft Hardware Notification class extension `HwNClx` (`hwnclx.sys`, the same framework as `hwnled` for the LEDs): it has no IOCTL of its own. Requests come in as `HWN_HEADER` / `HWN_SETTINGS` buffers through the `ClientSetState` / `ClientGetState` callbacks, and the driver converts them into a drive voltage that it sends to the PMIC vibrator block of [qcpmic8930.sys](./qcpmic8930.md#ioctl-0x801dxxxx--vibrator) with `IOCTL_PM_VIB_CONTROL_REGISTER`. It handles the blink mode (period / duty cycle / cycle count) itself with a WDF timer.  
+It is a client of the Microsoft Hardware Notification class extension `HwNClx` ([mshwnclx.sys](./mshwnclx.md), the same framework as [hwnled.sys](./hwnled.md) for the LEDs): it has no IOCTL of its own. Requests come in as `HWN_HEADER` / `HWN_SETTINGS` buffers through the `ClientSetState` / `ClientGetState` callbacks, and the driver converts them into a drive voltage that it sends to the PMIC vibrator block of [qcpmic8930.sys](./qcpmic8930.md#ioctl-0x801dxxxx--vibrator) with `IOCTL_PM_VIB_CONTROL_REGISTER`. It handles the blink mode (period / duty cycle / cycle count) itself with a WDF timer.  
 ACPI device `\_SB.VIB1` (`_HID` `NOKIA_VIBRA_DIME`, `_CID` `ACPINOKIA_VIBRA_DIME`). Its `_CRS` is empty (End tag only): no hardware resource.  
 KMDF, PDB path `E:\build_e\subtask\E05A4CC0_98\output\audio\fre\hwnvibradime.pdb`. Pool tag `BIVA`.
 
@@ -44,7 +44,7 @@ It communicates with the following devices:
 | ClientSetState | `sub_401198` | See [Set state](#set-state) |
 | ClientGetState | `sub_401114` | See [Get state](#get-state) |
 
-`EvtDriverDeviceAdd` (0x406008) only calls `HwNProcessAddDevicePreDeviceCreate`, `WdfDeviceCreate` and `HwNProcessAddDevicePostDeviceCreate` with the GUID `{825E8FD3-6467-4A5B-ABFB-BB010734FF4D}` (device interface of the vibrator created by HwNClx ?, also passed by [hwnhaptics.sys](./hwnhaptics.md)).  
+`EvtDriverDeviceAdd` (0x406008) only calls `HwNProcessAddDevicePreDeviceCreate`, `WdfDeviceCreate` and `HwNProcessAddDevicePostDeviceCreate` with the GUID `{825E8FD3-6467-4A5B-ABFB-BB010734FF4D}` (device interface of the vibrator, created by [mshwnclx.sys](./mshwnclx.md) with `WdfDeviceCreateDeviceInterface`, also passed by [hwnhaptics.sys](./hwnhaptics.md)).  
 `EvtDriverUnload` calls `HwNUnregisterClientDriver`.
 
 States (`ctx+0x04`, previous state at `ctx+0x08`):  
@@ -60,7 +60,7 @@ States (`ctx+0x04`, previous state at `ctx+0x08`):
 
 ### Set state
 
-Input buffer (`HWN_HEADER` with one `HWN_SETTINGS`, same layout as the buffer sent by [oempanel.sys](./oempanel.md#ioctl-0x228000--hwn-set-state-) to `hwnled`):  
+Input buffer (`HWN_HEADER` with one `HWN_SETTINGS`, same layout as the buffer sent by [oempanel.sys](./oempanel.md#ioctl-0x228000--hwn-set-state-) to [hwnled.sys](./hwnled.md#set-state)):  
 | Bytes | Value | Comment |
 |-------|-------|---------|
 | 00-03 | 30 00 00 00 | Payload size (48) |
@@ -79,7 +79,7 @@ Input buffer (`HWN_HEADER` with one `HWN_SETTINGS`, same layout as the buffer se
 Any other type, a mode > 2, an intensity > 100 or more than one setting returns `STATUS_UNSUCCESSFUL` (0xC0000001).  
 [ShellChrome.dll](../libraries/shellchrome.md#haptic-feedback) sends this request (IOCTL 0x228000, interface `{825E8FD3-…}`) for the haptic feedback of the hardware buttons: mode 1 with the intensity of `HKLM\SYSTEM\TOUCH\BUTTONS`, then mode 0 after `Duration` ms.  
 [MobileUI.exe](../applications/mobileui.md#ioctl-0x228000--vibrate) also sends it (`ShellButtonRouter::Vibrate`, camera button held on the lock screen): mode 1 at 100 %, then mode 0 after 50 ms.  
-The buffer-length check is inverted: `(length − 12) % (36 × count)` is only tested when the length is 0, so the length is in practice never validated (and a length of 0 with a count of 0 divides by zero).  
+The buffer-length check is inverted: `(length − 12) % (36 × count)` is only tested when the length is 0, so the length is in practice never validated here (and a length of 0 with a count of 0 divides by zero); [mshwnclx.sys](./mshwnclx.md) already requires at least 48 bytes, a count ≤ 1 (N) and Ids < 1 before calling ClientSetState.  
 
 Processing:
 1. If the watch of the `Vibra` key is not armed yet, arm it and read `Disable`.
@@ -93,6 +93,7 @@ Level sent to the PMIC (`sub_40186C`): `level = (DriveVoltage − 12) × intensi
 
 ### Get state
 
+Called by [mshwnclx.sys](./mshwnclx.md) for [IOCTL 0x22C004](./mshwnclx.md#ioctl-0x22c004--hwn-get-state) and after every request to manage the idle state.  
 The output buffer must be larger than 12 bytes and `(length − 12)` a multiple of 36, otherwise `STATUS_INVALID_BUFFER_SIZE` (0xC0000206). It returns 48 bytes: the same layout as [Set state](#set-state), with the last accepted settings. Before the first request: size 48, version 1, count 1, id 0, type 2, settings `0, 0, 0, 0, 0x5555, 0xFFFFFFFF, 0`.
 
 ---
@@ -129,7 +130,7 @@ If the IOCTL fails while switching the motor on, the reference on the PMIC devic
 
 ### Other GUID
 
-HwNClx device interface ? (passed to `HwNProcessAddDevicePostDeviceCreate`, also by [hwnhaptics.sys](./hwnhaptics.md))  
+HwNClx device interface (passed to `HwNProcessAddDevicePostDeviceCreate`, created by [mshwnclx.sys](./mshwnclx.md), also passed by [hwnhaptics.sys](./hwnhaptics.md))  
 `{825E8FD3-6467-4A5B-ABFB-BB010734FF4D}`
 
 qcpmic8930 vibrator interface  

@@ -140,9 +140,9 @@ The Direct3D device (`Drivers::Direct3D11::Device::ApiCreate`, 0x10099A50): dyna
 
 | Device | Opened by | Read |
 |--------|-----------|------|
-| `\Device\TouchClass0` | `ConnectDriverTouch` (0x10060908) | Overlapped `ReadFile` of 0xA8C bytes (`TriggerAsyncRead`), parsed by `ParseDataTouch` |
-| `\Device\WPKeyboardClass` | `ConnectDriverKeyboard` (0x10060734) | 0x78 bytes, `ParseDataKeyboard` (hardware buttons and keyboard) |
-| `\Device\PointerClass0` | `ConnectDriverTouchMouse` (0x10060EB8) | 0x78 bytes, `ParseDataTouchMouse` |
+| `\Device\TouchClass0` ([tchhid.sys](../drivers/tchhid.md)) | `ConnectDriverTouch` (0x10060908) | Overlapped `ReadFile` of 0xA8C bytes (`TriggerAsyncRead`), parsed by `ParseDataTouch`; the driver returns one [touch report](../drivers/tchhid.md#touch-report) per read |
+| `\Device\WPKeyboardClass` ([kbdclasswp.sys](../drivers/kbdclasswp.md)) | `ConnectDriverKeyboard` (0x10060734) | 0x78 bytes (the driver returns one 12-byte `KEYBOARD_INPUT_DATA` record per read), `ParseDataKeyboard` (hardware buttons and keyboard) |
+| `\Device\PointerClass0` ([mouclasswp.sys](../drivers/mouclasswp.md)) | `ConnectDriverTouchMouse` (0x10060EB8) | 0x78 bytes (up to 5 24-byte `MOUSE_INPUT_DATA` records), `ParseDataTouchMouse` |
 
 The devices are opened with `NtCreateFile` (access `FILE_READ_DATA`); if the name doesn't exist yet (`STATUS_OBJECT_NAME_NOT_FOUND`), the touch and keyboard readers wait up to 10 s for their ready event and try again. No IOCTL is sent: the drivers are only read. The `Disconnect*` functions cancel the read (`CancelIoEx`).
 

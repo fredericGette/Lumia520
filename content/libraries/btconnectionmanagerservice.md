@@ -296,7 +296,7 @@ IOCTLs, with the names of `BthIoctlName` (0x10030DD8):
 | 0x414010, 0x414014 | `IOCTL_BTHLEENUM_READ_GATT_EVENT`, `IOCTL_BTHLEENUM_READ_QUEUE_ACTIVATE` | `Device::TryIssueReadQueueIoctls` |
 | 0x4143C4 | `IOCTL_BTHLEENUM_TEST_FORCE_CONNECT` (log string) | `Device::ConnectLEDeviceWorker` |
 
-`BthIoctlName` also knows the SCO IOCTLs 0x411CC4…0x411CD0: their sender is [BtConnectionManagerClient.dll](./btconnectionmanagerclient.md#sco-audio). All are processed by the Microsoft stack (`BthPort`, `BthLEEnum`), which isn't analysed.
+`BthIoctlName` also knows the SCO IOCTLs 0x411CC4…0x411CD0: their sender is [BtConnectionManagerClient.dll](./btconnectionmanagerclient.md#sco-audio). The SCO IOCTLs and `IOCTL_BTH_WP8_L2CAP_*` (0x411D00…0x411D14) are processed by the filter driver [bthl2cap.sys](../drivers/bthl2cap.md#ioctl-0x411d000x411d14--ioctl_bth_wp8_l2cap_); the others by the Microsoft stack (`BthPort`, `BthLEEnum`), which isn't analysed.
 
 ### ETW
 

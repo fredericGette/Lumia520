@@ -197,7 +197,8 @@ Outputbuffer:
 ### internal IOCTL 0x29C4C0 — charging source notification
 
 This IOCTL is processed by Cad.sys (`EvtIoInternalDeviceControl` only; as a normal IOCTL it gets `STATUS_NOT_SUPPORTED`)  
-It is sent by [usbfnclx.sys](./usbfnclx.md#ioctl-0x29c4c0--charging-notification) for the USB source.
+It is sent by [usbfnclx.sys](./usbfnclx.md#ioctl-0x29c4c0--charging-notification) for the USB source.  
+This IOCTL is also sent by [ufx01000.sys](./ufx01000.md#internal-ioctl-0x29c4c0--ioctl_internal_cad_power_source_update) (`IOCTL_INTERNAL_CAD_POWER_SOURCE_UPDATE`, 32 bytes, with the proprietary charger GUID at 10-1F).
 
 | Property | Value |
 |----------|-------|

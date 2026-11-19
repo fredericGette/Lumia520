@@ -124,20 +124,20 @@ Files used other than the static imports.
 
 | Offset | Interface | IID | Vtable | Methods |
 |--------|-----------|-----|--------|---------|
-| 0x00 | `IPMDeploymentManager` | `{35F785FA-1979-4A8B-BC8F-FD70EB0D1544}` | 0x10002CDC | 34 |
-| 0x04 | `IPMDeploymentManager2` | `{75E430A7-9559-4828-98DD-BC657620AB87}` | 0x10002C8C | 17 |
-| 0x08 | `IPMEnumerationManager` | `{698D57C2-292D-4CF3-B73C-D95A6922ED9A}` | 0x10002C34 | 19 |
-| 0x0C | `IPMEnumerationManager2` | `{D83400E1-A7A6-4990-9B84-10490AFF2063}` | 0x10002C14 | 5 |
-| 0x10 | `IPMTileManager` | `{D622EEDE-5363-41FC-91C3-88E321191A34}` | 0x10002BEC | 7 |
-| 0x14 | `IPMTileManager2` | `{D29905F5-BAA2-48C5-A98A-F0DC7E122B84}` | 0x10002BC8 | 6 |
-| 0x18 | `IPMTileManagerInternal` | `{FDD4D1CC-282A-405C-B7B0-571C2BE66CAC}` | 0x10002BB0 | 3 |
-| 0x1C | `IPMBssWriter` (`CBssDbWriter`) | `{1D275BED-9E6B-4F08-9A69-20B1B12C95AE}` | 0x10002B8C | 6 |
-| 0x20 | `IPMBssManager` (`CBssDbManager`) | `{96F5B3C3-9610-427C-A522-7DABEAE417D5}` | 0x10002B58 | 10 |
-| 0x24 | `IPMInternal` | `{5ECEF0F3-AD16-434D-8940-EDC1BB4617D9}` | 0x10002B34 | 6 |
-| 0x28 | `IPMLiveTileJobManager` | `{15E673FD-0497-4CB3-97CB-99E698DD3B66}` | 0x10002B14 | 5 |
-| 0x2C | `IPMLicenseManager` (`CLicenseManager`) | `{11ED725B-8820-45F8-96E6-6845524E46DA}` | 0x10002AF8 | 4 |
-| 0x30 | `IPMLicenseManager2` | `{1B83665E-A1B1-455A-BEAC-C680B48BDA10}` | 0x10002AE0 | 3 |
-| 0x34 | `IPMTestHook` | `{C1CB379E-BAEA-4BA5-9675-27FB34184E9E}` | 0x10002AB4 | 8 |
+| 0x00 | `IPMDeploymentManager` | `{35F785FA-1979-4A8B-BC8F-FD70EB0D1544}` | 0x10002CDC | 33 |
+| 0x04 | `IPMDeploymentManager2` | `{75E430A7-9559-4828-98DD-BC657620AB87}` | 0x10002C8C | 16 |
+| 0x08 | `IPMEnumerationManager` | `{698D57C2-292D-4CF3-B73C-D95A6922ED9A}` | 0x10002C34 | 18 |
+| 0x0C | `IPMEnumerationManager2` | `{D83400E1-A7A6-4990-9B84-10490AFF2063}` | 0x10002C14 | 3 |
+| 0x10 | `IPMTileManager` | `{D622EEDE-5363-41FC-91C3-88E321191A34}` | 0x10002BEC | 6 |
+| 0x14 | `IPMTileManager2` | `{D29905F5-BAA2-48C5-A98A-F0DC7E122B84}` | 0x10002BC8 | 4 |
+| 0x18 | `IPMTileManagerInternal` | `{FDD4D1CC-282A-405C-B7B0-571C2BE66CAC}` | 0x10002BB0 | 1 |
+| 0x1C | `IPMBssWriter` (`CBssDbWriter`) | `{1D275BED-9E6B-4F08-9A69-20B1B12C95AE}` | 0x10002B8C | 5 |
+| 0x20 | `IPMBssManager` (`CBssDbManager`) | `{96F5B3C3-9610-427C-A522-7DABEAE417D5}` | 0x10002B58 | 9 |
+| 0x24 | `IPMInternal` | `{5ECEF0F3-AD16-434D-8940-EDC1BB4617D9}` | 0x10002B34 | 5 |
+| 0x28 | `IPMLiveTileJobManager` | `{15E673FD-0497-4CB3-97CB-99E698DD3B66}` | 0x10002B14 | 4 |
+| 0x2C | `IPMLicenseManager` (`CLicenseManager`) | `{11ED725B-8820-45F8-96E6-6845524E46DA}` | 0x10002AF8 | 3 |
+| 0x30 | `IPMLicenseManager2` | `{1B83665E-A1B1-455A-BEAC-C680B48BDA10}` | 0x10002AE0 | 2 |
+| 0x34 | `IPMTestHook` | `{C1CB379E-BAEA-4BA5-9675-27FB34184E9E}` | 0x10002AB4 | 7 |
 | 0x38 | `IFastRundown` | `{00000040-0000-0000-C000-000000000046}` | 0x10002AA4 | 1 |
 
 "Methods" doesn't count `IUnknown`. The objects returned by the enumerations are `Application` (`IPMApplicationInfo` `{50AFB58A-438C-4088-9789-F8C4899829C7}`; `IPMApplicationInfo2` `{2925390A-D947-4062-9DAD-CF6F60E6A707}` is only returned when bit 0x400 of the flags at +0x114 is set, it's the embedded `Application2` at +0x148; `IPMApplicationInfo` vtable of `Application` at 0x1000912C: index 7 `sub_10062910` returns the title, index 30 `sub_1006282C` the SID string, `ConvertSidToStringSidW` of the principal SID for an application with flag 0x400 or 0x40000 at +0x114), `Token` (`IPMTileInfo`), `Token2` (`IPMTileInfo2`), `Task`, `Extension`, `BackgroundServiceAgent`, `TokenJob` and their enumerators (`IPM*Enumerator`).
@@ -148,19 +148,21 @@ The methods, by vtable index (0…2 = `IUnknown`), with the name of their trace 
 
 | Interface | Index: method (capability) |
 |-----------|----------------------------|
-| `IPMDeploymentManager` | 3…7: install / update / deploy of XAP packages (`ID_CAP_PM_INSTALL`; `PackageManager::BeginInstall`, `BeginUpdate`, `BeginDeployPackage` ?); 8: debug API check; 9 `BeginUpdateDeployedPackageLegacy`; 10 `BeginUninstall` (`ID_CAP_PM_INSTALL` or `ID_CAP_ENTERPRISE_ENROLLMENT`, or debug); 11 `BeginEnterpriseAppInstall`, 12 `BeginEnterpriseAppUpdate` (`ID_CAP_ENTERPRISE_ENROLLMENT`); 13 `BeginUpdateLicense`, 14 ?, 15 `GetLicenseChallengeByProductID`, 16 ?, 17 `RevokeLicense` (`ID_CAP_PM_INSTALL`); 18 `RebindMdilBinaries` (debug), 19 `RebindAllMdilBinaries`; 20 `RegenerateXbf`, 21 ?, 22 `BeginProvision`, 23 `BeginDeprovision`, 24 `ReindexSQLCEDatabases` (`ID_CAP_PM_1ST_PARTY`); 25 `SetApplicationsNeedMaintenance`, 26 `UpdateChamberProfile` (`ID_CAP_PM_INSTALL`); 27 ? (`ID_CAP_PM_1ST_PARTY`); 28 `BeginUpdateDeployedPackage` (debug); 29 `ReportRestoreCancelled`; 30 ?; 31 `UpdateCapabilitiesForModernApps`, 32 `ReportDownloadStatusUpdate` (`ID_CAP_PM_INSTALL`); 33 `BeginUninstallWithOptions`; 34 `BindDeferredMdilBinaries`; 35 `GenerateXamlLightupXbfForCurrentLocale`; 36 ? |
-| `IPMDeploymentManager2` | 3…5: not implemented (`sub_1006C118`); 6 `BeginAppXRegister`, 7 `BeginAppXUninstall`, 8 `BeginAppXInstall`, 9 `BeginAppXUpdate`, 10 ?, 13 ?, 14 `AppxGetApplicabilityUsingProductId`, 15 `BeginAppxDownload`, 16 `BeginMove` (internal storage ↔ SD card), 17 `StartSDCardCleanupTask`, 18 `DeletePackageVolume` (`ID_CAP_PM_INSTALL`); 11 `FindPackages`, 12 `FindPackagesByNamePublisher` (`ID_CAP_PM_1ST_PARTY`) |
+| `IPMDeploymentManager` | 3 `ReportDownloadBegin`, 4 `ReportDownloadProgress`, 5 `ReportDownloadComplete`, 6 `BeginInstall`, 7 `BeginUpdate` (`ID_CAP_PM_INSTALL`); 8 `BeginDeployPackage` (debug); 9 `BeginUpdateDeployedPackageLegacy`; 10 `BeginUninstall` (`ID_CAP_PM_INSTALL` or `ID_CAP_ENTERPRISE_ENROLLMENT`, or debug); 11 `BeginEnterpriseAppInstall`, 12 `BeginEnterpriseAppUpdate` (`ID_CAP_ENTERPRISE_ENROLLMENT`); 13 `BeginUpdateLicense`, 14 `GetLicenseChallenge`, 15 `GetLicenseChallengeByProductID`, 16 `GetLicenseChallengeByProductID2`, 17 `RevokeLicense` (`ID_CAP_PM_INSTALL`); 18 `RebindMdilBinaries` (debug), 19 `RebindAllMdilBinaries` (`ID_CAP_PM_INSTALL`); 20 `RegenerateXbf`, 21 `GenerateXbfForCurrentLocale`, 22 `BeginProvision`, 23 `BeginDeprovision`, 24 `ReindexSQLCEDatabases` (`ID_CAP_PM_1ST_PARTY`); 25 `SetApplicationsNeedMaintenance`, 26 `UpdateChamberProfile` (`ID_CAP_PM_INSTALL`); 27 `EnterprisePolicyIsApplicationAllowed` (`ID_CAP_PM_1ST_PARTY`); 28 `BeginUpdateDeployedPackage` (debug); 29 `ReportRestoreCancelled` (`ID_CAP_PM_INSTALL`); 30 `ResolveResourceString`; 31 `UpdateCapabilitiesForModernApps`, 32 `ReportDownloadStatusUpdate` (`ID_CAP_PM_INSTALL`); 33 `BeginUninstallWithOptions`; 34 `BindDeferredMdilBinaries` (`ID_CAP_PM_INSTALL`); 35 `GenerateXamlLightupXbfForCurrentLocale` (`ID_CAP_PM_1ST_PARTY`) |
+| `IPMDeploymentManager2` | 3…5: not implemented (`sub_1006C118`); 6 `BeginAppXRegister`, 7 `BeginAppXUninstall`, 8 `BeginAppXInstall`, 9 `BeginAppXUpdate` (`ID_CAP_PM_INSTALL`, or debug); 10 `GetPayloadIdbyProductId`; 13 `AppxGetApplicability`, 14 `AppxGetApplicabilityUsingProductId`, 15 `BeginAppxDownload`, 16 `BeginMove` (internal storage ↔ SD card), 17 `StartSDCardCleanupTask`, 18 `DeletePackageVolume` (`ID_CAP_PM_INSTALL`); 11 `FindPackages`, 12 `FindPackagesByNamePublisher` (`ID_CAP_PM_1ST_PARTY`) |
 | `IPMEnumerationManager` | 3: application enumerator by filter; 4…20: application by product ID / by AUMID, tiles, tasks, extensions, background agents and workers, by filter (`ID_CAP_PM_1ST_PARTY` for 3, 5, 7, 8, 12…15, 17, 18); 9 is the application by product ID (`sub_100B12D0` → `sub_1004DB10`, GUID by value, returns `IPMApplicationInfo`, used by [ScreenRecorderImpl.dll](./screenrecorderimpl.md#application-identity-sub_1000264c)) |
 | `IPMEnumerationManager2` | 3: application info from an application ID (used by [BtsCli.dll](./btscli.md#foreground-listener)), 4 `get_TileInfo`, 5, 6 (`ID_CAP_PM_1ST_PARTY`) |
-| `IPMTileManager` | 3 `ConstructTile`, 4, 7 (`ID_CAP_PM_1ST_PARTY`), 5, 6 `CommitTileExternal`, 8 `PushUpdateTile` (`DeliverPhoneLegacyTileNotification` with privilege elevation) |
-| `IPMTileManager2` / `IPMTileManagerInternal` | `ConstructTileInternal` (several overloads), 5 `DeleteTile`, 7 (`ID_CAP_PM_1ST_PARTY`) |
-| `IPMBssWriter` | 3…6 (`ID_CAP_PM_BSS`): create (`PackageManager::ValidateForNotificationCreation`), update and delete the scheduled notifications of the `BSSACTION` table, 7 ? |
-| `IPMBssManager` | 3 `GetNotificationIteratorById`, 6 `GetTotalActiveBackgroundAgents`, 7 `GetNotificationByIndex`, 9 `GetNotificationIteratorByLastRunTime`, 10 `GetNotificationIteratorById`, 11 `GetNotificationIteratorByProductId` |
-| `IPMInternal` (`ID_CAP_PM_1ST_PARTY`) | 3: register a notification pipe ([Notifications](#notifications)); 4 ?; 5 `ReportInstallProgress`; 6, 7 ? |
+| `IPMTileManager` | 3 `ConstructTile`, 4 `CommitTile`, 7 `CommitTileSilent` (`ID_CAP_PM_1ST_PARTY`); 5 `DeleteTile`, 6 `CommitTileExternal`, 8 `PushUpdateTile` (`DeliverPhoneLegacyTileNotification` with privilege elevation) |
+| `IPMTileManager2` / `IPMTileManagerInternal` | 3 `ConstructTileInternal` (both interfaces); `IPMTileManager2` 4 and 6 commit a tile (same method, with 0 / 1) ?, 5 `DeleteTile` |
+| `IPMBssWriter` | 3 `CreateNotification` (`PackageManager::ValidateForNotificationCreation`), 4 `DeleteNotification`, 5 `DeleteApplication`, 6 `UpdateNotification` (`ID_CAP_PM_BSS`): the scheduled notifications of the `BSSACTION` table (`BnsDbWriter`); 7 `ExtendAgentEndTime` |
+| `IPMBssManager` | 3 notification by ID, 4 `GetNotificationCount`, 5 and 6 `GetTotalActiveBackgroundAgents` ?, 7 `GetNotificationByIndex`, 8 `GetNotificationIterator`, 9 `GetNotificationIteratorByLastRunTime`, 10 `GetNotificationIteratorById`, 11 `GetNotificationIteratorByProductId` |
+| `IPMInternal` (`ID_CAP_PM_1ST_PARTY`) | 3: register a notification pipe ([Notifications](#notifications)); 4: unregister it (`NotificationsSender::RemoveListener`); 5 `ReportInstallProgress`; 6 ?; 7: sends a notification (`CSender::SendNotification`) ? |
 | `IPMLiveTileJobManager` (`ID_CAP_PM_1ST_PARTY`) | 3 `AddLiveTokenSubscription` (with `FillLiveTokenSchedule`), 4 ?, 5 `RemoveLiveTokenSubscription`, 6 `UpdateTokenFromXML` |
-| `IPMLicenseManager` (`ID_CAP_PM_1ST_PARTY`) | 3, 4, 5 ? |
-| `IPMLicenseManager2` | 3 `IsTrialLicense` (package family name → product ID), 4 (`ID_CAP_PM_1ST_PARTY`) |
+| `IPMLicenseManager` (`ID_CAP_PM_1ST_PARTY`) | 3 `IsTrial` (`LicenseChecker::IsTrial`), 4 `VerifyLicenseForExecute`, 5 `RetrieveContentKeyFromLicense` |
+| `IPMLicenseManager2` | 3 `IsTrialLicense` (package family name → product ID), 4 `VerifyLicenseForExecute` (`ID_CAP_PM_1ST_PARTY`) |
 | `IPMTestHook` (`ID_CAP_PM_1ST_PARTY`) | 3 `UpdateAppState`, 4 `GetAppStorageID`, 5 `UpdateAppStorageID`, 6 `OnSDCardStateChange`, 7 `CheckAppsDuringStartup`, 8 `UpdateAppFlags`, 9 `GetAppFlags` |
+
+The out-of-process calls are marshalled by the proxy/stub DLL [PacManClient.dll](./pacmanclient.md#interfaces) (factory class `{1EECD525-6D75-4046-AE79-F291A319D36B}`), whose NDR format strings give the parameters of every method of these interfaces, of the objects and enumerators they return, and of the deployment extension handler interfaces below.
 
 The asynchronous `Begin*` methods create a request (`PackageManager::CreateInstallRequest`, `CreateUninstallRequest`, `SendUpdateRequest`, `EnqueueRequest`) for the request queue; the orchestrator runs the activities of the request (`ActivityContext`, saved in the database so that it can be rolled back or resumed after a reboot: `CROCOVERYOFUNINSTALL`, `Enqueue Recovered Uninstall Request: %s`). The orchestrator types are `OR_INSTALL`, `OR_UPDATE`, `OR_UPDATE_LICENSE`, `OR_DBPROVISION_INSTALL`, `OR_DBPROVISION_UNINSTALL`, `OR_DBPROVISION_UPDATE`, `OR_FORCEUNINSTALL`, `OR_INSTALL_WORKER`, `OR_LIGHTUP_INSTALL`, `OR_LIGHTUP_UPDATE`, `OR_SD_MOVE`, `OR_SD_MOVE_LIGHTUP` and `OR_APPX_EMPTY`.
 

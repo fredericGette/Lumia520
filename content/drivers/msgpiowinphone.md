@@ -46,6 +46,7 @@ It communicates with the following devices:
 | Lower device (ACPI PDO of `\_SB.BTN0`) | [acpi.sys](./acpi.md) | `IOCTL_ACPI_EVAL_METHOD_EX` on `BNWP` |
 | `\BaseNamedObjects\StorageSvcAdminPort` (ALPC port) | StorageSvc (user mode service ?) | Power log request, see [key dances](#key-dances) |
 | HID class driver (upper device) | mshidkmdf.sys / hidclass.sys ? | Internal HID IOCTLs (see below) |
+| HID collection (Usage Page Generic Desktop, Usage 0xEE) | [kbdclasswp.sys](./kbdclasswp.md) | Upper filter: reads the input reports and turns the buttons into scan codes for `\Device\WPKeyboardClass` (device type 2 "hardware buttons") |
 
 ### Lumia 520 ACPI node
 

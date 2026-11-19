@@ -84,7 +84,7 @@ Driver: the Windows driver that loads on the node, when it's documented in [driv
 | `\_SB.CPU0`, `CPU1` | ACPI0007 | | Processors |
 | `\_SB.CIN0` | QCOM1201 | [qcchipinfo8930.sys](../drivers/qcchipinfo8930.md) | Chip information (TLMM register 0x00802054) |
 | `\_SB.MBB0` … `MBB3` | QCOM0EA0 | | Mobile broadband |
-| `\_SB.HWN0` | QCOM0D50 | hwnled ? | Hardware notification LEDs (`HWNL`), see [oempanel.sys](../drivers/oempanel.md) |
+| `\_SB.HWN0` | QCOM0D50 | [hwnled.sys](../drivers/hwnled.md) | Hardware notification LEDs (`HWNL`), see [oempanel.sys](../drivers/oempanel.md) |
 | `\_SB.VIB1` | NOKIA_VIBRA_DIME | | Vibrator |
 | `\_SB.SSM` | QCOM2123 | [qcssm8930.sys](../drivers/qcssm8930.md) ? | Secure Services Module (SMD channel `SSM_RTR`, MODEM key exchange through TrustZone) |
 | `\_SB.RMNT` | QCOM2148 | [qcrmnetbridge8930.sys](../drivers/qcrmnetbridge8930.md) ? | RmNet bridge (USB RmNet function ↔ SMD channel `DATA40_CNTL` + BAM DMUX stream 2, channel 8) |
@@ -94,7 +94,7 @@ Driver: the Windows driver that loads on the node, when it's documented in [driv
 | `\_SB.ATTS` | NOKIA_ATTS | | |
 | `\_SB.EGP0` | ENOGPIO | | |
 | `\_SB.DISP` | NOKIA_PANEL | [oempanel.sys](../drivers/oempanel.md) | Panel (`DPID`) |
-| `\_SB.NRSD` | NRSD0001 | | |
+| `\_SB.NRSD` | NRSD0001 | [nrsdriver.sys](../drivers/nrsdriver.md) | Nokia NRS helper: first-boot cover-colour theme, file copy and registry IOCTLs |
 
 ### SSDT
 

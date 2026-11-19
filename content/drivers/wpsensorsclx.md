@@ -2,7 +2,7 @@
 
 Windows Phone **sensor class extension** (`SensorsClx`), PDB `wpsensorsclx.pdb`.  
 It's a KMDF class library: it registers itself with `WdfRegisterClassLibrary` and the sensor drivers bind to it with `WdfVersionBindClass("SensorsClx")` (see [ltr554als02.sys](./ltr554als02.md)). The client driver only talks to the chip. Everything else is done by SensorsClx: PnP/power callbacks, the device interface, the I/O queues, the subscribers (one per opened handle), the notification modes and thresholds, the polling thread, the idle settings and the device security.  
-On the Lumia 520 its clients are the accelerometer `\_SB.ACC1` (`KXTNK`, Kionix, [acckxtnk1000.sys](./acckxtnk1000.md)) and the ALS/proximity sensors `\_SB.ALS1`/`\_SB.PRX1` (`QPDS_T900`, [qpdst900.sys](./qpdst900.md)) or `\_SB.ALS2`/`\_SB.PRX2` ([ltr554als02.sys](./ltr554als02.md)). See the Nokia SSDT ([ssdt.dsl](../acpi/ssdt.dsl)).  
+On the Lumia 520 its clients are the accelerometer `\_SB.ACC1` (`KXTNK`, Kionix, [acckxtnk1000.sys](./acckxtnk1000.md)) and the ALS/proximity sensors `\_SB.ALS1`/`\_SB.PRX1` (`QPDS_T900`, [qpdst900.sys](./qpdst900.md)) or `\_SB.ALS2`/`\_SB.PRX2` ([ltr554als02.sys](./ltr554als02.md)), and the root-enumerated fusion sensor [fusdcmpi.sys](./fusdcmpi.md) (type 5), which removes itself on the Lumia 520 because there's no magnetometer. See the Nokia SSDT ([ssdt.dsl](../acpi/ssdt.dsl)).  
 It also has accelerometer code (calibration file `C:\DPP\Sensors\Accelerometer.bin`, see [Accelerometer](#accelerometer)) and gyroscope code (DC offset filter). There's no gyroscope on the Lumia 520.
 
 Device name : `\Device\WPSensorClassExt<n>` (control device, see below)  
@@ -49,7 +49,7 @@ Power setting: `PoRegisterPowerSettingCallback` on `{E1233993-EAA4-470F-9DE7-A35
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| Client drivers | [acckxtnk1000.sys](./acckxtnk1000.md), [ltr554als02.sys](./ltr554als02.md), [qpdst900.sys](./qpdst900.md) | Called through the callbacks of their registration packet (see [Client interface](#client-interface)) |
+| Client drivers | [acckxtnk1000.sys](./acckxtnk1000.md), [ltr554als02.sys](./ltr554als02.md), [qpdst900.sys](./qpdst900.md), [fusdcmpi.sys](./fusdcmpi.md) | Called through the callbacks of their registration packet (see [Client interface](#client-interface)) |
 | Own ACPI PDO (`WdfDeviceGetIoTarget`) | [acpi.sys](./acpi.md) | `IOCTL_ACPI_EVAL_METHOD_EX` (0x32C018) to evaluate `SCLX` and `PRIM` |
 | Own sensor device (`WdfIoTargetOpen` on its own `DEVICE_OBJECT`) | wpsensorsclx.sys → client driver | Accelerometer only: [IOCTL 0x22031C](#ioctl-0x22031c) |
 
@@ -121,9 +121,9 @@ Sensor types (`SensorSpecificAlloc`, 0x1000FB74):
 | 0 | Accelerometer | 40 | `{C2FB0F5F-E2D2-4C78-BCD0-352A9582819D}` |
 | 1 | Proximity | 32 | `{5220DAE9-3179-4430-9F90-06266D2A34DE}` |
 | 2 | Ambient light | 32 | `{97F115C8-599A-4153-8894-D2D12899918A}` |
-| 3 | Compass / magnetometer ? | 56 | `{55E5EFFB-15C7-40DF-8698-A84B7C863C53}` |
+| 3 | Magnetometer (read by [fusdcmpi.sys](./fusdcmpi.md)) | 56 | `{55E5EFFB-15C7-40DF-8698-A84B7C863C53}` |
 | 4 | Gyroscope | 40 | `{09485F5A-759E-42C2-BD4B-A349B75C8643}` |
-| 5 | ? | 208 | `{D4B5AED3-3819-45CB-A3CC-EA862A2013D1}` |
+| 5 | Orientation (sensor fusion, [fusdcmpi.sys](./fusdcmpi.md)) | 208 | `{D4B5AED3-3819-45CB-A3CC-EA862A2013D1}` |
 
 Sample (output of a read, or of `SensorClxSampleReady`):  
 | Bytes | Value | Comment |
@@ -289,7 +289,8 @@ Inputbuffer:
 
 ### IOCTL 0x220014 — NotificationConfigure
 
-This IOCTL is processed by Wpsensorsclx.sys (`IoControlNotificationConfigure`, 0x1000902C)
+This IOCTL is processed by Wpsensorsclx.sys (`IoControlNotificationConfigure`, 0x1000902C)  
+This IOCTL is also sent by [fusdcmpi.sys](./fusdcmpi.md) to the accelerometer, magnetometer and gyroscope devices
 
 | Property | Value |
 |----------|-------|
@@ -319,7 +320,8 @@ Fails with `STATUS_INVALID_DEVICE_STATE` while the notification is running. The 
 
 ### IOCTL 0x220018 — NotificationStart
 
-This IOCTL is processed by Wpsensorsclx.sys (`IoControlNotificationStart`, 0x10009108)
+This IOCTL is processed by Wpsensorsclx.sys (`IoControlNotificationStart`, 0x10009108)  
+This IOCTL is also sent by [fusdcmpi.sys](./fusdcmpi.md) to the accelerometer, magnetometer and gyroscope devices
 
 | Property | Value |
 |----------|-------|
@@ -338,7 +340,8 @@ Validates the configuration again, adds the subscriber to the notification list 
 
 ### IOCTL 0x22001C — NotificationStop
 
-This IOCTL is processed by Wpsensorsclx.sys (`IoControlNotificationStop`, 0x100091B8)
+This IOCTL is processed by Wpsensorsclx.sys (`IoControlNotificationStop`, 0x100091B8)  
+This IOCTL is also sent by [fusdcmpi.sys](./fusdcmpi.md) to the accelerometer, magnetometer and gyroscope devices
 
 | Property | Value |
 |----------|-------|
@@ -357,7 +360,8 @@ Removes the subscriber from the notification list. The sensor is stopped when no
 
 ### IOCTL 0x220020 — IsPrimarySensor
 
-This IOCTL is processed by Wpsensorsclx.sys (inline in `EvtIoDeviceControl`, 0x10008A7C)
+This IOCTL is processed by Wpsensorsclx.sys (inline in `EvtIoDeviceControl`, 0x10008A7C)  
+This IOCTL is also sent by [fusdcmpi.sys](./fusdcmpi.md) to the accelerometer, magnetometer and gyroscope devices
 
 | Property | Value |
 |----------|-------|
@@ -379,7 +383,8 @@ Outputbuffer:
 
 ### IOCTL 0x220024 — EnableIdleOperation
 
-This IOCTL is processed by Wpsensorsclx.sys (`IoControlEnableIdleOperation`, 0x10009268)
+This IOCTL is processed by Wpsensorsclx.sys (`IoControlEnableIdleOperation`, 0x10009268)  
+This IOCTL is also sent by [fusdcmpi.sys](./fusdcmpi.md) to the accelerometer, magnetometer and gyroscope devices
 
 | Property | Value |
 |----------|-------|
@@ -488,11 +493,11 @@ Proximity
 `{5220DAE9-3179-4430-9F90-06266D2A34DE}`  
 Ambient light  
 `{97F115C8-599A-4153-8894-D2D12899918A}`  
-Type 3 (compass ?)  
+Type 3 (magnetometer)  
 `{55E5EFFB-15C7-40DF-8698-A84B7C863C53}`  
 Gyroscope  
 `{09485F5A-759E-42C2-BD4B-A349B75C8643}`  
-Type 5 (?)  
+Type 5 (orientation, [fusdcmpi.sys](./fusdcmpi.md))  
 `{D4B5AED3-3819-45CB-A3CC-EA862A2013D1}`
 
 ### Other GUID

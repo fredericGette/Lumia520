@@ -297,7 +297,8 @@ This IOCTL is processed by SynapticsTouch.sys
 |------|------------------|-------------------|
 | IOCTL_HID_READ_REPORT | 0 | ≥ 14 |
 
-`sub_4073C4`: the request is forwarded to a manual queue (context `+0x0C`) and completed by the interrupt processing with report 1 or report 9. After a D0 entry, the first read also processes the pending controller interrupts (unless a firmware flash is running).
+`sub_4073C4`: the request is forwarded to a manual queue (context `+0x0C`) and completed by the interrupt processing with report 1 or report 9. After a D0 entry, the first read also processes the pending controller interrupts (unless a firmware flash is running).  
+The touch-screen reports (report 1) are read by the upper filter [tchhid.sys](./tchhid.md), which gathers the contacts of a frame from several reports (Contact Count of the first report).
 
 ---
 
@@ -418,6 +419,8 @@ This IOCTL is processed by SynapticsTouch.sys
 |-----------|------------|-----------------|
 | 7 | 3 | Current Device Mode |
 | 8 | 2 | Contact Count Maximum = **10** |
+
+Report 8 is requested by [tchhid.sys](./tchhid.md#ioctl-0xb0192--ioctl_hid_get_feature) (through the HID class) to get the Contact Count Maximum of the touch screen.
 
 > [!NOTE]
 > The driver returns a maximum of 10 contacts although the report descriptor declares a logical maximum of 2 and report 1 only carries 2 fingers.
