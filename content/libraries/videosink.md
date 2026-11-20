@@ -112,7 +112,7 @@ Constructor `sub_1000A810` (shared by the normal and aggregated objects), initia
 `IMFGetService::GetService` (`sub_1000AA28`): `MF_RATE_CONTROL_SERVICE` → `IMFRateSupport`, `MR_VIDEO_RENDER_SERVICE` → `{63DF056D-…}`; anything else `E_NOINTERFACE`. `IMFRateSupport`: slowest rate 0, fastest rate `-FLT_MAX` / `FLT_MAX` (reverse / forward), every rate supported.  
 `IQualProp`: `get_FramesDroppedInRenderer` = stream +0x264, `get_FramesDrawn` = stream +0x268 − +0x264, `get_AvgFrameRate` from the two clock times at stream +0x270 / +0x278 and the frame count; the other three `E_NOTIMPL`.
 
-**`{BCCD7224-1179-4F9A-8290-7F1DE5A2A549}`** (private, 4 methods):
+**`{BCCD7224-1179-4F9A-8290-7F1DE5A2A549}`** (private, 4 methods; [MFPalWP.dll](./mfpalwp.md#topology-attributes) `MFPalUpdateDecoderAttributes` only queries it to recognise this sink and give the decoder the same sample attributes):
 
 | Method | Function | Action |
 |--------|----------|--------|

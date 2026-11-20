@@ -315,7 +315,7 @@ The client is [BTAudioGatewayClient.dll](./btaudiogatewayclient.md#pipe-messages
 |------|-----------------|------|--------|
 | 0x41C61D22A3BC1075 `WNF_OS_BATTERY_STRENGTH` (`.text:0x1000127C`) | `OS`, 2 | 4 bytes: percentage ? | Subscribed; event 14. 0 → 1, 21 → 2, 41 → 3, 61 → 4, 91 and 100 → 5, other values → 0: indicator battchg |
 | 0x41821B2CA3BF3075 `WNF_AUD_ACTIVE_CALL_ENDPOINT` (`.text:0x100011FC`) | `AUD`, 102 | 4 bytes: 0 Default, 1 Speakerphone, 2 Handset, 3 Wired, 4 Wired+MIC, 5 SCO, 6 SCO+NREC | Subscribed, only logged |
-| 0x41821B2CA3BF4875 `WNF_AUD_CATEGORY_BACKGROUNDCAPABLEMEDIA` (`.text:0x10001178`) | `AUD`, 105 | 0x208 bytes: +4 flags, +0x108 id (string) | Subscribed, only logged |
+| 0x41821B2CA3BF4875 `WNF_AUD_CATEGORY_BACKGROUNDCAPABLEMEDIA` (`.text:0x10001178`) | `AUD`, 105 | 0x208 bytes: +4 flags, +0x108 id (string) | Subscribed, only logged. One of the 22 `WNF_AUD_CATEGORY_*` states (`AUD` 103–127) that [MFPalWP.dll](./mfpalwp.md#background-audio) watches for the default device of an audio category (flags at +0 / +4, device ids at +8 / +0x108) |
 | 0x41C6193FA3B95C75 `WNF_RW_CA_ENABLED` (`.text:0x10001244`) | `RW`, 171 | 4 bytes | Queried (`NtQueryWnfStateData`) for the Cortana name |
 | 0x0992022FA3BC1075 `WNF_BLTH_BLUETOOTH_AUDIO_GATEWAY_STATUS` | `BLTH`, 2 | 4 bytes: bits below | Published by `DispatchSetWNFStatus` (0x10008944) when the value changes; read by [BthAvrcp.dll](./bthavrcp.md#wnf-states) (bits 0x004 / 0x400 block an AVRCP Play, 0x008 / 0x800 a Pause) |
 

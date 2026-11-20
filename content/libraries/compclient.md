@@ -213,7 +213,7 @@ The session handle is a `CompositorAlpcClient` (one ALPC connection), released b
 - `SrStartSession(&session)` only opens the connection. `SrProcessCommand(session)` sends request 9; the server status 0xCFFF0001 is turned into `E_ACCESSDENIED` (0x80070005). "Sr" is screen recording: the server hands the request to the recorder of [ScreenRecorderImpl.dll](./screenrecorderimpl.md#processcommand-sub_100025a0), which reads the command from the caller's `ScreenRecorderMetaData` section.
 - `StartProtectedSession(&session, …)` opens the connection and sends request 15 `SetProtectedStatus`: while the connection is open the client is "protected" (protected content, no screen capture ?).
 
-`StartProtectedSession` / `StopProtectedSession` are called by [VideoSinkOTA.dll](./videosinkota.md#apollo-ota): the minimal OTA it gives to the video sink holds a protected session for its lifetime. The callers of the other session exports aren't known.
+`StartProtectedSession` / `StopProtectedSession` are called by [VideoSinkOTA.dll](./videosinkota.md#apollo-ota): the minimal OTA it gives to the video sink holds a protected session for its lifetime. [MFPalWP.dll](./mfpalwp.md#protected-output) also forwards its `MFMEPalStartProtectedSession` / `MFMEPalStopProtectedSession` exports to them (callers not documented). The callers of the other session exports aren't known.
 
 ### ETW
 

@@ -75,3 +75,6 @@
 [VideoSinkOTA.dll](./videosinkota.md)  
 [PacManClient.dll](./pacmanclient.md)  
 [vfbasics.dll](./vfbasics.md)  
+[nokia_mft_preview.dll](./nokia_mft_preview.md)  
+[nokia_mft_still.dll](./nokia_mft_still.md)  
+[MFPalWP.dll](./mfpalwp.md)  

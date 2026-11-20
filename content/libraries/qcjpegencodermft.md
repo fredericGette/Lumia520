@@ -142,7 +142,7 @@ Attribute store of the MFT (`sub_10002248`, `MFCreateAttributes(5)`), returned b
 
 | GUID | Type | Default | Use |
 |------|------|---------|-----|
-| `{B00FF797-0B7C-476E-9CE5-0BC9861805A2}` | `VT_VECTOR` \| `VT_CLSID` | the 5 GUIDs below | List of the supported keys ? |
+| `{B00FF797-0B7C-476E-9CE5-0BC9861805A2}` | `VT_VECTOR` \| `VT_CLSID` | the 5 GUIDs below | List of the supported keys ? ([nokia_mft_preview.dll](./nokia_mft_preview.md#attributes) sets the same attribute to the list of its own 3 keys) |
 | `{AE65C4A2-7E39-44D8-8015-E15C1454C7CD}` | UINT32 | 95 | JPEG quality ? Only read for the (empty) trace: the quality is always 95 for the main image and 75 for the thumbnail |
 | `{81D1395D-8033-4C26-85DA-1490CD19A63C}` | UINT32 | 0 | Encoder preference: 1 = "Software", other = "Hardware", see [Engines](#engines) |
 | `{9A2E241A-3F79-43A6-AB44-788826639D7A}` | UINT32 | 0 | Rotation in degrees: 0, 90, 180 or 270 (other values → 0), main image and thumbnail |
