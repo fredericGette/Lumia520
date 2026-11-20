@@ -138,3 +138,4 @@
 [ufx01000.sys](./ufx01000.md)  
 [ufxchipidea.sys](./ufxchipidea.md)  
 [ufxsynopsys.sys](./ufxsynopsys.md)  
+[WDFHelper.sys](./wdfhelper.md)  

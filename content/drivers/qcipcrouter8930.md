@@ -146,6 +146,7 @@ For each transport subkey, the arrival of the SMD interface calls `sub_401544`, 
 This IOCTL is processed by Qcipcrouter8930.sys  
 This IOCTL is also sent by [qcremotefs8930.sys](./qcremotefs8930.md#ioctl-0x122000)  
 This IOCTL is also sent by [qccium8930.dll](../libraries/qccium8930.md#ipc-router-transport)  
+This IOCTL is also sent by [WDFHelper.sys](./wdfhelper.md) (QCCI IPC router transport)  
 
 | Property | Value |
 |----------|-------|
@@ -211,6 +212,7 @@ Not found: `STATUS_NOT_FOUND` (0xC0000225).
 
 This IOCTL is processed by Qcipcrouter8930.sys  
 This IOCTL is also sent by [qccium8930.dll](../libraries/qccium8930.md#service-lookup)  
+This IOCTL is also sent by [WDFHelper.sys](./wdfhelper.md) (QCCI IPC router transport)  
 
 | Property | Value |
 |----------|-------|
@@ -301,6 +303,7 @@ Not registered: `STATUS_INVALID_DEVICE_REQUEST` (0xC0000010).
 This IOCTL is processed by Qcipcrouter8930.sys  
 This IOCTL is also sent by [qcremotefs8930.sys](./qcremotefs8930.md#ioctl-0x122017)  
 This IOCTL is also sent by [qccium8930.dll](../libraries/qccium8930.md#ipc-router-transport)  
+This IOCTL is also sent by [WDFHelper.sys](./wdfhelper.md) (QCCI IPC router transport)  
 
 | Property | Value |
 |----------|-------|
@@ -321,6 +324,7 @@ No buffer is used. If a packet is waiting, the IOCTL completes at once with `Inf
 
 This IOCTL is processed by Qcipcrouter8930.sys  
 This IOCTL is also sent by [qcremotefs8930.sys](./qcremotefs8930.md#ioctl-0x12201b)  
+This IOCTL is also sent by [WDFHelper.sys](./wdfhelper.md) (QCCI IPC router transport)  
 
 | Property | Value |
 |----------|-------|

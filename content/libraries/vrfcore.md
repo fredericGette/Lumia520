@@ -2,9 +2,9 @@
 
 Application Verifier core library ("AVRF 3.0", source `base\avrf\avrf30\vrfcore`): the layer registry and the shared run-time of every user-mode verifier check.  
 `vrfcore.dll` is a native DLL (only `ntdll.dll` imports, 323 functions, full symbols). It has two uses. In a tool such as [AppVerif.exe](../applications/appverif.md), it keeps the list of the *layers* (tests) registered by the providers and writes their settings in the `Image File Execution Options` (IFEO) key of the target image. Each layer has a name, a GUID, properties and stop codes. In a verified process, the loader loads it from `VerifierDlls` as the first verifier provider (`DLL_PROCESS_VERIFIER`). It then reads the settings of each layer, hooks a few `ntdll` / `kernel32` functions, and offers the other providers verifier stops (debug break / log / exception), the log file `<image>.<n>.dat`, fault injection and a TLS slot.  
-It contains three layers itself: `Core`, `Heaps` (page heap settings) and the descriptors of `COM` and `RPC`, which are registered by another provider. The other checks (`Handles`, `Locks`, `Leak`…) are in providers such as `vfbasics.dll` (next to it in the same folder, not analysed) and `vfgcleak.dll`, which import it. [AppVerif.exe](../applications/appverif.md) imports 14 of its exports.
+It contains three layers itself: `Core`, `Heaps` (page heap settings) and the descriptors of `COM` and `RPC`, which are registered by another provider. The other checks (`Handles`, `Locks`, `Leak`…) are in providers such as [vfbasics.dll](./vfbasics.md) and `vfgcleak.dll`, which import it. [AppVerif.exe](../applications/appverif.md) imports 14 of its exports.
 
-Location on the phone: `C:\Windows\System32\vrfcore.dll` ? (extracted next to `AppVerif.exe` and `vfbasics.dll`).  
+Location on the phone: `C:\Windows\System32\vrfcore.dll` ? (extracted next to `AppVerif.exe` and [vfbasics.dll](./vfbasics.md)).  
 
 ### Imports
 
@@ -27,7 +27,7 @@ Files used other than the static imports.
 | `verifier.dll` | Found in the loader list (`VfCoreModuleInfo`, 0x10004A20), `LdrGetDllHandle`, `LdrLoadDll` | The system verifier provider. vrfcore.dll scans its image for its `RTL_VERIFIER_PROVIDER_DESCRIPTOR` (see [DLL_PROCESS_VERIFIER](#dll_process_verifier)), redirects its stop functions (`VerifierRedirectStopFunctions`, else `VerifierStopMessage` patched), hooks its `VerifierGetPropertyValueByName`, and calls its `VerifierIsAddressInAnyPageHeap` in `VerifierGetInfoForException` |
 | `kernel32.dll` | `LdrGetDllHandle` + `LdrGetProcedureAddress` (`ViInitDelayLoad`, 0x10008744) | `TlsAlloc`, `TlsFree`, `TlsGetValue`, `TlsSetValue` (TLS slots of the layers, `VerifierTlsGetValue` / `VerifierTlsSetValue`) |
 | `ntdll.dll` | `LdrLoadDll` + `LdrGetProcedureAddress("LdrGetProcedureAddressForCaller")` | Present → the `LdrGetProcedureAddress*` and `GetProcAddress` hooks aren't installed (`AVrfAPILookupCallback` is used instead) |
-| `SHSMP.DLL`, `smartcpu.dll`, `TTTraceWriter.dll`, `vfbasics.dll` | Names compared in `VfCoreDllLoadCallback` (0x100088C8) | SmartHeap → stop 0x100B "SmartHeap (shsmp.dll) is not supported" ; smartcpu / TTTraceWriter (Time Travel tracing) → their calls get the original exports; `vfbasics.dll` loaded → the heap tracker of vrfcore.dll is destroyed |
+| `SHSMP.DLL`, `smartcpu.dll`, `TTTraceWriter.dll`, `vfbasics.dll` | Names compared in `VfCoreDllLoadCallback` (0x100088C8) | SmartHeap → stop 0x100B "SmartHeap (shsmp.dll) is not supported" ; smartcpu / TTTraceWriter (Time Travel tracing) → their calls get the original exports; [vfbasics.dll](./vfbasics.md) loaded → the heap tracker of vrfcore.dll is destroyed |
 | Provider DLLs (`VerifierDlls`) | Loaded by `ntdll` | Each provider calls `VerifierRegisterLayer` from its `DllMain`; its file name (loader `BaseDllName`) is what [VerifierEnableLayer](#verifierenablelayer-0x10006bcc) adds to `VerifierDlls` |
 | `<log directory>\<image>.<n>.dat` | `NtCreateFile` / `NtWriteFile` | Verifier log of the process, see [Log file](#log-file) |
 | `<log directory>` = `%VERIFIER_LOG_PATH%`, else `%USERPROFILE%`, else `%TEMP%`, + `\AppVerifierLogs` | `NtCreateFile(FILE_CREATE, FILE_DIRECTORY_FILE)` | Created if missing; `ProtectedProcessLogPath` of the global settings when it can't be created |
@@ -138,7 +138,7 @@ Hooks (thunks `{name, original, new}`):
 | 0x0C | 4 | 1 (version ?) |
 | 0x10 | 4 | Stop table (`AVRF_BREAK_DESCRIPTOR[]`, 76-byte entries, ends with stop code 0) |
 | 0x14 | 4 | Property table (`AVRF_PROPERTY_DESCRIPTOR[]`, 24-byte entries, ends with type 0) |
-| 0x18 | 4 | `L"Basics"` for Heaps/COM/RPC (group ?) |
+| 0x18 | 4 | Group: `L"Basics"` for Heaps/COM/RPC, `L"Miscellaneous"` or none for some layers of [vfbasics.dll](./vfbasics.md#layers) |
 | 0x1C | 4 | Description: string resource ID of the provider, replaced by the string (0x197 "Checks the heap errors…") |
 | 0x24 | 4 | Flags: bit 0 = the layer is propagated to child processes and cleared by `AutoClr` |
 | 0x28 | 4 | 1 (Heaps), 8 (RPC), 0x10 (COM): ? |
@@ -175,7 +175,7 @@ A query reads the value (`NtQueryValueKey`, `KeyValuePartialInformation`) and co
 | `COM` | `{91067D4F-67E6-4768-BEA4-2565236FDCBE}` | 0x400–0x423 | `ForceDllUnload` (1), `UnloadPeriodMs` (1000), `SecuritySettings` (0), `EventRemoveCheck` (1), `AgressiveMTATesting` (0) |
 | `RPC` | `{7CF16601-5646-4ecf-ACAF-D8B5872A0291}` | 0x500 (call without mutual authentication) | none |
 
-Only `Core` and `Heaps` are registered by vrfcore.dll; the `COM` and `RPC` descriptors are only used to route old-style stops (codes 0x400–0x4FF and 0x500–0x5FF) and by the `VerifierGetPropertyValueByName` hook. The provider that registers them isn't known (`vfbasics.dll` ?).
+Only `Core` and `Heaps` are registered by vrfcore.dll; the `COM` and `RPC` descriptors are only used to route old-style stops (codes 0x400–0x4FF and 0x500–0x5FF) and by the `VerifierGetPropertyValueByName` hook. The provider that registers them isn't known: not [vfbasics.dll](./vfbasics.md#layers), which only has their description strings.
 
 #### Heaps properties
 

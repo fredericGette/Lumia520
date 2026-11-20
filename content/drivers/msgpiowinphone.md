@@ -159,7 +159,7 @@ Created by sub_10002730 (`WdfPdoInitAllocate`, then `WdfFdoAddStaticChild`):
 Other lengths → `STATUS_INVALID_BUFFER_SIZE` (0xC0000206). If the state differs from the injected state (`+0xA4`), the event is pushed into the injection ring (twice for buttons 9, 11, 12) and one pending read is completed. Any value other than 0 or 1 is always "different", so it's injected every time. The write always goes to the first device (global pointer).  
 
 > [!NOTE]
-> This is the "TEST_PROXY" interface used by [oempanel.sys](./oempanel.md#test-proxy). Its records `00 01` then `00 00` are a press and release of button 0, i.e. a simulated **power key** press.
+> This is the "TEST_PROXY" interface used by [oempanel.sys](./oempanel.md#test-proxy). Its records `00 01` then `00 00` are a press and release of button 0, i.e. a simulated **power key** press. [WDFHelper.sys](./wdfhelper.md#ioctl-0x50012008--inject-a-button-event) also writes to it (buttons 10, 2 and 3), on behalf of the audio driver [qc8x60aud.sys](./qc8x60aud.md).
 
 ---
 
