@@ -78,3 +78,5 @@
 [nokia_mft_preview.dll](./nokia_mft_preview.md)  
 [nokia_mft_still.dll](./nokia_mft_still.md)  
 [MFPalWP.dll](./mfpalwp.md)  
+[MFCaptureEngine.dll](./mfcaptureengine.md)  
+[PhotosApp.Models.dll](./photosapp.models.md)  

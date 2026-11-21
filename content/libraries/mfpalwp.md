@@ -7,7 +7,7 @@ The Windows Phone "platform abstraction layer" of Media Foundation (MF PAL): the
 - protected output goes to [VideoSinkOTA.dll](./videosinkota.md) and [CompClient.dll](./compclient.md) (delay-loaded);
 - background audio is "muted" by opening an `IAudioClient2` stream of a dedicated category ([background audio](#background-audio)), the proxy comes from `ConnState!GetPreferredConnectionDetails` and the country code from two `CELL` WNF states.
 
-It's reached through the API set `ext-ms-win-mf-pal-l1-1-0` (the contract that maps to this DLL ?). `WINDOWS.MEDIA.DLL` (the `Windows.Media` WinRT classes, not documented here) delay-loads 8 functions from it, the [capture](#capture-resources) ones and `MFTEPalSupportSoftwareTranscoding` ([callers in WINDOWS.MEDIA.DLL](#callers-in-windowsmediadll)). The callers of the `MFMEPal*`, `MFNetPal*` and other `MFTEPal*` exports aren't known (the media engine and the network source ?); their parameter lists come from how the arguments are used.
+It's reached through the API set `ext-ms-win-mf-pal-l1-1-0` (the contract that maps to this DLL ?). `WINDOWS.MEDIA.DLL` (the `Windows.Media` WinRT classes, not documented here, client of the capture engine [MFCaptureEngine.dll](./mfcaptureengine.md)) delay-loads 8 functions from it, the [capture](#capture-resources) ones and `MFTEPalSupportSoftwareTranscoding` ([callers in WINDOWS.MEDIA.DLL](#callers-in-windowsmediadll)). The callers of the `MFMEPal*`, `MFNetPal*` and other `MFTEPal*` exports aren't known (the media engine and the network source ?); their parameter lists come from how the arguments are used.
 
 Location on the phone: ?  
 

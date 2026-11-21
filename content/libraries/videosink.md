@@ -231,7 +231,7 @@ The media sink is a "scenario client" of the power dependency coordinator, the s
 - Register: 32-byte object, signature `Pdcs` (0x73636450), component 0x412. `PdcPortOpen` (`sub_10013394`): port object `PdcP` / `PDCt`, `ZwAlpcConnectPort(L"\\PdcPort", attributes flags 0x20000, max message 0x30, connect flags 0xA0000)` with a register message (component 0x412, client type 5), then `TpAllocAlpcCompletion` with `sub_10013630` (errors printed by `PdcpAlpcProcessMessage` / `PdcpProcessMessageInternal`).
 - Request (`sub_10018068`): reference count; the first activation and the last release send message type 8 with byte +0x20 = 1 / 0.
 
-`OnClockStart` / `OnClockRestart` take the reference, `OnClockStop` / `OnClockPause` release it, the sink's destruction unregisters. So component 0x412 is active while a video plays. Its effect is decided by the kernel PDC (not analysed); see the other components in [DWMCORE.DLL](./dwmcore.md#pdc-scenarios) and [wppower.sys](../drivers/wppower.md#pdc-clients).
+`OnClockStart` / `OnClockRestart` take the reference, `OnClockStop` / `OnClockPause` release it, the sink's destruction unregisters. So component 0x412 is active while a video plays. Its effect is decided by the kernel PDC (not analysed); see the other components in [DWMCORE.DLL](./dwmcore.md#pdc-scenarios), [MFCaptureEngine.dll](./mfcaptureengine.md#pdc-scenarios) and [wppower.sys](../drivers/wppower.md#pdc-clients).
 
 ### Protected content
 
