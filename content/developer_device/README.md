@@ -34,7 +34,8 @@ Use the _Windows Phone Application Deployment_ tool installed along Visual Studi
 
 - [WPTweaker](https://github.com/sensboston/WPTweaker)
 - [CMD.Injector_WP8](https://github.com/fadilfadz01/CMD.Injector_WP8)
-- [wp81MyInfo](https://github.com/fredericGette/wp81MyInfo) 
+- [wp81MyInfo](https://github.com/fredericGette/wp81MyInfo)
+- [wp81Sshd](https://github.com/fredericGette/wp81Sshd)
 
 ## Second configuration
 
@@ -52,3 +53,5 @@ In WPTweaker:
 With wp81MyInfo:  
 - Pin to start the application and use a wide tile to see the current Wifi IP and Bluetooth addresses of the phone.  
 
+With wp81Sshd:  
+- Follow the installation and deployment instructions noted in the repository's README.
