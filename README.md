@@ -31,6 +31,8 @@ All about Nokia Lumia 520
 
 ## [Bluetooth stack](content/bluetooth/README.md)
 
+## [Camera stack](content/camera/README.md)
+
 ## [Windows drivers](content/drivers/README.md)
 
 ## [Windows applications](content/applications/README.md)
