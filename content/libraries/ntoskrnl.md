@@ -18,7 +18,7 @@ Location on the phone: `C:\Windows\System32\ntoskrnl.exe` ? (the extracted file 
 | msrpc | `NdrMesTypeEncode2`, `NdrMesTypeDecode2`, `MesEncodeIncrementalHandleCreate`, `MesDecodeBufferHandleCreate`, `MesIncrementalHandleReset`, `MesHandleFree`, `RpcExceptionFilter`: RPC serialisation |
 | ext-ms-win-fs-clfs-l1-1-0 | 23 `Clfs*` functions (common log file system, used by the transaction manager / registry) |
 | ext-ms-win-ntos-tm-l1-1-0 | 76 functions: the kernel transaction manager (`Tm*`, and the `Nt*Transaction*`, `Nt*Enlistment*`, `Nt*ResourceManager*` system calls are forwarded to it) |
-| ext-ms-win-ntos-werkernel-l1-1-0 | `WerLiveKernelInitSystem`, `WerLiveKernelCreateReport`, `WerLiveKernelSubmitReport`, `WerLiveKernelCancelReport`, `WerLiveKernelOpenDumpFile`, `WerLiveKernelCloseHandle`: live kernel dumps |
+| ext-ms-win-ntos-werkernel-l1-1-0 | `WerLiveKernelInitSystem`, `WerLiveKernelCreateReport`, `WerLiveKernelSubmitReport`, `WerLiveKernelCancelReport`, `WerLiveKernelOpenDumpFile`, `WerLiveKernelCloseHandle`: live kernel dumps (implemented by [werkernel.sys](../drivers/werkernel.md)) |
 | ext-ms-win-ntos-kcminitcfg-l1-1-0 | `CmSetInitMachineConfig`, `CmCompleteInitMachineConfig` |
 | ext-ms-win-ntos-ksr-l1-1-0 | `KsrInitPageDatabase`, `KsrCleanupPageDatabase` (kernel soft restart) |
 | ext-ms-win-ntos-ksecurity-l1-1-1 | `AppContainerPrivilegesEnabledExt`, `QueryUpdateFileEaAllowedExt` (implemented by [ksecext.sys](../drivers/ksecext.md)) |

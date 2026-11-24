@@ -2,6 +2,116 @@
 
 ![BluetoothStack](BluetoothStack.png)
 
+### Components
+
+Built from the [drivers](../drivers/README.md) and [libraries](../libraries/README.md) pages. Solid arrows: calls / IOCTLs / data. Dotted arrows: creation (PDO, COM object, DLL loading). The Microsoft drivers (`BthMini`, `BthPort`, `BthEnum`, `BthLEEnum`, RFCOMM) are not documented here.
+
+```mermaid
+flowchart TB
+    subgraph UM["User mode"]
+        direction TB
+        APP["Applications<br/>(Settings btuxcpl.exe, WinRT apps, …)"]
+
+        subgraph SVCHOST["svchost.exe services"]
+            direction TB
+            BTCM["BtConnectionManagerService.dll<br/>service BTConnMgr<br/>(+ built-in A2DP, PAN)"]
+            BTAG["BTAGService.dll<br/>service BTAGService (HFP AG)"]
+            AVCTP["BthavctpSvc.dll<br/>service BthAVCTPSvc"]
+            PBAP["Bthpbapservice.dll<br/>service BluetoothPBAPSvc"]
+            BTHSERV["BTHSERV.DLL<br/>service BthServ"]
+        end
+
+        CMCLI["BtConnectionManagerClient.dll<br/>COM {101C5B9F-…}"]
+        AGCLI["BTAudioGatewayClient.dll<br/>COM {EDFC5E7D-…}"]
+        AVRCP["BthAvrcp.dll<br/>AVRCP target profile"]
+        OPP["BthOPPManager.dll<br/>OPP (OBEX PUT)"]
+        HELPER["bthelpersvc.dll<br/>IBtHelperSvc (SDP)"]
+        WSHBTH["WSHBTH.DLL<br/>Winsock AF_BTH / NS_BTH"]
+        RADIODLL["QcBtradioctrl8930.dll<br/>SupportDLL"]
+    end
+
+    subgraph KM["Kernel mode"]
+        direction TB
+        RFCOMM["RFCOMM / BthTdi<br/>\Device\BTHMS_RFCOMM, \Device\BthTdi<br/>(Microsoft)"]
+        BTHENUM["BthEnum.sys<br/>(Microsoft)"]
+        BTHLEENUM["BthLEEnum.sys<br/>(Microsoft)"]
+        L2CAP["bthl2cap.sys<br/>filter: L2CAP for user mode, SCO audio"]
+        BTHPORT["BthPort.sys<br/>(Microsoft)"]
+        BTHMINI["BthMini.sys<br/>Bluetooth radio (Microsoft)"]
+        AUDIO["qc8x60aud.sys<br/>audio driver"]
+        QCBT["qcbluetooth8930.sys<br/>Serial HCI bus driver"]
+        QCWCN["qcwcn8930.sys<br/>WCN subsystem bus driver"]
+        SMD["qcsmd8930.sys<br/>\Device\SMD"]
+        PIL["qcpil8930.sys<br/>image loader"]
+        SMSM["qcsmsm8930.sys"]
+        PAIRF["wp81pairingfilter.sys<br/>(optional, wp81btmon)"]
+        HCIF["wp81hcifilter.sys<br/>(optional, wp81btmon)"]
+    end
+
+    subgraph WCNSS["WCN subsystem (RIVA)"]
+        BTCORE["Bluetooth controller<br/>(HCI, firmware Release 5.01.0)"]
+    end
+
+    %% user mode
+    APP -- "COM IBt…" --> CMCLI
+    APP -. "CoCreateInstance" .-> OPP
+    APP -. "COM IBTAG… ?" .-> AGCLI
+    CMCLI -- "\\.\Pipe\BtConnectionManager" --> BTCM
+    AGCLI -- "\\.\Pipe\BTAudioGateway" --> BTAG
+    BTAG --> CMCLI
+    AVCTP --> CMCLI
+    PBAP --> CMCLI
+    OPP --> CMCLI
+    AVCTP -. "loads profile" .-> AVRCP
+    BTCM -. "LoadLibrary SupportDLL" .-> RADIODLL
+    HELPER -- "WSALookupService* / WSASetService" --> WSHBTH
+    PBAP -- "sockets, WSASetService" --> WSHBTH
+    BTCM -- "RFCOMM sockets" --> WSHBTH
+    WSHBTH -- "RPC BthServEp" --> BTHSERV
+
+    %% user mode -> kernel mode
+    WSHBTH -- "socket IOCTLs" --> RFCOMM
+    WSHBTH -- "IOCTL_BTH_SDP_*" --> BTHPORT
+    BTHSERV -- "BthPort IOCTLs" --> BTHPORT
+    BTCM -- "BthPort IOCTLs<br/>IOCTL_BTH_SET/QUERY_RADIO_STATE<br/>0x411184 / 0x411180 (without SupportDLL)" --> BTHPORT
+    BTCM -- "IOCTL_BTH_WP8_L2CAP_*<br/>ReadFile / WriteFile" --> L2CAP
+    CMCLI -- "IOCTL_BTH_WP8_* (SCO)" --> L2CAP
+    RADIODLL -- "IOCTL 0x2A8004 on/off<br/>IOCTL 0x2A8008 state" --> QCBT
+
+    %% kernel mode
+    RFCOMM --> BTHENUM
+    L2CAP -- "BRBs" --> BTHENUM
+    BTHENUM --> BTHPORT
+    BTHLEENUM --> BTHPORT
+    AUDIO -- "IOCTL_BTHHFP_*<br/>(HFP SCO HCI bypass)" --> L2CAP
+    L2CAP -- "filter on BthMini" --> BTHMINI
+    L2CAP -.-> PAIRF
+    PAIRF -.-> BTHMINI
+    BTHPORT --> BTHMINI
+    BTHMINI -- "IOCTL_BTHX_*" --> QCBT
+    BTHMINI -.-> HCIF
+    HCIF -. "IOCTL_BTHX_*" .-> QCBT
+    QCBT -. "creates PDO SystemBusQc\SMD_BT" .-> BTHMINI
+    QCWCN -. "creates PDO" .-> QCBT
+    QCWCN -- "loads WCN image" --> PIL
+    QCWCN -- "waits for WCNSS" --> SMSM
+    QCBT -- "APPS_RIVA_BT_CMD (commands / events)<br/>APPS_RIVA_BT_ACL (ACL data)" --> SMD
+
+    %% kernel mode -> subsystem
+    SMD -- "shared memory FIFOs" --> BTCORE
+    PIL -. "boots" .-> BTCORE
+
+    %% optional filters
+    classDef optional stroke-dasharray: 5 5
+    class PAIRF,HCIF optional
+```
+
+Notes:
+- `BthMini` drives the radio through the standard `IOCTL_BTHX_*` requests ([QcBluetooth8930.sys](../drivers/qcbluetooth8930.md)); the bus driver itself sends the Qualcomm vendor-specific HCI commands (see [below](#hci-vendor-specific)) before creating the `BthMini` PDO.
+- The dashed boxes are optional filter drivers that aren't part of the phone's stock stack: `wp81pairingfilter.sys` sits between `bthl2cap.sys` and `BthMini`, and `wp81hcifilter.sys` sits between `BthMini` and `qcbluetooth8930.sys` to see or inject HCI packets. See [wp81btmon](https://github.com/fredericGette/wp81btmon/tree/main/driver).
+- The users of [BTAudioGatewayClient.dll](../libraries/btaudiogatewayclient.md) and [BthOPPManager.dll](../libraries/bthoppmanager.md), and the host of [bthelpersvc.dll](../libraries/bthelpersvc.md), are unknown.
+- [BtServ.dll](../libraries/btserv.md) and [BtsCli.dll](../libraries/btscli.md) are the Background Transfer Service, not Bluetooth.
+
 ## HCI Vendor Specific
 
 See  

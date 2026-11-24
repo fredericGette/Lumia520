@@ -5,7 +5,7 @@ It's a kernel **export driver** (a kernel DLL): `DllInitialize` and `DllUnload` 
 - picks the signing level that a new process (and the DLLs it loads ?) must have, from the Security Manager metastore (`HKLM\Software\Microsoft\SecurityManager\…`): system processes, Store / enterprise / OEM applications, developer unlocked applications ([SeQuerySigningPolicyExt](#sequerysigningpolicyext-0x10004840));
 - gives signing level 6 (Store) to the binaries of the applications installed on the SD card, where `ci.dll` can't store its signing level cache EA ([SeCodeIntegrityCacheExt](#secodeintegritycacheext-0x10004c38));
 - allows the Qualcomm user-mode display drivers ([CiQueryLoadLegacyDisplayDriversExt](#ciqueryloadlegacydisplaydriversext-0x10004188));
-- asks the Security Manager driver (`\Device\SecMgr`) which privileges an AppContainer gets ([AppContainerPrivilegesEnabledExt](#appcontainerprivilegesenabledext-0x100052cc)).
+- asks the Security Manager driver ([SecMgr.sys](./secmgr.md), `\Device\SecMgr`) which privileges an AppContainer gets ([AppContainerPrivilegesEnabledExt](#appcontainerprivilegesenabledext-0x100052cc)).
 
 It imports only `ntoskrnl.exe`.
 
@@ -65,7 +65,7 @@ UEFI variable read by `GetDeviceSecurityPolicyState`:
 It communicates with the following devices:  
 | Device | Driver | Comment |
 |--------|--------|---------|
-| \Device\SecMgr | ? (Security Manager driver, not identified) | [IOCTL 0x226054](#ioctl-0x226054) from `AppContainerPrivilegesEnabledExt` |
+| \Device\SecMgr | [SecMgr.sys](./secmgr.md) | [IOCTL 0x226054](#ioctl-0x226054) from `AppContainerPrivilegesEnabledExt` |
 
 ### Exports
 
@@ -188,13 +188,13 @@ The publisher is the first field (GUID) of `SYSTEM_SECUREBOOT_POLICY_INFORMATION
 ### KAddTrustedExecutable (0x10005108)
 
 `NTSTATUS KAddTrustedExecutable(PCWSTR path)`  
-Opens the file (`ZwCreateFile(0x10000000 GENERIC_ALL, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_OPEN, FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT)`) and calls `ZwSetCachedSigningLevel(flags 2, level 6, &handle, 1, handle)`: the file's signing level cache says level 6 (Store) **without checking its signature**. `STATUS_INVALID_PARAMETER` if `path` is NULL.
+Called by [SecMgr.sys](./secmgr.md#ioctl-0x22e008) for IOCTL 0x22E008. Opens the file (`ZwCreateFile(0x10000000 GENERIC_ALL, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_OPEN, FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT)`) and calls `ZwSetCachedSigningLevel(flags 2, level 6, &handle, 1, handle)`: the file's signing level cache says level 6 (Store) **without checking its signature**. `STATUS_INVALID_PARAMETER` if `path` is NULL.
 
 ---
 
 ### IOCTL 0x226054
 
-This IOCTL is sent by Ksecext.sys to the driver of `\Device\SecMgr` (`sub_10002564`). It's the same IOCTL as `QueryKernelPrivilegeCache` of [SecRuntime.dll](../libraries/secruntime.md#kernel-privilege-cache).
+This IOCTL is sent by Ksecext.sys to [SecMgr.sys](./secmgr.md#ioctl-0x226054) (`\Device\SecMgr`, `sub_10002564`). It's the same IOCTL as `QueryKernelPrivilegeCache` of [SecRuntime.dll](../libraries/secruntime.md#kernel-privilege-cache).
 
 | Property | Value |
 |----------|-------|
@@ -215,6 +215,6 @@ Inputbuffer:
 Outputbuffer:  
 | Bytes | Value | Comment |
 |-------|-------|---------|
-| 00-07 | ? | Privileges of the AppContainer (64-bit mask ?). 0 = use the default |
+| 00-07 | ? | Privileges of the AppContainer: 64-bit mask, bit n = privilege LUID n (`RequiredPrivileges` of the chamber in the [cache of SecMgr.sys](./secmgr.md#privilege-cache)). 0 = not in the cache, use the default |
 
 The device is opened with `ZwCreateFile(SYNCHRONIZE, FILE_OPEN, FILE_SYNCHRONOUS_IO_NONALERT)` and the request built with `IoBuildDeviceIoControlRequest` (not internal) on `IoGetRelatedDeviceObject` of the file object.

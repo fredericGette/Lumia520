@@ -370,7 +370,8 @@ Calls `sme_SetMaxTxPower` (`sub_4C4D44`) with BSSID and self MAC `FF:FF:FF:FF:FF
 
 ### IOCTL 0x122058
 
-This IOCTL is processed by Qcwlan8930.sys (`hdd_setCountryCode`, `sub_403838`)
+This IOCTL is processed by Qcwlan8930.sys (`hdd_setCountryCode`, `sub_403838`)  
+This IOCTL is also sent by [WlanProxyDriver.sys](./wlanproxydriver.md) (`\??\QcomWifi`), after validating the country code (2 to 4 bytes). Because of a bug ?, WlanProxyDriver.sys also forwards its 1-byte TxPowerCap request with this code instead of [IOCTL 0x122054](#ioctl-0x122054)
 
 | Property | Value |
 |----------|-------|

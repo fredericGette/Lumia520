@@ -17,7 +17,7 @@ Registry key `\Registry\Machine\System\CurrentControlSet\Control\CrashControl`:
 | EnableOfflineDumps | 0 | ULong. 0 = no preboot dump. 2 = also process the reset data of the SBL (see [Abnormal reset report](#abnormal-reset-report)) |
 | WpDisableDebuggerCheck | 0 | ULong (Boolean). By default the preboot dump is not enabled when a kernel debugger is attached (`KdDebuggerNotPresent`) |
 | WpDisableSubSystemCallBacks | 0 | ULong (Boolean). Don't call the halt / memory protection / failure record callbacks of the subsystems during a bugcheck |
-| DedicatedDumpFile | D:\DedicatedDump.sys | String. Path of the offline dump file. SBL dump: copied in the UEFI variable `DedicatedDumpFile` `{853CE3A3-…}`. UEFI dump: copied in the settings file; its parent directory is the CrashDump partition |
+| DedicatedDumpFile | D:\DedicatedDump.sys | String. Path of the offline dump file. SBL dump: copied in the UEFI variable `DedicatedDumpFile` `{853CE3A3-…}`. UEFI dump: copied in the settings file; its parent directory is the CrashDump partition. The live kernel dumps of [werkernel.sys](./werkernel.md) go in the directory `LiveDumps` next to this file |
 | OfflineDumpBugCheckCodes | ? | MultiString of base 10 integers, 5 values max. SBL dump only: bugcheck codes for which the phone is reset immediately (no online dump) |
 | WpSettingsFilePath | ? | String. UEFI dump only: path of the settings file read by wpdmp.efi |
 | WpAbortKeyName | ? | String. UEFI dump only: copied in the settings file for wpdmp.efi |
@@ -148,7 +148,7 @@ The entries are: `WpAbortKeyName`, `DedicatedDumpFile`, `WpAbortTimeout`, `WpAbo
 ### Abnormal reset report
 
 Only when `EnableOfflineDumps` = 2 and the config table is version 2 (`sub_10005AD8`): the config table gives the address and size of the reset data written by the SBL (`ResetDataAddress`, `ResetDataSize` = 8280 bytes, signature `{8CC74056-…}`). Its strings `GCC_RESET_STATUS=`, `PON_WARM_RESET_REASON1=` and `POFF_REASON1=` are parsed to compute an abnormal reset reason (only for MSM8916 and MSM8909 ?).  
-If an abnormal reset occurred, the driver creates a live kernel report `AbnormalReset` (`WerLiveKernelCreateReport`, secondary data `{6C123512-B8F4-440F-8BB1-813CC38D0CC9}` = the reset data), and writes the reason in `RebootReason`. If the shell is not ready yet, the report is delayed until the WNF state `WNF_SHL_START_READY` (0x418A063EA3BC3875).  
+If an abnormal reset occurred, the driver creates a live kernel report `AbnormalReset` ([`WerLiveKernelCreateReport`](./werkernel.md#werlivekernelcreatereport-0x100035a0) of [werkernel.sys](./werkernel.md), throttled only by the number of queued dumps, secondary data `{6C123512-B8F4-440F-8BB1-813CC38D0CC9}` = the reset data), and writes the reason in `RebootReason`. If the shell is not ready yet, the report is delayed until the WNF state `WNF_SHL_START_READY` (0x418A063EA3BC3875).  
 This is probably not used on the Lumia 520 (MSM8930).
 
 ### CDD interface

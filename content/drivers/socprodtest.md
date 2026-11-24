@@ -2,7 +2,7 @@
 
 SoC production test module: it checks that the device has been locked down in the factory.  
 It reads 4 registers of the QFPROM (fuses) and reports whether the secure boot fuse and the JTAG fuses are blown, whether the SHK (Secondary Hardware Key ?) is provisioned and whether a JTAG override is present.  
-This isn't a real device driver. It's a kernel-mode export driver (`IMAGE_FILE_DLL`, native subsystem, imports only `MmMapIoSpace` and `MmUnmapIoSpace`): it creates no device and installs no dispatch routine. The test can only run if another kernel-mode component imports `ProdTestDeviceControl` and calls it with an IRP.  
+This isn't a real device driver. It's a kernel-mode export driver (`IMAGE_FILE_DLL`, native subsystem, imports only `MmMapIoSpace` and `MmUnmapIoSpace`): it creates no device and installs no dispatch routine. The test runs when another kernel-mode component calls `ProdTestDeviceControl` with an IRP: [SecMgr.sys](./secmgr.md#other-ioctls) imports it and forwards every IOCTL it doesn't handle itself.  
 The PDB name is `socprodtest_8960.pdb`: the module was built for the MSM8960 family, and nothing in it is specific to the MSM8930.  
 
 Device name : none  
@@ -15,7 +15,7 @@ There's no ETW provider, no interface GUID and no log output.
 It doesn't communicate with any other device. It accesses the hardware directly.
 
 > [!NOTE]
-> No caller of `ProdTestDeviceControl` was found: no other binary in the analysed files references `SOCProdTest` or `ProdTestDeviceControl`, and no driver page mentions the IOCTL code. User mode can't reach this code directly, because the module has no device object.
+> The only caller found is [SecMgr.sys](./secmgr.md#other-ioctls): an IOCTL with any code it doesn't handle, sent to `\Device\SecMgr`, goes to `ProdTestDeviceControl(DeviceObject, Irp)`, and SecMgr completes the IRP. The DACL of `\Device\SecMgr` only allows SYSTEM and `NT SERVICE\SecMgr`.
 
 ### Exports
 
@@ -49,7 +49,7 @@ The role of each bit comes only from the failure messages. The binary gives no i
 ### IOCTL 0x22E014
 
 This IOCTL is processed by SOCProdTest.sys, in the exported function `ProdTestDeviceControl`.  
-It's the only code accepted. The sender is unknown.
+It's the only code accepted. It's reached through `\Device\SecMgr`: [SecMgr.sys](./secmgr.md#other-ioctls) forwards it (user-mode sender unknown).
 
 | Property | Value |
 |----------|-------|
@@ -63,7 +63,7 @@ It's the only code accepted. The sender is unknown.
 | SoC production test | ignored | 1028 minimum |
 
 Prototype (tentative):  
-`NTSTATUS ProdTestDeviceControl(PDEVICE_OBJECT DeviceObject ?, PIRP Irp)`  
+`NTSTATUS ProdTestDeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)` (SecMgr.sys passes its own device object and the IRP)  
 The first parameter is never used.
 
 The input buffer isn't read.

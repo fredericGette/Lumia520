@@ -139,3 +139,6 @@
 [ufxchipidea.sys](./ufxchipidea.md)  
 [ufxsynopsys.sys](./ufxsynopsys.md)  
 [WDFHelper.sys](./wdfhelper.md)  
+[WlanProxyDriver.sys](./wlanproxydriver.md)  
+[werkernel.sys](./werkernel.md)  
+[secmgr.sys](./secmgr.md)  
