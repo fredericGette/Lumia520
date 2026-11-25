@@ -92,7 +92,7 @@ Then `sub_4086EC` reads the CDCC data (sensor configuration) from a file, applie
 
 | Path | Max size | Comment |
 |------|----------|---------|
-| `\DosDevices\C:\Windows\System32\Drivers\<Camera ID>.dcc` | 51200 bytes | CDCC data, single `ZwReadFile` (`sub_40210C`). `<Camera ID>` = 8-character id returned by the sensor. Cached for 2 sensors (model + revision) |
+| `\DosDevices\C:\Windows\System32\Drivers\<Camera ID>.dcc` | 51200 bytes | CDCC data, single `ZwReadFile` (`sub_40210C`). `<Camera ID>` = 8-character id returned by the sensor. Cached for 2 sensors (model + revision). File format: see [qccamsensor8930.sys](./qccamsensor8930.md#cdcc-data-dcc-files) |
 
 ### Chromatix data
 

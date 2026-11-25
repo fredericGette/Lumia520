@@ -98,13 +98,57 @@ The component is activated at power on (`SensorDeviceActivate`, `sub_415060`: IO
 
 `cam_drv_on` (`sub_40816C`) reads the registry values above and runs the SMIA++ detection. On success it logs "cam_drv_on found SMIA++ CSID = %u, Camera ID = %s, Serial Number = %s, SensorModel = %04x".  
 The sensor is read at the I2C address 0x20 (8-bit, = 0x10 in 7-bit: SMIA default address, `byte_44B0AE`). Command 68 reads the SMIA registers 0x0000 (model id, 16 bits), 0x0002, 0x0010 and 0x0003.  
-Then `sub_4086E8` reads the CDCC data (sensor configuration) from a file, applies it (`cam_drv_config_set`), reads the camera details and the sensor modes (max 80, "Published modes"), and the NVM (`cam_drv_get_parsed_nvm`).
+Then `sub_4086E8` reads the [CDCC data](#cdcc-data-dcc-files) (sensor configuration, register writes) from a file, applies it (`cam_drv_config_set`), reads the camera details and the sensor modes (max 80, "Published modes"), and the NVM (`cam_drv_get_parsed_nvm`).
 
 ### Files
 
 | Path | Max size | Comment |
 |------|----------|---------|
-| `\DosDevices\C:\Windows\System32\Drivers\<Camera ID>.dcc` | 51200 bytes | CDCC data, single `ZwReadFile` (`sub_402108`). `<Camera ID>` = 8-character id returned by the sensor. Cached for 2 sensors (model + revision) |
+| `\DosDevices\C:\Windows\System32\Drivers\<Camera ID>.dcc` | 51200 bytes | CDCC data, single `ZwReadFile` (`sub_402108`). `<Camera ID>` = 8-character id returned by the sensor. Cached for 2 sensors (model + revision). See [CDCC data](#cdcc-data-dcc-files) |
+
+### CDCC data (.dcc files)
+
+The CDCC file is the per-module configuration of the sensor: a list of sensor register writes (including a block that looks like code for a microcontroller inside the sensor ?) and other sections not decoded. It is read and applied at **every** power on (command 0), not once: a trace of the Camera app shows the whole upload twice, once for each power on.
+
+Reading (`sub_4086E8`, call to `sub_4085D4` → `sub_402108`): the whole file is read into a 0xC800-byte buffer, its size is taken from bytes 06-07 (big-endian), checked against 0xC800 ("CDCC Size of %d bytes is larger than max allowed %d bytes"), and the data is copied into the SMIA++ context (`+0x2A808` pointer, `+0x2A80C` size: the buffer returned by [command 51 GetCDCCData](#commands-5153-getcdccdata-getinfonvmdata-getinforawnvmdata)). It is then applied by `cam_drv_config_set`, called through a function table (`dword_44B048` `+0x0C`); "failed getting CDCC data for sensor ID = %x" when the file can't be read.
+
+Files on the Lumia 520 (`C:\Windows\System32\Drivers`, all dated 2015-06-17): `01022F02`, `01022F03`, `01022F05` (13147–13150 bytes), `0103BB00`, `0103BB01`, `0107A300`, `0107A301`, `0107A302` (43475 bytes), `0A03BB01`…`03`, `0A6A3001`…`03`, `0B017001`, `0C21AC67`, `0C562301`…`03`, `0C563A01`…`03`, `10444101`, `10504101`, `10504102`. The rear camera of the Lumia 520 is `0107A302` (model 0x07A3, revision 2).
+
+File layout (big-endian), from `0107A302.dcc`:  
+| Bytes | Value | Comment |
+|-------|-------|---------|
+| 00-03 | 00 00 00 1E | ? (30: header size ?) |
+| 04-07 | 00 00 A9 D3 | File size (43475). The driver uses bytes 06-07 |
+| 08-27 | "0107A302" | Camera id, zero padded |
+| 28-2B | 07 DD 06 0E | Date ? 2013-06-14 |
+| 2C-33 | "007" "011" | Versions ? |
+| 34-37 | 08 00 00 00 | Number of sections ? (8) |
+| 38-57 | | 8 × (section id, length), 16 bits each |
+| 58-… | | Sections, in the order of the table. The lengths add up to the file size minus 4 bytes |
+
+| Section id | Length | Content |
+|------------|--------|---------|
+| 0 | 2430 | Sensor register writes, see below |
+| 4, 3, 1 | 21 each | `[register, value]` entries on 0x0A00…0x0A0C (SMIA NVM / OTP access registers) and a terminator: `0A02 = 1E`, `0A00 = 03`, `0A0A = 03` (section 1: `09`), `0A0B = 63`, `0A0C = 64`, `0A00 = 00`, `00 00 00`. NVM read sequences ? |
+| 12 | 108 | Header of 8 bytes (`00 6C 00 03 00 20 00 00`), then the text "Added on 09th October, 2012", then ? |
+| 5 | 6 | `12 0E 01 00 00 00` ? |
+| 6 | 40692 | Tuning data ?: header of 8 bytes (`00 F4 9E 10 00 40 00 00`), the text "14-Jun-2013 8:54 1.4 \| Raisu_ST CS2.1 \| Test tuning 0 \| v22", then tables (repeated patterns) |
+| 14 | 84 | Header of 8 bytes (`01 54 00 02 00 1F 00 00`), then the text "Added on 9th October, 2012", then ? |
+
+The last 4 bytes of the file (`90 6D AD 1B` in `0107A302.dcc`) follow the sections: checksum ?
+
+Section 0 is a list of 3-byte entries `[register (16 bits), value (8 bits)]` (810 entries); the last entry `0000 = 00` is a terminator (it isn't written). The writes go to the sensor (I2C address 0x20) through the [platform I2C write](#internal-ioctl-0x2320030x23201f--camera-platform) (0x23200F), in the order of the file, consecutive registers grouped in transfers of up to 8 data bytes. In `0107A302.dcc`:  
+| Registers | Bytes | Comment |
+|-----------|-------|---------|
+| 0x3002, 0x3016-0x3017, 0x3003, 0x3045 | 5 | Manufacturer specific registers: `32`, `46 29`, `03`, `03` |
+| 0xFBD7-0xFBFE | 40 | 10 pairs of 16-bit values (`4C89 40E1`, `4C73 40D9`, `4C74 40D9`…). Not addresses in the 0xF800 block |
+| 0xFB00 | 1 | `51`. Patch control ? |
+| 0xF800-0xFAB5 | 694 | Code ? The bytes decode as 8051 instructions: `90 30 47 74 98 F0` = `MOV DPTR,#0x3047` / `MOV A,#0x98` / `MOVX @DPTR,A` (writes the sensor register 0x3047), `LCALL` to low addresses (`12 21 22`, `12 17 D8`: ROM routines ?), `LJMP` inside the block (`02 F8 7B`), `RET` (`22`). So the sensor would contain an 8051 microcontroller whose RAM at 0xF800 is patched |
+| 0x35D8-0x35EF, 0x35F1, 0x35F3, 0x35F5-0x3615 | 59 | Tables, the first one an increasing series of 16-bit values (`010F 0172 01B4 01DF 0208 0228`…) |
+| 0x35D2-0x35D4, 0x35D0 | 4 | `FF FF E0`, `01` |
+| 0x3E44, 0x3570, 0x6006-0x6008, 0xFADF | 6 | `01`, `01`, `02 02 02`, `00` |
+
+In the trace, the CDCC writes come after the detection reads (0x0003, 0x0011, 0x0000, 0x0002, 0x0010, 0x001C…), the software reset (0x0103 = `01`), the external clock (0x0136 = `09 9A`: 9.6 MHz) and the writes to 0x0130-0x0135 (`02 80`, `01 33`, `01 CD`), and before the reads of the SMIA capability registers (0x0040…, 0x0080…, 0x1000…).
 
 ### Chromatix data
 
