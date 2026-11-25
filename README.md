@@ -33,6 +33,8 @@ All about Nokia Lumia 520
 
 ## [Camera stack](content/camera/README.md)
 
+## [Rear camera sensor firmware](content/sensor_firmware/README.md)
+
 ## [Windows drivers](content/drivers/README.md)
 
 ## [Windows applications](content/applications/README.md)

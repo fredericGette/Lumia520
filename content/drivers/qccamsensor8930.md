@@ -142,8 +142,8 @@ Section 0 is a list of 3-byte entries `[register (16 bits), value (8 bits)]` (81
 |-----------|-------|---------|
 | 0x3002, 0x3016-0x3017, 0x3003, 0x3045 | 5 | Manufacturer specific registers: `32`, `46 29`, `03`, `03` |
 | 0xFBD7-0xFBFE | 40 | 10 pairs of 16-bit values (`4C89 40E1`, `4C73 40D9`, `4C74 40D9`…). Not addresses in the 0xF800 block |
-| 0xFB00 | 1 | `51`. Patch control ? |
-| 0xF800-0xFAB5 | 694 | Code ? The bytes decode as 8051 instructions: `90 30 47 74 98 F0` = `MOV DPTR,#0x3047` / `MOV A,#0x98` / `MOVX @DPTR,A` (writes the sensor register 0x3047), `LCALL` to low addresses (`12 21 22`, `12 17 D8`: ROM routines ?), `LJMP` inside the block (`02 F8 7B`), `RET` (`22`). So the sensor would contain an 8051 microcontroller whose RAM at 0xF800 is patched |
+| 0xFB00 | 1 | `51`. A number used by the sensor firmware (`0x78` by default), not a patch control. See [Rear camera sensor firmware](../sensor_firmware/README.md#initialisation) |
+| 0xF800-0xFAB5 | 694 | 8051 code: `90 30 47 74 98 F0` = `MOV DPTR,#0x3047` / `MOV A,#0x98` / `MOVX @DPTR,A` (writes the sensor register 0x3047), `LCALL` to ROM routines (`12 21 22`, `12 17 D8`), `LJMP` inside the block (`02 F8 7B`), `RET` (`22`). The sensor contains an 8051 microcontroller and this is a patch of its mask ROM firmware, see [Rear camera sensor firmware](../sensor_firmware/README.md#patch-from-the-dcc-file) |
 | 0x35D8-0x35EF, 0x35F1, 0x35F3, 0x35F5-0x3615 | 59 | Tables, the first one an increasing series of 16-bit values (`010F 0172 01B4 01DF 0208 0228`…) |
 | 0x35D2-0x35D4, 0x35D0 | 4 | `FF FF E0`, `01` |
 | 0x3E44, 0x3570, 0x6006-0x6008, 0xFADF | 6 | `01`, `01`, `02 02 02`, `00` |
