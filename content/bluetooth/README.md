@@ -1,7 +1,5 @@
 # Bluetooth stack
 
-![BluetoothStack](BluetoothStack.png)
-
 ### Components
 
 Built from the [drivers](../drivers/README.md) and [libraries](../libraries/README.md) pages. Solid arrows: calls / IOCTLs / data. Dotted arrows: creation (PDO, COM object, DLL loading). The Microsoft drivers (`BthMini`, `BthPort`, `BthEnum`, `BthLEEnum`, RFCOMM) are not documented here.
