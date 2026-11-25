@@ -80,3 +80,4 @@
 [MFPalWP.dll](./mfpalwp.md)  
 [MFCaptureEngine.dll](./mfcaptureengine.md)  
 [PhotosApp.Models.dll](./photosapp.models.md)  
+[Windows.Media.dll](./windows.media.md)  
