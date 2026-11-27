@@ -81,3 +81,4 @@
 [MFCaptureEngine.dll](./mfcaptureengine.md)  
 [PhotosApp.Models.dll](./photosapp.models.md)  
 [Windows.Media.dll](./windows.media.md)  
+[TestDeploymentInfo.dll](./testdeploymentinfo.md)  

@@ -120,7 +120,7 @@ Binds `{4172BF6F-…}` at +0x0C, then creates a [resource manager object](#resou
 
 ### CreateForegroundTaskManager (0x100044A8)
 
-The first parameter is required. It's a COM object, not identified, that creates message channels (a CoreMessaging-like factory ?). The object (0x100 bytes) has four interfaces. The one at +0 is returned. `QueryInterface` (`sub_100057B8`) returns +4 for `IUnknown` and `{23B500C2-5623-4428-9DB4-A4803B62E684}`, +8 for `{D1085C9C-64D3-49B2-BC55-77A9C101B302}`, and +0x0C for `{83280408-0CFA-4006-88FE-039BEE064E43}`.
+The first parameter is required. It's a COM object, not identified, that creates message channels (a CoreMessaging-like factory ?). [TestNavigationApi.exe](../applications/testnavigationapi.md#dependencies) passes the object returned by `CoreMessaging!CoreUICreate`. The object (0x100 bytes) has four interfaces. The one at +0 is returned. `QueryInterface` (`sub_100057B8`) returns +4 for `IUnknown` and `{23B500C2-5623-4428-9DB4-A4803B62E684}`, +8 for `{D1085C9C-64D3-49B2-BC55-77A9C101B302}`, and +0x0C for `{83280408-0CFA-4006-88FE-039BEE064E43}`.
 
 | Offset | Size | Comment |
 |--------|------|---------|
@@ -173,7 +173,7 @@ Methods (RPC on the binding +0x14 unless stated):
 | | 18 `sub_10005454` | `id` with high byte 0x0A: AppX resource manager opnum 0; else resource manager opnum 15 |
 | | 19…21 | foreground opnums 11, 14, 15 |
 | | 22 `sub_100055E4` | `IPMEnumerationManager` method 12, then method 6 of the returned object |
-| +4 `{23B500C2-…}` (0x10003BC4) | 3…14 | resource manager opnums 3, 4, 7, 6, 5, 8 (followed by AppX resource manager opnum 10), 12, 13, 9, 10, 11, 14 |
+| +4 `{23B500C2-…}` (0x10003BC4) | 3…14 | resource manager opnums 3, 4, 7, 6, 5, 8 (followed by AppX resource manager opnum 10), 12, 13, 9, 10, 11, 14. Slot 6 (opnum 6) is `SetAutoDehydrate(BOOL)`: called by [TestNavigationApi.exe](../applications/testnavigationapi.md#parameters) (`EnableAutoDehydrate` / `DisableAutoDehydrate`) |
 | +8 `{D1085C9C-…}` (0x10003B68) | 3…5 | foreground opnums 12, 13, 16 |
 | +0x0C `{83280408-…}` (0x10003B80) | 3 | `E_NOTIMPL` |
 | | 4…12 | AppX resource manager opnums 1…9 |

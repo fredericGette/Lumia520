@@ -276,7 +276,7 @@ Each enumerator has a single method (index 3) that returns the next object (`IPM
 
 #### Notifications
 
-`IPMNotificationManager` 3 registers an `IPMNotificationsSink` for a kind of notification (enum) and 4 unregisters it; the sink receives the notification objects through method 5 (an interface pointer whose IID is given by the `GUID*`: `IPMLifeCycleNotification`, `IPMTileNotification`, `IPMBnsNotification` ?). The object that implements `IPMNotificationManager` isn't identified. None of these six IIDs appears in pacmanserver.dll, so they're implemented by another binary: probably a client library that reads the notification pipe and builds the objects ? ( the service also notifies its clients through `\\.\pipe\PMCN…` pipes, see [pacmanserver.dll](./pacmanserver.md#notifications)).
+`IPMNotificationManager` 3 registers an `IPMNotificationsSink` for a kind of notification (enum) and 4 unregisters it; the sink receives the notification objects through method 5 (an interface pointer whose IID is given by the `GUID*`: `IPMLifeCycleNotification`, `IPMTileNotification`, `IPMBnsNotification` ?). The object that implements `IPMNotificationManager` isn't identified; clients create it with CLSID `{D0DF0C7D-33BF-4E04-9B11-B1D7AE572EED}` ([TH.exe](../applications/th.md#waiting-for-the-result), [Alarms_NoUI.exe](../applications/alarms_noui.md)). None of these six IIDs appears in pacmanserver.dll, so they're implemented by another binary: probably a client library that reads the notification pipe and builds the objects ? ( the service also notifies its clients through `\\.\pipe\PMCN…` pipes, see [pacmanserver.dll](./pacmanserver.md#notifications)).
 
 | Interface | IID | Methods (index: parameters) |
 |-----------|-----|-----------------------------|
@@ -345,6 +345,8 @@ The `struct72` fields are proven by `PackageManager::BeginInstall` (0x1004EC78 i
 | 0x54 | enum | 0x50 | enum |
 | 0x58, 0x5C, 0x60 | 3 `LONG` | 0x54, 0x58, 0x5C | 3 `LONG` |
 | 0x64 | pointer to an array (`FC_BOGUS_ARRAY`) | 0x60 | pointer to an array (`FC_BOGUS_ARRAY`) |
+
+[TH.exe](../applications/th.md#beginappxregister-parameter) fills `struct104` as follows: +0x00 product ID, +0x10 path of `AppxManifest.xml` (deploy of an unsigned package), +0x18 a string used instead of +0x10 for a signed install, +0x4C / +0x50 licence and its size (signed install only), +0x54 1 (8 for a bundle manifest), +0x58 flags (2 = deploy, 0x10000 = SD card), +0x60 / +0x64 number and array of dependency packages.
 
 `BeginAppxDownload` (method 15) takes an array of `struct28`: `GUID`, `BSTR`, `LONG`, `LONG`.
 
