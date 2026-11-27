@@ -106,6 +106,50 @@ The `.dcc` overwrites some of these values just after the power on: `0xFADF = 00
 
 The handlers use the same scheme with their own flag byte, e.g. `sub_165B` dispatches on `RAM_48`.
 
+## Exposure and line timing
+
+The exposure (`0x0202–0x0203` coarse integration time), the frame length (`0x0340–0x0341`) and the line length (`0x0342–0x0343`) are **never read or written by the ROM** (checked over the whole dump). The host writes them over I2C and the pixel-array timing hardware uses them directly. The firmware only *reads* the clock plan and the gain, to derive its own values:
+
+| Register | Read at | |
+|----------|---------|-|
+| `0x0205` analog gain | `0x1955` | gain → analog core, also hooked by the patch `0xF800` |
+| `0x0306` pll_multiplier | `0x15D7`, `0x1622` | |
+| `0x0305` pre_pll_clk_div | `0x162F` | |
+| `0x0301` vt_pix_clk_div | `0x2513` | |
+| `0x0303` vt_sys_clk_div | `0x250E` | |
+| `0x0309` op_pix_clk_div | `0x2169`, `0x2509` | |
+| `0x030B` op_sys_clk_div | `0x2518` | |
+
+So the firmware sets **no ceiling** on the exposure; the limit is the register width and the pixel clock:
+
+```
+t_exposure ≈ coarse_integration_time × line_length_pck / vt_pix_clk
+```
+
+The ~6.5 s maximum often quoted is `0xFFFF` lines × the default line time. `coarse_integration_time` is 16-bit (≤ 65535 lines), and there is no wider vendor counter: a scan for multi-byte register writes on the timing pages finds none, and `sub_050D` (stream start/stop) only writes control bits (`0x3530`, `0x3230`, `0x3220`, `0x3240`, `0x3340`, `0x3356`, `0x3583`, `0x3503`), not counters.
+
+To go past 6.5 s, two host-side levers — both untouched by the firmware — multiply the per-line time:
+
+- raise `line_length_pck` (`0x0342`, 16-bit horizontal blanking), so each of the 65535 lines lasts longer;
+- slow the PLL (`0x0304–0x030B`: lower `pll_multiplier`, raise the dividers), so each line lasts longer.
+
+Both scale the exposure linearly. The real limits are outside the sensor firmware: the PLL minimum lock frequency, the VFE/CSI receiver timing out on a multi-second frame (the capture pipeline must tolerate the long frame blanking, and the DPHY data rate drops with the clock), and the dark current at long integration.
+
+## OTP / NVM interface
+
+The SMIA data-transfer interface gives the 8051 access to the module NVM/OTP (calibration): `0x0A00` control, `0x0A02` page/status, `0x0A04…` data registers. Every access to the `0x0A0x` page in the dump:
+
+| Address | Access | |
+|---------|--------|-|
+| `0x061F` | read `0x0A02` | vector `0x0043` handler, `CJNE A,#0x1E` (gate) |
+| `0x1398` | read `0x0A02` | |
+| `0x23FB` | read `0x0A00` | |
+| `0x2412` → `0x2418` | read `0x0A00`, then write it back with `ANL A,#0xFB` (clears bit 2), under a bit test, then `LJMP 0x1398` | |
+
+The data registers `0x0A04…` are never touched, and no write ever sets a program / write-enable bit: **the firmware never programs the OTP**. It only reads the interface status and clears a control bit (interface disable / teardown). The calibration itself is read by the host ([qccamsensor8930.sys](../drivers/qccamsensor8930.md#cdcc-data-dcc-files), the `.dcc` sections 1, 3 and 4) over I2C, not by the 8051.
+
+This is why the ROM dumper is safe: it only reads code memory (`MOVC`) and writes the scratch registers `0x35F7–0x35FE`, and the stream-start path it hijacks (`0xF90F` → `0x1D4F`) never goes near the OTP.
+
 ## Self-test
 
 `sub_19C3` is a memory test: it reads a pattern from `0x361D–0x361E`, checks the RAM `0xFC00–0xFFFF` (`0x3FF` or `0x3F7` bytes depending on bit 7 of `0x361E`), stores the failing addresses at `0xF802…`, counts the wrong bits with a table of bit counts per nibble at `0x0E41` (`00 01 01 02 01 02 02 03…`), writes the result to `0xF800–0xF801` and sets bit 2 of `0x361F`. A second routine around `0x1BEB` does the same with its result in `RAM_28:29` and bit 0 of `0x361F`. Production test, started by a host write to `0x361D…` ?
